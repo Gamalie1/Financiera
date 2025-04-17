@@ -1,0 +1,140 @@
+/* Definición de los colores en :root */
+:root {
+  /* Colores Principales */
+  --primary-color: #2d6073;  /* Verde azulado */
+  --secondary-color: #1f192f;  /* Color oscuro, ideal para texto */
+  
+  /* Colores de Fondo */
+  --background-color: #f0f7da;  /* Amarillo suave para el fondo */
+  --background-light: #ffffff;  /* Blanco para secciones más neutras */
+
+  /* Colores de Acento */
+  --success-color: #65b8a6;  /* Verde menta claro */
+  --error-color: #dc3545;  /* Rojo (color de error común) */
+
+  /* Colores de Enlace */
+  --link-color: #1f192f;  /* Color oscuro para enlaces */
+  
+  /* Sombra */
+  --shadow-light: rgba(0, 0, 0, 0.1);  /* Sombra suave */
+}
+
+/* Fondo principal */
+body {
+  background-color: var(--background-color);
+  color: var(--secondary-color);
+  font-family: Arial, sans-serif;
+}
+
+/* Botón Primario */
+.btn-primary {
+  background-color: var(--primary-color);
+  border: none;
+  color: white;
+  border-radius: 5px;
+  padding: 10px;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  background-color: #244c56;  /* Variación más oscura del verde azulado */
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.25rem rgba(45, 96, 115, 0.5);
+}
+
+/* Fondo de tarjetas y secciones */
+.card {
+  background-color: var(--background-light);
+  box-shadow: 0px 4px 6px var(--shadow-light);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Enlaces */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: var(--primary-color);  /* Cambia color al pasar el cursor */
+}
+
+/* Mensajes de éxito y error */
+.alert-success {
+  background-color: var(--success-color);
+  color: white;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.alert-danger {
+  background-color: var(--error-color);
+  color: white;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+/* Estilos para el formulario de login */
+form {
+  margin-top: 20px;
+}
+
+.input-group {
+  border-radius: 5px;
+}
+
+.input-group-text {
+  background-color: var(--primary-color);
+  border: none;
+}
+
+.input-group-text img {
+  max-height: 20px;
+  max-width: 20px;
+}
+
+.form-control {
+  border-radius: 5px;
+  border-color: #ccc;
+  background-color: var(--background-light);
+  padding: 10px;
+  font-size: 1rem;
+}
+
+/* Botón de inicio de sesión */
+.btn {
+  background-color: var(--primary-color);
+  border: none;
+  color: white;
+  border-radius: 5px;
+  padding: 10px;
+  width: 100%;
+  font-weight: bold;
+}
+
+.btn:hover {
+  background-color: #244c56;
+}
+
+/* Responsividad para móviles y tabletas */
+@media (max-width: 768px) {
+  .d-flex {
+    flex-direction: column;
+  }
+
+  .bg-white {
+    width: 90%;
+  }
+
+  .card {
+    width: 100%;
+    padding: 15px;
+  }
+}

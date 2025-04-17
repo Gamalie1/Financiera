@@ -1,0 +1,125 @@
+:root {
+    --blue: #4e73df;
+    --indigo: #6610f2;
+    --purple: #6f42c1;
+    --pink: #e83e8c;
+    --red: #e74a3b;
+    --orange: #fd7e14;
+    --yellow: #f6c23e;
+    --green: #1cc88a;
+    --teal: #20c9a6;
+    --cyan: #36b9cc;
+    --white: #fff;
+    --gray: #858796;
+    --gray-dark: #5a5c69;
+    --primary: #4e73df;
+    --secondary: #858796;
+    --success: #1cc88a;
+    --info: #36b9cc;
+    --warning: #f6c23e;
+    --danger: #e74a3b;
+    --light: #f8f9fc;
+    --dark: #5a5c69;
+    --font-family-sans-serif: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+  
+  /* Estilo de la tabla */
+  .table {
+      width: 100%;
+      margin-bottom: 1rem;
+      color: var(--gray-dark);
+      border-collapse: collapse;
+  }
+  
+  .table th, .table td {
+      padding: 12px 15px;
+      vertical-align: middle;
+      border: 1px solid #ddd;
+  }
+  
+  .table th {
+      background-color: var(--primary); /* Color de fondo para los encabezados */
+      color: var(--white);
+      text-align: left;
+      font-weight: bold;
+  }
+  
+  .table tbody tr:nth-child(odd) {
+      background-color: var(--light); /* Fondo suave para filas impares */
+  }
+  
+  .table tbody tr:nth-child(even) {
+      background-color: var(--white); /* Fondo blanco para filas pares */
+  }
+  
+  .table tbody tr:hover {
+      background-color: var(--success); /* Resaltar fila al pasar el mouse */
+      color: var(--white);
+  }
+  
+  .table .action-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      gap: 10px;
+  }
+  
+  .table .action-list li a {
+      color: var(--primary); /* Color de los iconos */
+      font-size: 1.2rem;
+      transition: color 0.3s;
+  }
+  
+  .table .action-list li a:hover {
+      color: var(--danger); /* Cambiar color al hacer hover */
+  }
+  
+  /* Estilo de botones */
+  .btn-primary {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 8px 15px;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-block;
+      margin: 10px 0;
+  }
+  
+  .btn-primary:hover {
+      background-color: var(--indigo);
+      color: var(--white);
+  }
+  
+  /* Mejoras de la cabecera */
+  .panel-heading {
+      background-color: var(--info); /* Fondo suave */
+      padding: 15px;
+      color: var(--white);
+      border-radius: 5px;
+  }
+  
+  .panel-heading .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+  }
+  
+  /* Añadir bordes redondeados */
+  .panel {
+      border-radius: 10px;
+      overflow: hidden;
+  }
+  
+  .panel-body {
+      padding: 20px;
+  }
+  
+  /* Estilo de los inputs de búsqueda (si se descomenta la barra de búsqueda) */
+  .form-control {
+      border-radius: 5px;
+      padding: 8px;
+      font-size: 1rem;
+  }
+  

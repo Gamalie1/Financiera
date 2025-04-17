@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<link href="/static/css/signup.css" rel="stylesheet">
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="bg-white p-4 rounded-5 text-secondary shadow-lg" style="width: 100%; max-width: 400px;">
+  
+        <div class="text-center fs-1 fw-bold mb-4">Registrarse</div>
+  
+        <!-- Mostrar errores si existen -->
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+  
+        <!-- Formulario de registro -->
+        <form action="{% url 'signup' %}" method="POST" class="card-body">
+            {% csrf_token %}
+  
+            <!-- Nombre de usuario -->
+            <div class="mb-3">
+                <label for="username" class="form-label">Nombre de usuario:</label>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Escribe tu usuario" required>
+            </div>
+  
+            <!-- Nombre -->
+            <div class="mb-3">
+                <label for="first_name" class="form-label">Nombre:</label>
+                <input type="text" name="first_name" id="first_name" class="form-control" placeholder="Escribe tu nombre completo" required>
+            </div>
+  
+            <!-- Apellido -->
+            <div class="mb-3">
+                <label for="last_name" class="form-label">Apellido:</label>
+                <input type="text" name="last_name" id="last_name" class="form-control" placeholder="Escribe tu apellido completo" required>
+            </div>
+  
+            <!-- Tipo de usuario (ocupación) -->
+            <div class="form-group mb-3">
+                <label for="ocupacion" class="form-label">Tipo de usuario:</label>
+                <select id="ocupacion" name="ocupacion" class="form-control" required>
+                    <option value="psicologa">Administrador</option>
+                    <option value="maestra">Empleado</option>
+                </select>
+            </div>
+        
+            <!-- Correo electrónico -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Correo electrónico:</label>
+                <input type="email" name="email" id="email" class="form-control" placeholder="Escribe tu correo" required>
+            </div>
+  
+            <!-- Contraseña -->
+            <div class="mb-3">
+                <label for="password1" class="form-label">Contraseña:</label>
+                <input type="password" name="password1" id="password1" class="form-control" placeholder="Escribe tu contraseña" required>
+            </div>
+  
+            <!-- Confirmar contraseña -->
+            <div class="mb-3">
+                <label for="password2" class="form-label">Confirmar contraseña:</label>
+                <input type="password" name="password2" id="password2" class="form-control" placeholder="Confirma tu contraseña" required>
+            </div>
+  
+            <!-- Botón de registro -->
+            <button type="submit" class="btn btn-primary text-white w-100 mt-4 fw-semibold shadow-sm">Registrarse</button>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}
