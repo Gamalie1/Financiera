@@ -67,12 +67,15 @@
                                     {% endif %}
                                 <td>
                                     <ul class="action-list">
-                                        <li><a href="{% url 'editar_prestamo' pk=prestamo.id %}" data-tip="edit"><i class="fa fa-edit"></i> Editar</a></li>
-                                        <li><a href="#" data-tip="delete" onclick="eliminarRegistro({{prestamo.id}})">
+                                        <li><a href="{% url 'editar_prestamo' pk=prestamo.id %}" class="btn btn-sm btn-warning" data-tip="edit">
+                                            <i class="fa fa-edit"></i> Editar
+                                        </a></li>
+                                        <li><a href="#" class="btn btn-sm btn-danger" data-tip="delete" onclick="eliminarRegistro({{prestamo.id}})">
                                             <i class="fa fa-trash"></i> Eliminar
                                         </a></li>
                                     </ul>
                                 </td>
+                               
                             </tr>
                             {% empty %}
                             <tr>

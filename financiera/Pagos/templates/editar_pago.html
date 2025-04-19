@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link href="/static/css/signup.css" rel="stylesheet">
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="bg-white p-4 rounded-5 text-secondary shadow-lg" style="width: 100%; max-width: 500px;">
+  
+        <div class="text-center fs-1 fw-bold mb-4">Editar Pago #{{ pago.id }}</div>
+  
+        <!-- Mostrar errores si existen -->
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+  
+        <!-- Formulario de edición -->
+        <form method="post" class="card-body">
+            {% csrf_token %}
+            
+            <!-- Campo Préstamo -->
+            <div class="mb-3">
+                <label for="prestamo_id" class="form-label">Préstamo:</label>
+                <select name="prestamo_id" id="prestamo_id" class="form-control" required>
+                    {% for prestamo in prestamos %}
+                    <option value="{{ prestamo.id }}" {% if prestamo.id == pago.prestamo.id %}selected{% endif %}>
+                        Préstamo #{{ prestamo.id }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Campo Monto -->
+            <div class="mb-3">
+                <label for="monto_pago" class="form-label">Monto:</label>
+                <input type="number" name="monto_pago" id="monto_pago" class="form-control" 
+                value="{{ pago.monto_pago|stringformat:'.2f' }}" step="0.01" min="0" placeholder="Ingrese el monto" required>
+            </div>
+          
+            <!-- Campo Fecha -->
+            <div class="mb-3">
+                <label for="fecha_pago" class="form-label">Fecha:</label>
+                <input type="datetime-local" name="fecha_pago" id="fecha_pago" class="form-control"
+                       value="{{ pago.fecha_pago|date:'Y-m-d\TH:i' }}" required>
+            </div>
+            
+            <!-- Campo Método de Pago -->
+            <div class="mb-3">
+                <label for="metodo_pago" class="form-label">Método de pago:</label>
+                <select name="metodo_pago" id="metodo_pago" class="form-control" required>
+                    <option value="" disabled {% if not pago.metodo_pago %}selected{% endif %}>Seleccione método</option>
+                    <option value="EFECTIVO" {% if pago.metodo_pago == 'EFECTIVO' %}selected{% endif %}>Efectivo</option>
+                    <option value="TARJETA" {% if pago.metodo_pago == 'TARJETA' %}selected{% endif %}>Tarjeta de crédito/débito</option>
+                    <option value="TRANSFERENCIA" {% if pago.metodo_pago == 'TRANSFERENCIA' %}selected{% endif %}>Transferencia bancaria</option>
+                    <option value="CHEQUE" {% if pago.metodo_pago == 'CHEQUE' %}selected{% endif %}>Cheque</option>
+                    <option value="OTRO" {% if pago.metodo_pago == 'OTRO' %}selected{% endif %}>Otro método</option>
+                </select>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="d-flex gap-2">
+                <a href="{% url 'pagos' %}" class="btn btn-secondary text-white w-100 mt-3 fw-semibold shadow-sm">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary text-white w-100 mt-3 fw-semibold shadow-sm">
+                    <i class="fas fa-save"></i> Actualizar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
