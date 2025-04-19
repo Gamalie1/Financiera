@@ -1,4 +1,108 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1 class="h3 mb-4 text-gray-800">Prestamos</h1>
+
+<link href="/static/css/usuarios.css" rel="stylesheet">
+<div class="container">
+    <div class="row">
+        <div class="col-md-offset-1 col-md-10">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col col-sm-3 col-xs-12">
+                            <h4 class="title">Lista <span>de préstamos</span></h4>
+                        </div>
+                        <div class="col-sm-9 col-xs-12 text-right">
+                            <div class="btn_group">
+                                <a href="{% url 'createPrestamo' %}" class="btn btn-sm btn-primary pull-left">
+                                    <i class="fa fa-plus-circle"></i> Nuevo préstamo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Monto</th>
+                                <th>Tasa de Interes</th>
+                                <th>Plazo</th>
+                                <th>Estado</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Fecha Aprobación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestamo in prestamos %}
+                            <tr>
+                                <td>{{ prestamo.id }}</td>
+                                <td>{{ prestamo.cliente.nombre_completo }}</td>
+                                <td>
+                                    {% if prestamo.monto %}
+                                        ${{ prestamo.monto|floatformat:2 }}
+                                    {% else %}
+                                        $0.00
+                                    {% endif %}
+                                </td>
+                                <td>{{ prestamo.tasa_interes|floatformat:2 }}%</td>
+                                <td>{{ prestamo.plazo }} meses</td>
+
+                                <td>
+                                    <span class="badge 
+                                        {% if prestamo.estado == 'APROBADO' %}bg-success
+                                        {% elif prestamo.estado == 'RECHAZADO' %}bg-danger
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ prestamo.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td>{{ prestamo.fecha_solicitud|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if prestamo.fecha_aprobacion %}
+                                        {{ prestamo.fecha_aprobacion|date:"d/m/Y" }}
+                                    {% else %}
+                                        No disponible
+                                    {% endif %}
+                                <td>
+                                    <ul class="action-list">
+                                        <li><a href="{% url 'editar_prestamo' pk=prestamo.id %}" data-tip="edit"><i class="fa fa-edit"></i> Editar</a></li>
+                                        <li><a href="#" data-tip="delete" onclick="eliminarRegistro({{prestamo.id}})">
+                                            <i class="fa fa-trash"></i> Eliminar
+                                        </a></li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No hay préstamos registrados</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function eliminarRegistro(id) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás deshacer esta acción!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/Prestamos/eliminar/${id}/`;
+        }
+    });
+}
+</script>
 {% endblock %}
