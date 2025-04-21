@@ -1,4 +1,164 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1 class="h3 mb-4 text-gray-800">Simulador</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Préstamo Interactivo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card-header { background-color: #0d6efd; color: white; }
+        .resumen-box { border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .table-detalle th { background-color: #f8f9fa; }
+        .total-row { background-color: #e9ecef; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Datos del Préstamo</h3>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Capital a prestar ($)</label>
+                    <input type="number" id="capital" class="form-control" value="10000" step="100">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tasa de interés mensual (%)</label>
+                    <input type="number" id="tasa" class="form-control" value="5.75" step="0.01">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Número de pagos</label>
+                    <input type="number" id="pagos" class="form-control" value="12">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha de desembolso</label>
+                    <input type="date" id="fecha" class="form-control" value="2024-11-12">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Días entre pagos</label>
+                    <input type="number" id="dias" class="form-control" value="30">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">IVA sobre intereses (%)</label>
+                    <input type="number" id="iva" class="form-control" value="16" step="0.1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Garantía líquida (%)</label>
+                    <input type="number" id="garantia" class="form-control" value="10" step="0.1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Aportación social ($)</label>
+                    <input type="number" id="aportacion" class="form-control" value="650" step="10">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header">
+            <h3 class="mb-0">Detalle de Pagos</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-detalle table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Pago</th>
+                            <th>Fecha</th>
+                            <th class="text-end">Saldo Capital</th>
+                            <th class="text-end">Abono Capital</th>
+                            <th class="text-end">Interés</th>
+                            <th class="text-end">IVA Interés</th>
+                            <th class="text-end">Total Pago</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla"></tbody>
+                    <tfoot class="total-row">
+                        <tr>
+                            <td colspan="6" class="text-end">Total Préstamo + Intereses</td>
+                            <td class="text-end" id="total-prestamo">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="text-end">Costos Adicionales</td>
+                            <td class="text-end" id="costos-extra">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" class="text-end">Total General</td>
+                            <td class="text-end" id="total-general">$0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => input.addEventListener('input', calcularFlujo));
+
+    function calcularFlujo() {
+        const capital = parseFloat(document.getElementById('capital').value) || 0;
+        const tasa = parseFloat(document.getElementById('tasa').value) / 100 || 0; // Tasa MENSUAL
+        const numPagos = parseInt(document.getElementById('pagos').value) || 0;
+        const fecha = new Date(document.getElementById('fecha').value);
+        const dias = parseInt(document.getElementById('dias').value) || 0;
+        const ivaPorc = parseFloat(document.getElementById('iva').value) / 100 || 0;
+        const garantia = (parseFloat(document.getElementById('garantia').value) / 100) * capital || 0;
+        const aportacion = parseFloat(document.getElementById('aportacion').value) || 0;
+
+        let saldo = capital; // No se reduce
+        const abono = capital / numPagos; // Cuota fija de capital
+        const interesMensual = capital * tasa; // Interés FIJO por periodo
+        const ivaMensual = interesMensual * ivaPorc; 
+        const totalPago = abono + interesMensual + ivaMensual;
+        
+        let tablaHTML = '';
+
+        for(let i = 1; i <= numPagos; i++) {
+            const fechaPago = new Date(fecha);
+            fechaPago.setDate(fecha.getDate() + (dias * i));
+            
+            tablaHTML += `
+                <tr>
+                    <td>${i}</td>
+                    <td>${formatearFecha(fechaPago)}</td>
+                    <td class="text-end">$${saldo.toFixed(2)}</td>
+                    <td class="text-end">$${abono.toFixed(2)}</td>
+                    <td class="text-end">$${interesMensual.toFixed(2)}</td>
+                    <td class="text-end">$${ivaMensual.toFixed(2)}</td>
+                    <td class="text-end">$${totalPago.toFixed(2)}</td>
+                </tr>
+            `;
+        }
+
+        const totalIntereses = interesMensual * numPagos;
+        const totalIva = ivaMensual * numPagos;
+        const totalPrestamo = capital + totalIntereses + totalIva;
+        const costosExtra = garantia + aportacion;
+        
+        document.getElementById('cuerpo-tabla').innerHTML = tablaHTML;
+        document.getElementById('total-prestamo').textContent = `$${totalPrestamo.toFixed(2)}`;
+        document.getElementById('costos-extra').textContent = `$${costosExtra.toFixed(2)}`;
+        document.getElementById('total-general').textContent = `$${(totalPrestamo + costosExtra).toFixed(2)}`;
+    }
+
+    function formatearFecha(fecha) {
+        return fecha.toLocaleDateString('es-ES', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+    }
+
+    calcularFlujo();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
 {% endblock %}

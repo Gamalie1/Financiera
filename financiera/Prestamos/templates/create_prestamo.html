@@ -87,8 +87,6 @@
                                    placeholder="Ej: 12.5">
                             <span class="input-group-text">%</span>
                         </div>
-                        <input type="range" class="form-range mt-2" min="0.1" max="50" step="0.1" 
-                               id="tasa_interes_range" value="{{ form_data.tasa_interes|default:'12.5' }}">
                     </div>
                     
                     <div class="col-md-4">
@@ -100,8 +98,6 @@
                                    placeholder="Ej: 52 (1 año)">
                             <span class="input-group-text">semanas</span>
                         </div>
-                        <input type="range" class="form-range mt-2" min="4" max="520" 
-                               id="plazo_range" value="{{ form_data.plazo|default:'52' }}">
                         <small class="text-muted">Mínimo 4 - Máximo 520 semanas (10 años)</small>
                     </div>
                 </div>
@@ -109,50 +105,7 @@
                 <!-- Estado oculto -->
                 <input type="hidden" name="estado" value="SOLICITADO">
 
-                <!-- Sección 3: Resumen Financiero -->
-                <div class="card mb-4 border-primary">
-                    <div class="card-header bg-primary bg-opacity-10">
-                        <h5 class="mb-0 fw-bold text-white">Resumen Financiero Estimado</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 text-center">
-                            <div class="col-md-3">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <h6 class="text-muted">Monto Principal</h6>
-                                    <h4 class="text-primary fw-bold" id="monto-principal">$0.00</h4>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <h6 class="text-muted">Tasa Anual</h6>
-                                    <h4 class="text-primary fw-bold" id="tasa-anual">0.00%</h4>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <h6 class="text-muted">Cuota Semanal</h6>
-                                    <h4 class="text-primary fw-bold" id="cuota-semanal">$0.00</h4>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <h6 class="text-muted">Total Intereses</h6>
-                                    <h4 class="text-primary fw-bold" id="total-intereses">$0.00</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="p-3 bg-primary bg-opacity-10 rounded text-center">
-                                    <h5 class="mb-2 fw-bold" style="color: white !important;">Total a Pagar</h5>
-                                    <h2 class="text-success fw-bold" id="total-pagar">$0.00</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sección 4: Botones -->
+                <!-- Sección 3: Botones -->
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Cancelar
@@ -173,16 +126,10 @@
     .table-hover tbody tr:hover {
         background-color: rgba(13, 110, 253, 0.05);
     }
-    .form-range::-webkit-slider-thumb {
-        background: #0d6efd;
-    }
-    .form-range::-moz-range-thumb {
-        background: #0d6efd;
-    }
 </style>
 
 <script>
-    // Validación de formulario
+    // Validación básica de formulario
     (function() {
         'use strict'
         const forms = document.querySelectorAll('.needs-validation')
@@ -197,85 +144,5 @@
             }, false)
         })
     })()
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Elementos del formulario
-        const montoInput = document.getElementById('monto');
-        const tasaInteresInput = document.getElementById('tasa_interes');
-        const plazoInput = document.getElementById('plazo');
-        const tasaRange = document.getElementById('tasa_interes_range');
-        const plazoRange = document.getElementById('plazo_range');
-        
-        // Sincronizar inputs numéricos con range sliders
-        if (tasaRange && tasaInteresInput) {
-            tasaRange.addEventListener('input', () => {
-                tasaInteresInput.value = tasaRange.value;
-                calcularResumen();
-            });
-            
-            tasaInteresInput.addEventListener('input', () => {
-                tasaRange.value = tasaInteresInput.value;
-                calcularResumen();
-            });
-        }
-        
-        if (plazoRange && plazoInput) {
-            plazoRange.addEventListener('input', () => {
-                plazoInput.value = plazoRange.value;
-                calcularResumen();
-            });
-            
-            plazoInput.addEventListener('input', () => {
-                plazoRange.value = plazoInput.value;
-                calcularResumen();
-            });
-        }
-        
-        // Función para calcular los valores
-        function calcularResumen() {
-            // Obtener valores de los inputs
-            const monto = parseFloat(montoInput.value) || 0;
-            const tasaInteres = parseFloat(tasaInteresInput.value) || 0;
-            const plazo = parseInt(plazoInput.value) || 0;
-            
-            // Calcular valores
-            const tasaSemanal = tasaInteres / 52 / 100; // Tasa semanal en decimal
-            const cuotaSemanal = monto * (tasaSemanal * Math.pow(1 + tasaSemanal, plazo)) / (Math.pow(1 + tasaSemanal, plazo) - 1);
-            const totalIntereses = cuotaSemanal * plazo - monto;
-            const totalPagar = monto + totalIntereses;
-            
-            // Actualizar la interfaz
-            document.getElementById('monto-principal').textContent = `$${monto.toFixed(2)}`;
-            document.getElementById('tasa-anual').textContent = `${tasaInteres.toFixed(2)}%`;
-            document.getElementById('cuota-semanal').textContent = `$${cuotaSemanal.toFixed(2)}`;
-            document.getElementById('total-intereses').textContent = `$${totalIntereses.toFixed(2)}`;
-            document.getElementById('total-pagar').textContent = `$${totalPagar.toFixed(2)}`;
-        }
-        
-        // Validación de inputs
-        function validarInputs() {
-            const monto = parseFloat(montoInput.value);
-            const tasa = parseFloat(tasaInteresInput.value);
-            const plazo = parseInt(plazoInput.value);
-            
-            if (monto < 100) montoInput.value = 100;
-            if (tasa < 0.1) tasaInteresInput.value = 0.1;
-            if (tasa > 50) tasaInteresInput.value = 50;
-            if (plazo < 4) plazoInput.value = 4;
-            if (plazo > 520) plazoInput.value = 520;
-            
-            calcularResumen();
-        }
-        
-        // Escuchar cambios en los inputs
-        [montoInput, tasaInteresInput, plazoInput].forEach(input => {
-            input.addEventListener('input', calcularResumen);
-            input.addEventListener('change', validarInputs);
-            input.addEventListener('blur', validarInputs);
-        });
-        
-        // Calcular valores iniciales
-        calcularResumen();
-    });
 </script>
 {% endblock %}
