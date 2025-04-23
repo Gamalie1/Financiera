@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block content %}
+<link href="/static/css/registroClientes.css" rel="stylesheet">
+<div class="form-container">
+    <div class="form-header text-center">
+        Registrar Cliente
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+         <!-- Selección de Usuario -->
+         <div class="form-group mb-3">
+            <label for="id_usuario">Promotor</label>
+            {{ form.usuario }}  <!-- Esto debería generar correctamente el campo de usuario como un dropdown -->
+        </div>
+        <!-- Nombre -->
+        <div class="form-group mb-3">
+            <label for="id_nombre">Nombre de la persona</label>
+            <input type="text" class="form-control" id="id_nombre" name="nombre"  required>
+        </div>
+
+        <!-- Aval -->
+        <div class="form-group mb-3">
+            <label for="id_aval">Aval</label>
+            <input type="text" class="form-control" id="id_aval" name="aval"  required>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="form-group mb-3">
+            <label for="id_telefono">Teléfono</label>
+            <input type="text" class="form-control" id="id_telefono" name="telefono"  required>
+        </div>
+
+        <!-- Domicilio -->
+        <div class="form-group mb-3">
+            <label for="id_domicilio">Domicilio</label>
+            <textarea class="form-control" id="id_domicilio" name="domicilio" rows="4" required></textarea>
+        </div>
+
+        <!-- Trabajo -->
+        <div class="form-group mb-3">
+            <label for="id_trabajo">Trabajo</label>
+            <input type="text" class="form-control" id="id_trabajo" name="trabajo"  required>
+        </div>
+
+        <!-- INE (Imagen) -->
+        <div class="form-group mb-3">
+            <label for="id_ine">INE</label>
+            <input type="file" class="form-control-file" id="id_ine" name="ine" accept="image/*">
+        </div>
+
+        <!-- CURP -->
+        <div class="form-group mb-3">
+            <label for="id_curp">CURP</label>
+            <input type="text" class="form-control" id="id_curp" name="curp" >
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'principalClientes' %}" class="btn btn-cancel">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Registrar Cliente</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
