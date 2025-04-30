@@ -1,0 +1,40 @@
+
+.form-container {
+    background-color: #ffffff; /* Fondo blanco para el formulario */
+    border-radius: 10px; /* Bordes redondeados */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    padding: 30px;
+    max-width: 600px;
+    margin: 50px auto;
+}
+.form-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #4e73df; /* Color de texto */
+}
+.form-control, .form-select {
+    border-radius: 8px; /* Bordes redondeados en los campos */
+    font-size: 1rem;
+}
+.btn-primary {
+    background-color: #4e73df; /* Botón verde azulado */
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1rem;
+}
+.btn-primary:hover {
+    background-color: #244c56; /* Variación más oscura del color al pasar el cursor */
+}
+.btn-cancel {
+    background-color: #dc3545; /* Botón rojo para cancelar */
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: white; /* Cambiar el color del texto a blanco */
+}
+.btn-cancel:hover {
+    background-color: #a91e2e; /* Variación más oscura del color al pasar el cursor */
+}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Solicitar Nuevo Préstamo
+                </h2>
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Sección 1: Información Básica -->
+                <div class="row g-3 mb-4">
+                    <!-- Select de Cliente -->
+                    <div class="col-md-6">
+                        <label for="cliente" class="form-label fw-bold">Cliente*</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <select 
+                                name="cliente" 
+                                id="cliente" 
+                                class="form-select form-select-lg py-3 bg-white"
+                                style="border-color: #ced4da; color: #495057;"
+                                required
+                            >
+                                <option value="">Seleccione un cliente</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}" {% if cliente.id == cliente_seleccionado %}selected{% endif %}>
+                                    {{ cliente.nombre_completo }} - {{ cliente.dni }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                
+                    <!-- Fecha de solicitud (solo visual) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Fecha de solicitud</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <div class="form-control form-control-lg py-3 bg-light">
+                                {% now "d/m/Y H:i" %}
+                            </div>
+                        </div>
+                        <input type="hidden" name="fecha_solicitud" value="{% now 'Y-m-d H:i' %}">
+                    </div>
+                </div>
+
+                <!-- Sección 2: Datos Financieros -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label for="monto" class="form-label fw-bold">Monto ($)*</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="monto" name="monto" 
+                                   class="form-control form-control-lg text-end"   
+                                   step="0.01" min="100" required
+                                   placeholder="Ej: 10000.00">
+                        </div>
+                        <small class="text-muted">Mínimo $100.00</small>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="tasa_interes" class="form-label fw-bold">Tasa de Interés*</label>
+                        <div class="input-group">
+                            <input type="number" id="tasa_interes" name="tasa_interes" 
+                                   class="form-control form-control-lg text-end" 
+                                   step="0.01" min="0.1" max="50" required
+                                   placeholder="Ej: 12.5">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="plazo" class="form-label fw-bold">Plazo*</label>
+                        <div class="input-group">
+                            <input type="number" id="plazo" name="plazo" 
+                                   class="form-control form-control-lg text-end" 
+                                   min="4" max="520" required
+                                   placeholder="Ej: 52 (1 año)">
+                            <span class="input-group-text">semanas</span>
+                        </div>
+                        <small class="text-muted">Mínimo 4 - Máximo 520 semanas (10 años)</small>
+                    </div>
+                </div>
+
+                <!-- Estado oculto -->
+                <input type="hidden" name="estado" value="SOLICITADO">
+
+                <!-- Sección 3: Botones -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-lg btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:read-only {
+        background-color: #f8f9fa;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+</style>
+
+<script>
+    // Validación básica de formulario
+    (function() {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

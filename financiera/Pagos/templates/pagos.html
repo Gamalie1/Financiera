@@ -1,4 +1,110 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1 class="h3 mb-4 text-gray-800">Pagos</h1>
+
+<link href="/static/css/usuarios.css" rel="stylesheet">
+<div class="container">
+    <div class="row">
+        <div class="col-md-offset-1 col-md-10">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col col-sm-3 col-xs-12">
+                            <h4 class="title">Listado <span>de Pagos</span></h4>
+                        </div>
+                        <div class="col-sm-9 col-xs-12 text-right">
+                            <div class="btn_group">
+                                <a href="{% url 'createPago' %}" class="btn btn-sm btn-primary pull-left">
+                                    <i class="fa fa-plus-circle"></i> Nuevo Pago
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Préstamo</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                                <th>Método</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pago in pagos %}
+                            <tr>
+                                <td>{{ pago.id }}</td>
+                                <td>{{ pago.prestamo.id }}</td>
+                                <td>${{ pago.monto_pago|floatformat:2 }}</td>
+                                <td>{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                <td>{{ pago.metodo_pago }}</td>
+                                <td>
+                                    <ul class="action-list">
+                                        <li><a href="{% url 'editar' pago.id %}" class="btn btn-sm btn-warning" data-tip="edit">
+                                            <i class="fa fa-edit"></i> Editar
+                                        </a></li>
+                                        <li><a href="#" class="btn btn-sm btn-danger" data-tip="delete" onclick="eliminarRegistros({{pago.id}})">
+                                            <i class="fa fa-trash"></i> Eliminar
+                                        </a></li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No hay pagos registrados</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function eliminarRegistros(id) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás deshacer esta acción!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Llamada AJAX para eliminar
+            $.ajax({
+                url: `/Pagos/eliminar/${id}/`,
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if(response.success) {
+                        Swal.fire(
+                            'Eliminado!',
+                            'El pago ha sido eliminado.',
+                            'success'
+                        ).then(() => {
+                            location.reload(); // Recarga la página
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire(
+                        'Error!',
+                        'Ocurrió un error al eliminar el pago.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+    </script>
 {% endblock %}
