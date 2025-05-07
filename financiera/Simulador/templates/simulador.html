@@ -35,6 +35,13 @@
                     <input type="number" id="pagos" class="form-control" value="12">
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">Tipo de pago</label>
+                    <select id="tipo-pago" class="form-select">
+                        <option value="mensual">Mensual</option>
+                        <option value="semanal">Semanal</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Fecha de desembolso</label>
                     <input type="date" id="fecha" class="form-control" value="2024-11-12">
                 </div>
@@ -99,24 +106,35 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const inputs = document.querySelectorAll('input');
+    const inputs = document.querySelectorAll('input, select');
     inputs.forEach(input => input.addEventListener('input', calcularFlujo));
+
+    // Manejar cambio en tipo de pago
+    document.getElementById('tipo-pago').addEventListener('change', function() {
+        const diasInput = document.getElementById('dias');
+        if (this.value === 'mensual') {
+            diasInput.value = 30;
+        } else {
+            diasInput.value = 7;
+        }
+        calcularFlujo();
+    });
 
     function calcularFlujo() {
         const capital = parseFloat(document.getElementById('capital').value) || 0;
-        const tasa = parseFloat(document.getElementById('tasa').value) / 100 || 0; // Tasa MENSUAL
+        const tasa = parseFloat(document.getElementById('tasa').value) / 100 || 0;
         const numPagos = parseInt(document.getElementById('pagos').value) || 0;
         const fecha = new Date(document.getElementById('fecha').value);
         const dias = parseInt(document.getElementById('dias').value) || 0;
         const ivaPorc = parseFloat(document.getElementById('iva').value) / 100 || 0;
-        const garantia = (parseFloat(document.getElementById('garantia').value) / 100) * capital || 0;
+        const garantia = (parseFloat(document.getElementById('garantia').value / 100) * capital || 0);
         const aportacion = parseFloat(document.getElementById('aportacion').value) || 0;
 
-        let saldo = capital; // No se reduce
-        const abono = capital / numPagos; // Cuota fija de capital
-        const interesMensual = capital * tasa; // Interés FIJO por periodo
-        const ivaMensual = interesMensual * ivaPorc; 
-        const totalPago = abono + interesMensual + ivaMensual;
+        let saldo = capital;
+        const abono = capital / numPagos;
+        const interesPorPeriodo = capital * (tasa / 30) * dias; // Interés proporcional a días
+        const ivaPorPeriodo = interesPorPeriodo * ivaPorc;
+        const totalPago = abono + interesPorPeriodo + ivaPorPeriodo;
         
         let tablaHTML = '';
 
@@ -130,15 +148,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${formatearFecha(fechaPago)}</td>
                     <td class="text-end">$${saldo.toFixed(2)}</td>
                     <td class="text-end">$${abono.toFixed(2)}</td>
-                    <td class="text-end">$${interesMensual.toFixed(2)}</td>
-                    <td class="text-end">$${ivaMensual.toFixed(2)}</td>
+                    <td class="text-end">$${interesPorPeriodo.toFixed(2)}</td>
+                    <td class="text-end">$${ivaPorPeriodo.toFixed(2)}</td>
                     <td class="text-end">$${totalPago.toFixed(2)}</td>
                 </tr>
             `;
+            
+            saldo -= abono;
         }
 
-        const totalIntereses = interesMensual * numPagos;
-        const totalIva = ivaMensual * numPagos;
+        const totalIntereses = interesPorPeriodo * numPagos;
+        const totalIva = ivaPorPeriodo * numPagos;
         const totalPrestamo = capital + totalIntereses + totalIva;
         const costosExtra = garantia + aportacion;
         

@@ -38,7 +38,7 @@
                                 <td>{{ pago.id }}</td>
                                 <td>{{ pago.prestamo.id }}</td>
                                 <td>${{ pago.monto_pago|floatformat:2 }}</td>
-                                <td>{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
                                 <td>{{ pago.metodo_pago }}</td>
                                 <td>
                                     <ul class="action-list">
