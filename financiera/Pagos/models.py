@@ -11,7 +11,7 @@ class Pago(models.Model):
         ('OTRO', 'Otro método'),
     ]
         
-    prestamo = models.ForeignKey(Prestamo, on_delete=models.CASCADE)
+    prestamo = models.ForeignKey(Prestamo, on_delete=models.CASCADE, related_name='pagos') 
     monto_pago = models.DecimalField(max_digits=12, decimal_places=2)
     fecha_pago = models.DateTimeField(default=timezone.now)
     metodo_pago = models.CharField(max_length=50, choices=METODOS_PAGO)

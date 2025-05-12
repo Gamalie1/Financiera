@@ -38,8 +38,8 @@
             <!-- Campo Fecha -->
             <div class="mb-3">
                 <label for="fecha_pago" class="form-label">Fecha:</label>
-                <input type="datetime-local" name="fecha_pago" id="fecha_pago" class="form-control"
-                       value="{{ pago.fecha_pago|date:'Y-m-d\TH:i' }}" required>
+                <input type="date" name="fecha_pago" id="fecha_pago" class="form-control"
+                       value="{{ pago.fecha_pago|date:'Y-m-d' }}" required>
             </div>
             
             <!-- Campo Método de Pago -->

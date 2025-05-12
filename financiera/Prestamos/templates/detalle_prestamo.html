@@ -1,0 +1,193 @@
+<!-- templates/prestamos/detalle_prestamo.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Detalle del Préstamo #{{ prestamo.id }}</h3>
+                <a href="{% url 'principalPrestamos' %}" class="btn btn-light btn-sm">
+                    <i class="fa fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Información general del préstamo -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <h5>Información del Préstamo</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Cliente:</strong> {{ prestamo.cliente.nombre }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Monto:</strong> ${{ prestamo.monto|floatformat:2 }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Tasa interés:</strong> {{ prestamo.tasa_interes }}%
+                        </li>
+                        <li class="list-group-item">
+                            <strong>IVA sobre intereses:</strong> {{ prestamo.iva_sobre_intereses }}%
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-4">
+                    <h5>Datos del Plan</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Total de Pagos:</strong> {{ prestamo.total_pagos }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Frecuencia:</strong> {{ prestamo.get_tipo_display }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Solicitud:</strong> {{ prestamo.fecha_solicitud|date:"d/m/Y" }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Finalización Estimada:</strong> 
+                            {% if prestamo.fecha_finalizacion %}
+                                {{ prestamo.fecha_finalizacion|date:"d/m/Y" }}
+                            {% else %}
+                                Por definir
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-4">
+                    <h5>Estado Actual</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Estado:</strong>
+                            <span class="badge 
+                                {% if prestamo.estado == 'APROBADO' %}bg-success
+                                {% elif prestamo.estado == 'RECHAZADO' %}bg-danger
+                                {% else %}bg-warning{% endif %}">
+                                {{ prestamo.get_estado_display }}
+                            </span>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Pagado:</strong> ${{ total_pagado|floatformat:2 }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Pendiente:</strong> ${{ saldo_pendiente|floatformat:2 }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Próximo Pago:</strong> 
+                            {% if prestamo.proximo_pago %}
+                                {{ prestamo.proximo_pago|date:"d/m/Y" }}
+                            {% else %}
+                                Sin pagos pendientes
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Resumen de pagos -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Resumen de Pagos</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-success">
+                                <strong>Total Pagado:</strong> ${{ total_pagado|floatformat:2 }}
+                            </div>
+                            <div class="alert alert-warning">
+                                <strong>Saldo Pendiente:</strong> ${{ saldo_pendiente|floatformat:2 }}
+                            </div>
+                            <div class="alert alert-danger">
+                                <strong>Multas por Atraso:</strong> ${{ multa_total|floatformat:2 }}
+                            </div>
+                            <div class="alert alert-secondary">
+                                <strong>Costos Adicionales:</strong>
+                                <ul class="mb-0">
+                                    <li>Garantía: ${{ garantia_monto|floatformat:2 }}</li>
+                                    <li>Aportación Social: ${{ prestamo.aportacion_social|floatformat:2 }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Desglose Financiero</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-6">Monto original:</dt>
+                                <dd class="col-6 text-end">${{ prestamo.monto|floatformat:2 }}</dd>
+                                
+                                <dt class="col-6">Total intereses:</dt>
+                                <dd class="col-6 text-end">${{ total_intereses|floatformat:2 }}</dd>
+                                
+                                <dt class="col-6">IVA sobre intereses ({{ prestamo.iva_sobre_intereses }}%):</dt>
+                                <dd class="col-6 text-end">${{ total_iva|floatformat:2 }}</dd>
+                                
+                                <dt class="col-6">Total a pagar:</dt>
+                                <dd class="col-6 text-end">${{ total_a_pagar|floatformat:2 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de detalle de pagos -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Detalle de Pagos ({{ prestamo.get_tipo_display }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th># Pago</th>
+                                    <th>Fecha Programada</th>
+                                    <th class="text-end">Cuota</th>
+                                    <th class="text-end">Capital</th>
+                                    <th class="text-end">Interés</th>
+                                    <th class="text-end">IVA</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Días Atraso</th>
+                                    <th class="text-end">Multa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pago in detalle_pagos %}
+                                <tr class="{% if pago.realizado %}table-success{% elif pago.dias_atraso > 0 %}table-danger{% else %}table-warning{% endif %}">
+                                    <td>{{ pago.numero }}/{{ prestamo.total_pagos }}</td>
+                                    <td>{{ pago.fecha_programada|date:"d/m/Y" }}</td>
+                                    <td class="text-end">${{ pago.total|floatformat:2 }}</td>                                    <td class="text-end">${{ pago.abono_capital|floatformat:2 }}</td>
+                                    <td class="text-end">${{ pago.interes|floatformat:2 }}</td>
+                                    <td class="text-end">${{ pago.iva|floatformat:2 }}</td>
+                                    <td>
+                                        {% if pago.realizado %}
+                                            <span class="badge bg-success">Pagado</span>
+                                            <small class="text-muted d-block">{{ pago.pago.fecha_pago|date:"d/m/Y" }}</small>
+                                        {% elif pago.dias_atraso > 0 %}
+                                            <span class="badge bg-danger">Atrasado</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">{{ pago.dias_atraso }}</td>
+                                    <td class="text-end">${{ pago.multa|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

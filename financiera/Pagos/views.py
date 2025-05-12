@@ -3,6 +3,8 @@ from .models import Pago, Prestamo
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from decimal import Decimal  
+from django.db import transaction
 
 def pagosPrincipal(request):
     pagos = Pago.objects.all().order_by('-fecha_pago')
@@ -11,30 +13,30 @@ def pagosPrincipal(request):
 
 def create_pago(request):
     if request.method == 'POST':
+        prestamo_id = request.POST.get('prestamo_id')
         try:
-            prestamo_id = request.POST.get('prestamo_id')
-            monto_pago = request.POST.get('monto_pago')
-            fecha_pago = request.POST.get('fecha_pago')
-            metodo_pago = request.POST.get('metodo_pago')
-            
-            prestamo = Prestamo.objects.get(id=prestamo_id)
-            
-            Pago.objects.create(
-                prestamo=prestamo,
-                monto_pago=monto_pago,
-                fecha_pago=fecha_pago,
-                metodo_pago=metodo_pago
-            )
-            
-            messages.success(request, 'Pago creado exitosamente')
-            return redirect('pagos')
-        except Exception as e:
-            messages.error(request, f'Error al crear pago: {str(e)}')
+            with transaction.atomic():
+                prestamo = Prestamo.objects.get(id=prestamo_id)
+                monto_pago = Decimal(request.POST.get('monto_pago'))  # Conversión aquí
+                
+                pago = Pago(
+                    prestamo=prestamo,
+                    monto_pago=monto_pago,  # Usa la variable ya convertida
+                    metodo_pago=request.POST.get('metodo_pago'),
+                    fecha_pago=request.POST.get('fecha_pago'),
+                )
+                pago.save()
+                
+                messages.success(request, 'Pago registrado correctamente')
+                return redirect('detalle_prestamo', pk=prestamo.id)
+                
+        except Prestamo.DoesNotExist:
+            messages.error(request, 'Préstamo no encontrado')
             return redirect('create_pago')
     
-    # GET request - mostrar formulario
     prestamos = Prestamo.objects.all()
     return render(request, 'create_pago.html', {'prestamos': prestamos})
+
 
 def editar_pago(request, pk):
     pago = get_object_or_404(Pago, pk=pk)

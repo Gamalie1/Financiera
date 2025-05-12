@@ -28,18 +28,23 @@
                                 <th>Cliente</th>
                                 <th>Monto</th>
                                 <th>Tasa de Interes</th>
-                                <th>Plazo</th>
+                                <th>Tipo</th>
+                                <th>Total de pagos</th>
+                                <th>IVA sobre intereses</th>
+                                <th>Garantía líquida</th>
+                                <th>Aportación social</th>
                                 <th>Estado</th>
                                 <th>Fecha Solicitud</th>
                                 <th>Fecha Aprobación</th>
                                 <th>Acciones</th>
+                                <th>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for prestamo in prestamos %}
                             <tr>
                                 <td>{{ prestamo.id }}</td>
-                                <td>{{ prestamo.cliente.nombre_completo }}</td>
+                                <td>{{ prestamo.cliente.nombre }}</td>
                                 <td>
                                     {% if prestamo.monto %}
                                         ${{ prestamo.monto|floatformat:2 }}
@@ -48,8 +53,11 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ prestamo.tasa_interes|floatformat:2 }}%</td>
-                                <td>{{ prestamo.plazo }} meses</td>
-
+                                <td>{{ prestamo.tipo }}</td>
+                                <td>{{ prestamo.total_pagos }}</td>
+                                <td>{{ prestamo.iva_sobre_intereses }} %</td>
+                                <td>{{ prestamo.garantia_liquida }} %</td>
+                                <td>{{ prestamo.aportacion_social }} </td>
                                 <td>
                                     <span class="badge 
                                         {% if prestamo.estado == 'APROBADO' %}bg-success
@@ -74,6 +82,13 @@
                                             <i class="fa fa-trash"></i> Eliminar
                                         </a></li>
                                     </ul>
+                                </td>
+                                <td>
+                                    <ul class="action-list">
+                                        <li><a href="{% url 'detalle_prestamo' pk=prestamo.id %}" class="btn btn-sm btn-warning" data-tip="edit">
+                                            <i class="fa fa-edit"></i> Detalle prestamo
+                                        </a></li>
+                                    </ul>  
                                 </td>
                                
                             </tr>
