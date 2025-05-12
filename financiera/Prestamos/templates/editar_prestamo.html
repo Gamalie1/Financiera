@@ -29,7 +29,7 @@
                 <!-- Sección 1: Información Básica -->
                 <div class="row g-3 mb-4">
                     <!-- Select de Cliente -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="cliente" class="form-label fw-bold">Cliente</label>
                         <div class="input-group input-group-lg">
                             <span class="input-group-text">
@@ -45,15 +45,34 @@
                             >
                                 {% for cliente in clientes %}
                                 <option value="{{ cliente.id }}" {% if cliente.id == prestamo.cliente.id %}selected{% endif %}>
-                                    {{ cliente.nombre_completo }}
+                                    {{ cliente.nombre }}
                                 </option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-                
+                     <!-- Frecuencia de pagos -->
+                     <!-- Frecuencia de pagos -->
+                    <div class="col-md-4">
+                        <label for="tipo" class="form-label fw-bold">Frecuencia de Pagos*</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </span>
+                                <select 
+                                name="tipo" 
+                                id="tipo" 
+                                class="form-select form-select-lg py-3 bg-white"
+                                required
+                                >
+                                <option value="SEMANAL" {% if prestamo.tipo == 'SEMANAL' %}selected{% endif %}>Semanal</option>
+                                <option value="MENSUAL" {% if prestamo.tipo == 'MENSUAL' %}selected{% endif %}>Mensual</option>
+                                </select>
+                            </div>
+                        </div>
+                    
                     <!-- Fecha de solicitud -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label fw-bold">Fecha de solicitud</label>
                         <div class="input-group input-group-lg">
                             <span class="input-group-text">
@@ -64,6 +83,7 @@
                             </div>
                         </div>
                     </div>
+                    
                 </div>
 
                 <!-- Sección 2: Datos Básicos -->
@@ -81,31 +101,93 @@
                     </div>
                     
                     <div class="col-md-4">
-                        <label for="tasa_interes" class="form-label fw-bold">Tasa de Interés</label>
+                        <label for="tasa_interes" class="form-label fw-bold">Tasa Mensual</label>
                         <div class="input-group">
                             <input type="number" id="tasa_interes" name="tasa_interes" 
                                    class="form-control form-control-lg text-end" 
                                    value="{{ prestamo.tasa_interes|stringformat:'.2f' }}" 
-                                   step="0.01" min="0.1" max="50" required>
+                                   step="0.01" min="0.1" max="30" required>
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
                     
+                   
                     <div class="col-md-4">
-                        <label for="plazo" class="form-label fw-bold">Plazo</label>
+                        <label for="total_pagos" class="form-label fw-bold">Total de Pagos</label>
                         <div class="input-group">
-                            <input type="number" id="plazo" name="plazo" 
+                            <input type="number" id="total_pagos" name="total_pagos" 
                                    class="form-control form-control-lg text-end" 
-                                   value="{{ prestamo.plazo }}" 
-                                   min="4" max="520" required
+                                   value="{{ prestamo.total_pagos }}" 
+                                   min="1" required
                                    {% if not puede_editar %}readonly{% endif %}>
-                            <span class="input-group-text">semanas</span>
+                            <span class="input-group-text" id="tipo-pagos-label">
+                                {{ prestamo.get_tipo_display|lower }}
+                            </span>
                         </div>
-                        <small class="text-muted">Mínimo 4 - Máximo 520 semanas (10 años)</small>
                     </div>
                 </div>
 
-                <!-- Sección 3: Estado -->
+                <!-- Sección 3: Cargos Adicionales -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <label for="iva_sobre_intereses" class="form-label fw-bold">% IVA sobre intereses</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" id="iva_sobre_intereses" name="iva_sobre_intereses" 
+                                           class="form-control form-control-lg text-end calculable"
+                                            step="0.01" min="0" max="100" required
+                                            value="{{ prestamo.iva_sobre_intereses|stringformat:'.2f' }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="alert alert-info p-2">
+                                    <small class="text-muted d-block">Valor calculado:</small>
+                                    <strong id="iva_sobre_display">${{ prestamo.iva_sobre_intereses|floatformat:2 }}</strong>
+                                </div>
+                                <input type="hidden" id="iva_sobre" name="iva_sobre" 
+                                       value="{{ prestamo.iva_sobre_intereses|default:0 }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <label for="garantia_porcentaje" class="form-label fw-bold">% Garantía líquida</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" id="garantia_liquida" name="garantia_liquida" 
+                                           class="form-control form-control-lg text-end calculable"
+                                            step="0.01" min="0" max="100" required
+                                            value="{{ prestamo.garantia_liquida|stringformat:'.2f' }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="alert alert-info p-2">
+                                    <small class="text-muted d-block">Valor calculado:</small>
+                                    <strong id="garantia_display">${{ prestamo.garantia_liquida|floatformat:2 }}</strong>
+                                </div>
+                                <input type="hidden" id="garantia" name="garantia" 
+                                       value="{{ prestamo.garantia_liquida|default:0 }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <label for="aportacion_social" class="form-label fw-bold">Aportación social</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" id="aportacion_social" name="aportacion_social" 
+                                           class="form-control form-control-lg text-end"
+                                           value="{{ prestamo.aportacion_social|stringformat:'.2f' }}"
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Estado -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="estado" class="form-label fw-bold">Estado</label>
@@ -139,7 +221,7 @@
                     {% endif %}
                 </div>
 
-                <!-- Sección 4: Botones -->
+                <!-- Sección 5: Botones -->
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Volver
@@ -162,23 +244,81 @@
     .table-hover tbody tr:hover {
         background-color: rgba(13, 110, 253, 0.05);
     }
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .is-valid {
+        border-color: #28a745 !important;
+    }
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
 </style>
 
 <script>
-    // Validación básica de formulario
-    (function() {
-        'use strict'
-        const forms = document.querySelectorAll('.needs-validation')
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('tipo');
+    const tipoPagosLabel = document.getElementById('tipo-pagos-label');
+    const montoInput = document.getElementById('monto');
+    const tasaInput = document.getElementById('tasa_interes');
+    const pagosInput = document.getElementById('total_pagos');
+    const ivaPorcentajeInput = document.getElementById('iva_porcentaje');
+    const garantiaPorcentajeInput = document.getElementById('garantia_porcentaje');
+
+    // Actualizar etiqueta de frecuencia
+    function actualizarEtiquetaFrecuencia() {
+        tipoPagosLabel.textContent = tipoSelect.value === 'SEMANAL' ? 'semanas' : 'meses';
+    }
+
+    // Calcular valores financieros
+    function calcularValores() {
+        const monto = parseFloat(montoInput.value) || 0;
+        const tasaMensual = parseFloat(tasaInput.value) / 100 || 0;
+        const totalPagos = parseInt(pagosInput.value) || 0;
+        const tipo = tipoSelect.value;
         
-        Array.from(forms).forEach(form => {
-            form.addEventListener('submit', event => {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
-        })
-    })();
+        if(totalPagos > 0 && monto > 0 && tasaMensual > 0) {
+            let tasaPeriodo = tasaMensual;
+            
+            if(tipo === 'SEMANAL') {
+                // Convertir tasa mensual a semanal
+                tasaPeriodo = Math.pow(1 + tasaMensual, 1/4.33) - 1;
+            }
+            
+            // Cálculo de cuota
+            const cuota = (monto * tasaPeriodo * Math.pow(1 + tasaPeriodo, totalPagos)) / 
+                         (Math.pow(1 + tasaPeriodo, totalPagos) - 1);
+            
+            // Cálculo de intereses totales
+            const interesesTotales = (cuota * totalPagos) - monto;
+            
+            // Actualizar IVA y garantía
+            const ivaCalculado = interesesTotales * (parseFloat(ivaPorcentajeInput.value)/100);
+            const garantiaCalculada = monto * (parseFloat(garantiaPorcentajeInput.value)/100);
+            
+            document.getElementById('iva_sobre_display').textContent = `$${ivaCalculado.toFixed(2)}`;
+            document.getElementById('garantia_display').textContent = `$${garantiaCalculada.toFixed(2)}`;
+            document.getElementById('iva_sobre').value = ivaCalculado.toFixed(2);
+            document.getElementById('garantia').value = garantiaCalculada.toFixed(2);
+        }
+    }
+
+    // Event listeners
+    tipoSelect.addEventListener('change', () => {
+        actualizarEtiquetaFrecuencia();
+        calcularValores();
+    });
+
+    [montoInput, tasaInput, pagosInput, ivaPorcentajeInput, garantiaPorcentajeInput].forEach(input => {
+        input.addEventListener('input', calcularValores);
+    });
+
+    // Inicialización
+    actualizarEtiquetaFrecuencia();
+    calcularValores();
+});
 </script>
 {% endblock %}
