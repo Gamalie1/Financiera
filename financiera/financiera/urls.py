@@ -33,5 +33,7 @@ urlpatterns = [
     path('Pagos/', include('Pagos.urls')),
     #Simulador
     path('Simulador/', include('Simulador.urls')),
+    #Grupos
+    path('Grupos/', include('Grupos.urls'))
 
 ]

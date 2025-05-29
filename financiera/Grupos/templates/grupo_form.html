@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<link href="/static/css/registroClientes.css" rel="stylesheet">
+<div class="form-container">
+    <div class="form-header text-center">
+        {% if grupo.pk %}Editar Grupo: {{ grupo.nombre }}{% else %}Crear Nuevo Grupo{% endif %}
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        <!-- Nombre del Grupo -->
+        <div class="form-group mb-3">
+            <label for="id_nombre">Nombre del Grupo</label>
+            <input type="text" class="form-control" id="id_nombre" name="nombre" 
+                   value="{{ grupo.nombre|default:'' }}" required>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-group mb-3">
+            <label for="id_descripcion">Descripción</label>
+            <textarea class="form-control" id="id_descripcion" name="descripcion" 
+                      rows="4">{{ grupo.descripcion|default:'' }}</textarea>
+        </div>
+
+        <!-- Responsable -->
+        <div class="form-group mb-3">
+            <label for="id_responsable">Responsable</label>
+            <select class="form-control" id="id_responsable" name="responsable">
+                <option value="">--- Seleccionar responsable ---</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente.id }}" 
+                        {% if grupo.responsable and grupo.responsable.id == cliente.id %}selected{% endif %}>
+                    {{ cliente.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Estado Activo -->
+        <div class="form-group mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="id_activo" name="activo"
+                   {% if grupo.activo or not grupo.pk %}checked{% endif %}>
+            <label class="form-check-label" for="id_activo">Grupo Activo</label>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="d-flex justify-content-between">
+            <a href="{% if grupo.pk %}{% url 'detalle-grupo' grupo.pk %}{% else %}{% url 'listar-grupos' %}{% endif %}" 
+               class="btn btn-cancel">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if grupo.pk %}Actualizar Grupo{% else %}Crear Grupo{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

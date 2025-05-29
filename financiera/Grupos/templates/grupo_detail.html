@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Custom styles for this template-->
+<link href="/static/css/usuarios.css" rel="stylesheet">
+<div class="container">
+    <div class="row">
+        <div class="col-md-offset-1 col-md-10">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col col-sm-6 col-xs-12">
+                            <h4 class="title">Detalle <span>de Grupo: {{ grupo.nombre }}</span></h4>
+                        </div>
+                        <div class="col-sm-6 col-xs-12 text-right">
+                            <div class="btn_group">
+                                <a href="{% url 'agregar-integrante' grupo.pk %}" class="btn btn-sm btn-primary"><i class="fa fa-user-plus"></i> Agregar Integrante</a>
+                                <a href="{% url 'editar-grupo' grupo.pk %}" class="btn btn-sm btn-default"><i class="fa fa-edit"></i> Editar Grupo</a>
+                                <a href="#" class="btn btn-sm btn-danger" onclick="eliminarGrupo({{ grupo.pk }})"><i class="fa fa-trash"></i> Eliminar Grupo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="grupo-info mb-4">
+                        <p><strong>Descripción:</strong> {{ grupo.descripcion|default:"Sin descripción" }}</p>
+                        <p><strong>Responsable:</strong> {{ grupo.responsable.nombre|default:"No asignado" }}</p>
+                        <p><strong>Fecha de creación:</strong> {{ grupo.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Estado:</strong> {% if grupo.activo %}Activo{% else %}Inactivo{% endif %}</p>
+                    </div>
+
+                    <h4 class="subtitle">Integrantes</h4>
+                    
+                    {% if integrantes %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Fecha de ingreso</th>
+                                    <th>Rol</th>
+                                    <th>Préstamos</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for integrante in integrantes %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ integrante.cliente.nombre }}</td>
+                                    <td>{{ integrante.fecha_ingreso|date:"d/m/Y" }}</td>
+                                    <td>{% if integrante.es_representante %}Representante{% else %}Integrante{% endif %}</td>
+                                    <td>
+                                        {% if integrante.prestamos.all %}
+                                        <ul class="prestamos-list">
+                                            {% for prestamo in integrante.prestamos.all %}
+                                            <li>
+                                                ${{ prestamo.monto }} ({{ prestamo.tasa_interes }}%)
+                                                <a href="{% url 'editar-prestamo-grupal' prestamo.pk %}" data-tip="edit"><i class="fa fa-edit"></i></a>
+                                                <a href="#" data-tip="delete" onclick="eliminarPrestamo({{ prestamo.pk }})"><i class="fa fa-trash"></i></a>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        Sin préstamos
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <ul class="action-list">
+                                            <li><a href="{% url 'editar-integrante' integrante.pk %}" data-tip="edit"><i class="fa fa-edit"></i> Editar</a></li>
+                                            <li><a href="#" data-tip="delete" onclick="eliminarIntegrante({{ integrante.pk }})"><i class="fa fa-trash"></i> Eliminar</a></li>
+                                            <li><a href="{% url 'agregar-prestamo-grupal' integrante.pk %}" data-tip="add"><i class="fa fa-plus"></i> Préstamo</a></li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Este grupo no tiene integrantes registrados.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="panel-footer text-right">
+                    <a href="{% url 'listar-grupos' %}" class="btn btn-default"><i class="fa fa-arrow-left"></i> Volver a la lista</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function eliminarGrupo(id) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás deshacer esta acción!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                window.location.href = "/grupos/eliminar/" + id + "/";
+            }
+        });
+    }
+
+    function eliminarIntegrante(id) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás deshacer esta acción!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                window.location.href = "/grupos/integrantes/eliminar/" + id + "/";
+            }
+        });
+    }
+
+    function eliminarPrestamo(id) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás deshacer esta acción!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                window.location.href = "/grupos/prestamos/eliminar/" + id + "/";
+            }
+        });
+    }
+</script>
+
+{% endblock %}

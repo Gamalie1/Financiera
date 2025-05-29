@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Integrante{% endblock %}
+
+{% block content %}
+    <h2>Confirmar Eliminación</h2>
+    
+    <p>¿Estás seguro que deseas eliminar a "{{ integrante.cliente.nombre }}" del grupo "{{ integrante.grupo.nombre }}"?</p>
+    <p>Esta acción también eliminará todos los préstamos asociados a este integrante.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="actions">
+            <button type="submit" class="btn-danger">Sí, Eliminar</button>
+            <a href="{% url 'detalle-grupo' integrante.grupo.pk %}" class="btn">Cancelar</a>
+        </div>
+    </form>
+{% endblock %}

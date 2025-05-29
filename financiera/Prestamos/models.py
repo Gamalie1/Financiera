@@ -18,45 +18,38 @@ class Prestamo(models.Model):
         ('SEMANAL', 'Semanal'),
         ('MENSUAL', 'Mensual'),
     ]
+
+    ES_GRUPAL_CHOICES = [
+        (False, 'Individual'),
+        (True, 'Grupal')
+    ]
     
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='prestamos')
+    
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='prestamos', null=True, blank=True)
+    grupo = models.ForeignKey('Grupos.Grupo', on_delete=models.CASCADE, related_name='prestamos', null=True, blank=True)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
     tasa_interes = models.DecimalField(max_digits=5, decimal_places=2) 
-    tipo = models.CharField(
-        max_length=10,
-        choices=TIPO_CHOICES,
-        default='SEMANAL',
-        verbose_name="Tipo de pago"
-    )
-    total_pagos = models.IntegerField(
-        verbose_name="Total de pagos",
-        help_text="Número total de pagos a realizar según el tipo seleccionado"
-    )
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='SEMANAL', verbose_name="Tipo de pago")
+    total_pagos = models.IntegerField(verbose_name="Total de pagos", help_text="Número total de pagos a realizar según el tipo seleccionado")
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
     fecha_aprobacion = models.DateTimeField(null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='SOLICITADO')
-    iva_sobre_intereses = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0, 
-        verbose_name="IVA sobre intereses"
-    )
-    garantia_liquida = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        verbose_name="Garantía líquida"
-    )
-    aportacion_social = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        verbose_name="Aportación social"
-    )
+    iva_sobre_intereses = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="IVA sobre intereses")
+    garantia_liquida = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Garantía líquida")
+    aportacion_social = models.DecimalField( max_digits=12, decimal_places=2, default=0, verbose_name="Aportación social")
+    es_grupal = models.BooleanField( choices=ES_GRUPAL_CHOICES, default=False, verbose_name="Tipo de préstamo")
 
     def __str__(self):
         return f"Préstamo #{self.id} - {self.cliente.nombre}"
     
+    def clean(self):
+        """Valida que el préstamo tenga cliente O grupo, pero no ambos"""
+        if not self.cliente and not self.grupo:
+            raise ValidationError("Debe especificar un cliente o un grupo.")
+        if self.cliente and self.grupo:
+            raise ValidationError("Un préstamo no puede ser individual y grupal simultáneamente.")
+        self.es_grupal = bool(self.grupo) # Actualiza el campo es_grupal según la presencia del grupo
+
     @property
     def tasa_periodo(self):
         """Calcula la tasa de interés efectiva según el periodo"""

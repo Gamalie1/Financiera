@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Préstamo{% endblock %}
+
+{% block content %}
+    <h2>Confirmar Eliminación</h2>
+    
+    <p>¿Estás seguro que deseas eliminar el préstamo de ${{ prestamo_grupal.monto }} a {{ prestamo_grupal.integrante.cliente.nombre }}?</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="actions">
+            <button type="submit" class="btn-danger">Sí, Eliminar</button>
+            <a href="{% url 'detalle-grupo' prestamo_grupal.integrante.grupo.pk %}" class="btn">Cancelar</a>
+        </div>
+    </form>
+{% endblock %}

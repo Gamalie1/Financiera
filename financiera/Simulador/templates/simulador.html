@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for(let i = 1; i <= numPagos; i++) {
             const fechaPago = new Date(fecha);
-            fechaPago.setDate(fecha.getDate() + (dias * i));
+            fechaPago.setDate(fecha.getDate() + (dias * i)+2);
             
             tablaHTML += `
                 <tr>

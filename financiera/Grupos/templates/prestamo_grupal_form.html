@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{% if prestamo_grupal.pk %}Editar{% else %}Agregar{% endif %} Préstamo{% endblock %}
+
+{% block content %}
+<link href="/static/css/registroClientes.css" rel="stylesheet">
+<div class="form-container">
+    <div class="form-header text-center">
+        {% if prestamo_grupal.pk %}Editar Préstamo Grupal{% else %}Agregar Préstamo a {{ prestamo_grupal.integrante.cliente.nombre|default:"Integrante" }}{% endif %}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Selección de Préstamo -->
+        <div class="form-group mb-3">
+            <label for="prestamo">Préstamo:</label>
+            <select class="form-control" id="prestamo" name="prestamo">
+                <option value="">--- Seleccionar ---</option>
+                {% for prestamo in prestamos %}
+                <option value="{{ prestamo.id }}" {% if prestamo_grupal.prestamo and prestamo_grupal.prestamo.id == prestamo.id %}selected{% endif %}>
+                    {{ prestamo.id }} - {{ prestamo.descripcion }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Monto -->
+        <div class="form-group mb-3">
+            <label for="monto">Monto:</label>
+            <input type="number" step="0.01" class="form-control" id="monto" name="monto" 
+                   value="{{ prestamo_grupal.monto|default:'' }}" required>
+        </div>
+        
+        <!-- Tasa de Interés -->
+        <div class="form-group mb-3">
+            <label for="tasa_interes">Tasa de interés (%):</label>
+            <input type="number" step="0.01" class="form-control" id="tasa_interes" name="tasa_interes" 
+                   value="{{ prestamo_grupal.tasa_interes|default:'' }}" required>
+        </div>
+        
+        <!-- Plazo de Pagos -->
+        <div class="form-group mb-3">
+            <label for="plazo_pagos">Plazo en pagos:</label>
+            <input type="number" class="form-control" id="plazo_pagos" name="plazo_pagos" 
+                   value="{{ prestamo_grupal.plazo_pagos|default:'' }}" required>
+        </div>
+        
+        <!-- Botones de Acción -->
+        <div class="d-flex justify-content-between">
+            {% if prestamo_grupal.integrante and prestamo_grupal.integrante.grupo %}
+                <a href="{% url 'detalle-grupo' prestamo_grupal.integrante.grupo.pk %}" class="btn btn-cancel">Cancelar</a>
+            {% else %}
+                <a href="{% url 'listar-grupos' %}" class="btn btn-cancel">Cancelar</a>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">{% if prestamo_grupal.pk %}Actualizar{% else %}Guardar{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
