@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+<title>{% block title %}Gastos{% endblock %}</title>
+{% block content %}
+<link href="/static/css/usuarios.css" rel="stylesheet" />
+<div class="container">
+  <div class="row">
+    <div class="col-md-offset-1 col-md-10">
+      <div class="panel">
+        <div class="panel-heading">
+          <div class="row">
+            <div class="col col-sm-3 col-xs-12">
+              <h4 class="title">Listado <span>de gastos</span></h4>
+            </div>
+            <div class="col-sm-9 col-xs-12 text-right">
+              <div class="btn_group">
+                <a
+                  href="{% url 'createGasto' %}"
+                  class="btn btn-sm btn-primary pull-left"
+                >
+                  <i class="fa fa-plus-circle"></i> Nuevo gasto
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-body table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Promotor</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Concepto</th>
+                {% if request.user.is_staff %}
+                <th>Acciones</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for gastos in gastos %}
+              <tr>
+                <td>{{ gastos.id }}</td>
+                <td>{{ gastos.usuario.username }}</td>
+                <td>${{ gastos.monto|floatformat:2 }}</td>
+                <td>{{ gastos.fecha_registro|date:"d/m/Y" }}</td>
+                <td>{{ gastos.concepto }}</td>
+                {% if request.user.is_staff %}
+                <td>
+                  <ul class="action-list">
+                    <li>
+                      <a
+                        href="{% url 'editarGasto' gastos_id=gastos.id %}"
+                        class="btn btn-sm btn-warning"
+                        data-tip="edit"
+                      >
+                        <i class="fa fa-edit"></i> Editar
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        class="btn btn-sm btn-danger"
+                        data-tip="delete"
+                        onclick="eliminarRegistro({{gastos.id}})"
+                      >
+                        <i class="fa fa-trash"></i> Eliminar
+                      </a>
+                    </li>
+                  </ul>
+                </td>
+                {% endif %}
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center">
+                  No hay pagos registrados
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function eliminarRegistro(id) {
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás deshacer esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then(function (result) {
+      if (result.isConfirmed) {
+        window.location.href = "/Gastos/eliminarGasto/" + id + "/";
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends 'base.html' %} {% load static %}
+<title>{% block title %}Documentos{% endblock %}</title>
+{% block content %}
+
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentos Disponibles</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+
+      header {
+        background-color: #1a73e8;
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 36px;
+      }
+
+      .container {
+        width: 80%;
+        margin: 20px auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between;
+      }
+
+      .document-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: calc(33% - 20px);
+        padding: 20px;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .document-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .document-card h3 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 22px;
+      }
+
+      .document-card p {
+        color: #777;
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+
+      .document-card iframe {
+        width: 100%;
+        height: 200px;
+        border: none;
+        margin-bottom: 20px;
+      }
+
+      .document-card a {
+        text-decoration: none;
+        background-color: #1a73e8;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+      }
+
+      .document-card a:hover {
+        background-color: #0c56c1;
+      }
+
+      @media (max-width: 768px) {
+        .document-card {
+          width: calc(50% - 20px);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .document-card {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Documentos Disponibles</h1>
+    </header>
+
+    <div class="container">
+      <!-- Contrato Individual -->
+      <div class="document-card">
+        <h3>Contrato individual</h3>
+        <iframe
+          src="{% static 'documentos/Contrato_Individual.pdf' %}"
+          title="Contrato Individual"
+        ></iframe>
+        <a href="{% static 'documentos/Contrato_Individual.pdf' %}" download
+          >Descargar</a
+        >
+      </div>
+
+      <!-- Págare -->
+      <div class="document-card">
+        <h3>Pagare individual semanal</h3>
+        <iframe
+          src="{% static 'documentos/PAGARE_INDIVIDUAL_SEMANAL.pdf' %}"
+          title="Págare"
+        ></iframe>
+        <a
+          href="{% static 'documentos/PAGARE_INDIVIDUAL_SEMANAL.pdf' %}"
+          download
+          >Descargar</a
+        >
+      </div>
+
+      <!-- Documento 1 -->
+      <div class="document-card">
+        <h3>Pagare individual mensual</h3>
+        <iframe
+          src="{% static 'documentos/PAGARE_INDIVIDUAL_MENSUAL.pdf' %}"
+          title="Documento 1"
+        ></iframe>
+        <a
+          href="{% static 'documentos/PAGARE_INDIVIDUAL_MENSUAL.pdf' %}"
+          download
+          >Descargar</a
+        >
+      </div>
+
+      <!-- Documento 2 -->
+      <div class="document-card">
+        <h3>Documento de liquidacion</h3>
+        <iframe
+          src="{% static 'documentos/LIQUIDACION.pdf' %}"
+          title="Documento 2"
+        ></iframe>
+        <a href="{% static 'documentos/LIQUIDACION.pdf' %}" download
+          >Descargar</a
+        >
+      </div>
+
+      <!-- Documento "LIQUIDACION DE CREDITO" -->
+      <div class="document-card">
+        <h3>Documento de invitacion</h3>
+        <iframe
+          src="{% static 'documentos/INVITACION.pdf' %}"
+          title="Liquidación de Crédito"
+        ></iframe>
+        <a href="{% static 'documentos/INVITACION.pdf' %}" download
+          >LIQUIDACION DE CREDITO</a
+        >
+      </div>
+
+      <!-- Documento 2 -->
+      <div class="document-card">
+        <h3>Invitacion de pago</h3>
+
+        <iframe
+          src="{% static 'documentos/invitacion_de_pago.pdf' %}"
+          title="Documento 2"
+        ></iframe>
+        <a href="{% static 'documentos/invitacion_de_pago.pdf' %}" download
+          >Descargar</a
+        >
+      </div>
+      <!-- Documento 2 -->
+      <div class="document-card">
+        <h3>Lista de cotrol grupal</h3>
+
+        <iframe
+          src="{% static 'documentos/Lista_control_pagos.pdf' %}"
+          title="Documento 2"
+        ></iframe>
+        <a href="{% static 'documentos/Lista_control_pagos.pdf' %}" download
+          >Descargar</a
+        >
+      </div>
+      <!-- Documento 2 -->
+      <div class="document-card">
+        <h3>Invitacion de pago</h3>
+
+        <iframe
+          src="{% static 'documentos/invitacion_2.pdf' %}"
+          title="Documento 2"
+        ></iframe>
+        <a href="{% static 'documentos/invitacion_2.pdf' %}" download
+          >Descargar</a
+        >
+      </div>
+    </div>
+  </body>
+</html>
+{% endblock %}

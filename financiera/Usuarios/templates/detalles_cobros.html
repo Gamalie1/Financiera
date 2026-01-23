@@ -1,0 +1,476 @@
+{% extends 'base.html' %} {% block content %}
+<h3>Detalles del cobrador: {{ user.username }}</h3>
+
+<!-- Botones de selección (Hoy, Semana, Mes, Total) -->
+<div class="btn-group mb-4" role="group" aria-label="Botones de selección">
+  <button type="button" class="btn btn-primary" onclick="mostrarTabla('hoy')">
+    Hoy
+  </button>
+  <button
+    type="button"
+    class="btn btn-success"
+    onclick="mostrarTabla('semana')"
+  >
+    Semana
+  </button>
+  <button type="button" class="btn btn-info" onclick="mostrarTabla('mes')">
+    Mes
+  </button>
+  <button type="button" class="btn btn-warning" onclick="mostrarTabla('total')">
+    Total
+  </button>
+</div>
+{% if tipo == 'pagos' %}
+<!-- Tabla de pagos -->
+<div id="tabla_hoy" class="tabla-pagos">
+  <!-- Tabla de pagos hoy -->
+  <h4>Pagos Hoy</h4>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+        <th>Método de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_hoy_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <!-- Nombre del cliente -->
+        <td>{{ pago.prestamo__tipo_prestamo }}</td>
+        <!-- Tipo de préstamo -->
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+        <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Pagos Hoy:</strong>
+        </td>
+        <td colspan="2" class="text-right">
+          ${{ total_pagado_hoy|floatformat:2 }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de pagos por semana -->
+<div id="tabla_semana" class="tabla-pagos" style="display: none">
+  <h4>Pagos Esta Semana</h4>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+        <th>Método de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_semana_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <!-- Nombre del cliente -->
+        <td>{{ pago.prestamo__tipo }}</td>
+        <!-- Tipo de préstamo -->
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+        <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Pagos Hoy:</strong>
+        </td>
+        <td colspan="2" class="text-right">
+          ${{ total_pagado_semana|default:'No hay pagos esta semana' }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de pagos por mes -->
+<div id="tabla_mes" class="tabla-pagos" style="display: none">
+  <h4>Pagos Este Mes</h4>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+        <th>Método de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_mes_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <!-- Nombre del cliente -->
+        <td>{{ pago.prestamo__tipo }}</td>
+        <!-- Tipo de préstamo -->
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+        <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Pagos Hoy:</strong>
+        </td>
+        <td colspan="2" class="text-right">
+          ${{ total_pagado_mes|default:'No hay pagos este mes' }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de pagos totales -->
+<div id="tabla_total" class="tabla-pagos" style="display: none">
+  <h5>Pagos Totales</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+        <th>Método de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_totales_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <!-- Nombre del cliente -->
+        <td>{{ pago.prestamo__tipo }}</td>
+        <!-- Tipo de préstamo -->
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+        <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Pagos Hoy:</strong>
+        </td>
+        <td colspan="2" class="text-right">
+          ${{ total_pagado_general|default:'No hay pagos totales' }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% elif tipo == 'gastos' %}
+<!-- Tabla de gastos -->
+<div id="tabla_hoy" class="tabla-pagos">
+  <!-- Tabla de gastos hoy -->
+  <h5>Gastos Hoy</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Promotor</th>
+        <th>Monto</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gasto in gastos_hoy_detalles %}
+      <tr>
+        <td>{{ gasto.usuario__username }}</td>
+        <!-- Nombre del promotor -->
+        <td>${{ gasto.monto|floatformat:2 }}</td>
+        <!-- Monto del gasto -->
+        <td>{{ gasto.fecha_registro }}</td>
+        <!-- Fecha del gasto -->
+        <td>{{ gasto.concepto }}</td>
+        <!-- Concepto del gasto -->
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Gastos Hoy:</strong>
+        </td>
+        <td colspan="1" class="text-right">
+          ${{ total_gasto_hoy|floatformat:2 }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de gastos por semana -->
+<div id="tabla_semana" class="tabla-pagos" style="display: none">
+  <h5>Gastos Esta Semana</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Promotor</th>
+        <th>Monto</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gasto in gastos_semana_detalles %}
+      <tr>
+        <td>{{ gasto.usuario__username }}</td>
+        <td>${{ gasto.monto|floatformat:2 }}</td>
+        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.concepto }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Gastos Esta Semana:</strong>
+        </td>
+        <td colspan="1" class="text-right">
+          ${{ total_gasto_semana|floatformat:2 }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de gastos por mes -->
+<div id="tabla_mes" class="tabla-pagos" style="display: none">
+  <h5>Gastos Este Mes</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Promotor</th>
+        <th>Monto</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gasto in gastos_mes_detalles %}
+      <tr>
+        <td>{{ gasto.usuario__username }}</td>
+        <td>${{ gasto.monto|floatformat:2 }}</td>
+        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.concepto }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Gastos Este Mes:</strong>
+        </td>
+        <td colspan="1" class="text-right">
+          ${{ total_gasto_mes|floatformat:2 }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de gastos totales -->
+<div id="tabla_total" class="tabla-pagos" style="display: none">
+  <h5>Gastos Totales</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Promotor</th>
+        <th>Monto</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gasto in gastos_totales_detalles %}
+      <tr>
+        <td>{{ gasto.usuario__username }}</td>
+        <td>${{ gasto.monto|floatformat:2 }}</td>
+        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.concepto }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Gastos Totales:</strong>
+        </td>
+        <td colspan="1" class="text-right">
+          ${{ total_gasto_general|floatformat:2 }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% elif tipo == 'prestamos' %}
+
+<!-- Tabla de pagos pendientes -->
+<div id="tabla_hoy" class="tabla-pagos">
+  <!-- Tabla de pagos pendientes hoy -->
+  <h4>Pagos pendientes hoy</h4>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_hoy_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <!-- Nombre del cliente -->
+        <td>{{ pago.prestamo__tipo }}</td>
+        <!-- Tipo de préstamo -->
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de Pagos pendientes hoy:</strong>
+        </td>
+        <td colspan="1" class="text-right">{{ pagos_hoy}}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de pagos pendientes por semana -->
+<div id="tabla_semana" class="tabla-pagos" style="display: none">
+  <h5>Pagos pendientes esta semana</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_semana_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <td>{{ pago.prestamo__tipo }}</td>
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de pagos pendientes esta semana:</strong>
+        </td>
+        <td colspan="1" class="text-right">{{ pagos_semana }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de pagos pendientes por mes -->
+<div id="tabla_mes" class="tabla-pagos" style="display: none">
+  <h5>Pagos pendientes este mes</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_mes_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <td>{{ pago.prestamo__tipo }}</td>
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de pagos pendientes este mes:</strong>
+        </td>
+        <td colspan="1" class="text-right">{{ pagos_mes}}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Tabla de pagos pendientes totales -->
+<div id="tabla_total" class="tabla-pagos" style="display: none">
+  <h5>Pagos pendientes totales</h5>
+  <table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+      <tr>
+        <th>Nombre Cliente</th>
+        <th>Tipo de Préstamo</th>
+        <th>Fecha de Pago</th>
+        <th>Monto de Pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pago in pagos_totales_detalles %}
+      <tr>
+        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <td>{{ pago.prestamo__tipo }}</td>
+        <td>{{ pago.fecha_pago }}</td>
+        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <td colspan="3" class="text-right">
+          <strong>Total de pagos pendientes totales:</strong>
+        </td>
+        <td colspan="1" class="text-right">{{ pagos_totales }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endif %}
+
+<script>
+  // Función para mostrar la tabla correspondiente al botón seleccionado
+  function mostrarTabla(tipo) {
+    // Ocultar todas las tablas
+    document.getElementById("tabla_hoy").style.display = "none";
+    document.getElementById("tabla_semana").style.display = "none";
+    document.getElementById("tabla_mes").style.display = "none";
+    document.getElementById("tabla_total").style.display = "none";
+
+    // Mostrar la tabla seleccionada
+    document.getElementById("tabla_" + tipo).style.display = "block";
+  }
+</script>
+{% endblock %}

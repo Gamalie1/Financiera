@@ -7,9 +7,9 @@
                 <h2 class="mb-0">
                     <i class="fas fa-edit me-2"></i>Editar Préstamo #{{ prestamo.id }}
                 </h2>
-                <span class="badge bg-{% if prestamo.estado == 'APROBADO' %}success{% elif prestamo.estado == 'RECHAZADO' %}danger{% elif prestamo.estado == 'PAGADO' %}info{% else %}warning{% endif %} fs-6">
-                    {{ prestamo.get_estado_display }}
-                </span>
+                <a href="{% url 'principalPrestamos' %}" class="btn btn-light btn-sm">
+          <i class="fa fa-arrow-left"></i> Volver
+        </a>
             </div>
         </div>
 
@@ -206,32 +206,32 @@
                             </select>
                         </div>
                     </div>
-                    {% if prestamo.fecha_aprobacion %}
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Fecha de aprobación</label>
+                   
+                                                    <!-- Campo para seleccionar la fecha de aprobación -->
+                                <div class="col-md-4">
+                        <label for="fecha_aprobacion" class="form-label fw-bold">Fecha de aprobación</label>
                         <div class="input-group input-group-lg">
                             <span class="input-group-text">
                                 <i class="fas fa-calendar-check"></i>
                             </span>
-                            <div class="form-control form-control-lg py-3 bg-light">
-                                {{ prestamo.fecha_aprobacion|date:'d/m/Y H:i' }}
-                            </div>
+                            <input type="date" name="fecha_aprobacion" class="form-control form-control-lg py-3" 
+                                value="{{ prestamo.fecha_aprobacion|date:'Y-m-d' }}">
                         </div>
                     </div>
-                    {% endif %}
-                </div>
 
-                <!-- Sección 5: Botones -->
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Volver
-                    </a>
-                    {% if puede_editar %}
-                    <button type="submit" class="btn btn-lg btn-primary">
-                        <i class="fas fa-save me-2"></i>Guardar Cambios
-                    </button>
-                    {% endif %}
-                </div>
+               <!-- Sección 5: Botones -->
+
+                  <!-- Sección 5: Botones -->
+
+{% if puede_editar %}
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-center">
+        <button type="submit" class="btn btn-lg btn-primary">
+            <i class="fas fa-save me-2"></i>Guardar Cambios
+        </button>
+    </div>
+</div>
+{% endif %}
             </form>
         </div>
     </div>

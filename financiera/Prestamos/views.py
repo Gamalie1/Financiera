@@ -6,29 +6,55 @@ from django.shortcuts import get_object_or_404, redirect
 from django import forms
 from django.utils import timezone
 from django.contrib import messages
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta  
 from Prestamos.models import Prestamo
+from Grupos.models import Grupo, IntegranteGrupo
+from Grupos.models import DetallePrestamoGrupal
+from django.template.loader import render_to_string
+from django.http import HttpResponse, FileResponse
+from weasyprint import HTML
+import tempfile
+from django.core.files.storage import default_storage
+from num2words import num2words
+import calendar
+import locale
+from datetime import datetime
+from django.contrib.auth.models import User  # Importar el modelo User de Django
+from django.http import HttpResponseForbidden
 
 
 
 def principal(request):
-    prestamos = Prestamo.objects.all().select_related('cliente')
-    return render(request, 'prestamos.html', {
-        'prestamos': prestamos,
-        'seccion': 'prestamos'  
-    })
+    if request.user.is_staff:
+        # Admin ve todos los préstamos
+        prestamos = Prestamo.objects.all().select_related('cliente')
+    else:
+        # Empleado SOLO ve préstamos aprobados
+        prestamos = Prestamo.objects.filter(
+            estado='APROBADO'
+        ).select_related('cliente')
+
+    context = {'prestamos': prestamos}
+    return render(request, 'prestamos.html', context)
 
 @login_required
 def create_prestamo(request):
     clientes = Cliente.objects.all()
+    promotores = User.objects.all()  # Trae todos los usuarios, o filtra los promotores
+    grupos = Grupo.objects.all()  # Trae todos los grupos existentes
+    
     
     if request.method == 'POST':
         form_data = request.POST.copy()
         try:
             # Conversión y validación 
             cliente_id = form_data.get('cliente')
+            promotor_id = form_data.get('promotor')  # Obtener el ID del promotor
+            grupo_id = form_data.get('grupo')  # Obtener el ID del grupo
+            # Convertimos el valor de 'es_grupal' a booleano (True/False)
+            es_grupal = request.POST.get('es_grupal') == 'True'  # Convertir "True"/"False" en booleano
             monto = Decimal(form_data.get('monto', '0').strip() or '0')
             tasa_interes = Decimal(form_data.get('tasa_interes', '0').strip() or '0')
             tipo = form_data.get('tipo')
@@ -36,7 +62,8 @@ def create_prestamo(request):
             iva_sobre_intereses = Decimal(form_data.get('iva_sobre_intereses', '0').strip() or '0')
             garantia_liquida = Decimal(form_data.get('garantia_liquida', '0').strip() or '0')
             aportacion_social = Decimal(form_data.get('aportacion_social', '0').strip() or '0')
-
+            ahorro = Decimal(form_data.get('ahorro', '0').strip() or '0')
+            folio = form_data.get('solicitud_credito', '').strip()
             errores = []
             if not cliente_id:
                 errores.append("Debe seleccionar un cliente")
@@ -61,12 +88,15 @@ def create_prestamo(request):
                     messages.error(request, error)
                 return render(request, 'create_prestamo.html', {
                     'clientes': clientes,
+                    'promotores': promotores,  # Asegúrate de pasar los promotores al template
                     'form_data': form_data
                 })
+          
             
             # Creación del préstamo
             Prestamo.objects.create(
                 cliente_id=cliente_id,
+                promotor_id=promotor_id,  # Asignar el promotor seleccionado
                 monto=monto,
                 tasa_interes=tasa_interes,
                 tipo=tipo,
@@ -74,7 +104,10 @@ def create_prestamo(request):
                 estado='SOLICITADO',
                 iva_sobre_intereses=iva_sobre_intereses,
                 garantia_liquida=garantia_liquida,
-                aportacion_social=aportacion_social
+                aportacion_social=aportacion_social,
+                es_grupal=es_grupal,  # Asignar si es grupal o no
+                ahorro=ahorro,   
+                folio=folio,
             )
             
             messages.success(request, 'Préstamo creado exitosamente!')
@@ -87,7 +120,7 @@ def create_prestamo(request):
                 'form_data': form_data
             })
     
-    return render(request, 'create_prestamo.html', {'clientes': clientes})
+    return render(request, 'create_prestamo.html', {'clientes': clientes,  "promotores": promotores,  "grupos": grupos})
 
 @login_required
 def editar_prestamo(request, pk):
@@ -106,6 +139,12 @@ def editar_prestamo(request, pk):
             iva_sobre_intereses = Decimal(request.POST.get('iva_sobre_intereses', '0').strip() or '0')
             garantia_liquida = Decimal(request.POST.get('garantia_liquida', '0').strip() or '0')
             aportacion_social = Decimal(request.POST.get('aportacion_social', '0').strip() or '0')
+            fecha_aprobacion = request.POST.get('fecha_aprobacion')  # Obtener la fecha de aprobación
+       
+            if fecha_aprobacion:
+                prestamo.fecha_aprobacion = datetime.strptime(fecha_aprobacion, "%Y-%m-%d")
+            else:
+                prestamo.fecha_aprobacion = None
 
             errores = []
             if monto < 100:
@@ -136,9 +175,12 @@ def editar_prestamo(request, pk):
                 prestamo.aportacion_social = aportacion_social
                 
                 if estado == 'APROBADO' and prestamo.estado != 'APROBADO':
-                    prestamo.fecha_aprobacion = timezone.now()
+                    if fecha_aprobacion:
+                        prestamo.fecha_aprobacion = fecha_aprobacion  # Asigna directamente
+                    else:
+                        prestamo.fecha_aprobacion = None  # Si no se pasa, deja la fecha en None
                 elif estado != 'APROBADO':
-                    prestamo.fecha_aprobacion = None
+                    prestamo.fecha_aprobacion = None  # Si no está aprobado, eliminamos la fecha de a
                 
                 prestamo.save()
                 messages.success(request, 'Préstamo actualizado correctamente')
@@ -160,7 +202,6 @@ def editar_prestamo(request, pk):
     return render(request, 'editar_prestamo.html', context)
 
 
-
 @login_required
 def eliminar_prestamo(request, pk):
     prestamo = get_object_or_404(Prestamo, pk=pk)
@@ -168,55 +209,57 @@ def eliminar_prestamo(request, pk):
     messages.success(request, 'Préstamo eliminado correctamente')
     return redirect('principalPrestamos')
 
+# Establecer el locale para español
+locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+
+def fecha_a_letras(fecha):
+    locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')
+    """Convierte una fecha en formato 'día de mes de año, día de la semana' en español."""
+    # Convertir la fecha en formato 'día de mes de año'
+    dia_semana = fecha.strftime("%A")  # Obtener el día de la semana
+    fecha_letras = fecha.strftime("%d de %B de %Y")  # Fecha en formato "7 de junio de 2025"
+    return f"{dia_semana}, {fecha_letras}"
 
 @login_required
 def detalle_prestamo(request, pk):
     prestamo = get_object_or_404(Prestamo, pk=pk)
-
-    
-    
-    if not request.user.is_staff and prestamo.cliente.usuario != request.user:
-        return HttpResponseForbidden("No tienes permiso para ver este préstamo")
-
-    # Calcular tasa periódica ajustada (mensual o semanal)
-    if prestamo.tipo == 'SEMANAL':
-        tasa_periodo = (prestamo.tasa_interes / Decimal('100')) * (Decimal('7') / Decimal('30'))  # Tasa semanal
-    else:
-        tasa_periodo = prestamo.tasa_interes / Decimal('100')  # Tasa mensual
-
-    garantia_monto = prestamo.monto * (prestamo.garantia_liquida / 100)
-    iva_porc = prestamo.iva_sobre_intereses / Decimal('100')
-    monto = prestamo.monto
+    # Recibiendo los valores del préstamo y asegurando que todo sea de tipo Decimal
+    monto = Decimal(prestamo.monto)  # Convertir el monto a Decimal
+    tasa_interes = Decimal(prestamo.tasa_interes) / Decimal('100')  # Convertir a decimal de porcentaje
+    iva_porcentaje = Decimal(prestamo.iva_sobre_intereses) / Decimal('100')
     total_pagos = prestamo.total_pagos
-    
+    tipo_pago = prestamo.tipo  # 'SEMANAL' o 'MENSUAL'
+    garantia_liquida = Decimal(prestamo.garantia_liquida)  # Garantía líquida también como Decimal
 
-    # Componentes fijos de cada pago
-    abono_capital_base = monto / total_pagos
-    interes_base = monto * tasa_periodo
-    iva_base = interes_base * iva_porc
-    cuota_base = abono_capital_base + interes_base + iva_base
-    
-
+    # Calcular componentes fijos de cada pago
+    abono_capital_base = Decimal(monto / total_pagos)  # Abono a capital por pago
+    interes_por_periodo = Decimal(monto * tasa_interes)  # Interés fijo por cada pago
+    iva_por_periodo = Decimal(interes_por_periodo * iva_porcentaje)  # IVA sobre el interés
+    cuota_base = Decimal(abono_capital_base + interes_por_periodo + iva_por_periodo)  # Cuota total por pago
 
     # Generar fechas de pagos
     fechas_pagos = []
     if prestamo.fecha_aprobacion:
         fecha_base = prestamo.fecha_aprobacion.date()
-        
-        if prestamo.tipo == 'SEMANAL':
+        dia_prestamo = fecha_base.weekday()  # Día de la semana de la fecha de aprobación
+
+        if tipo_pago == 'SEMANAL':
             fecha_pago = fecha_base + relativedelta(weeks=1)
         else:
-            fecha_pago = fecha_base + relativedelta(months=1)
-                
-                
-        for _ in range(total_pagos):
-            fechas_pagos.append(fecha_pago)
+            fecha_pago = fecha_base + timedelta(days=30)
         
-                # Calcular siguiente fecha
-            if prestamo.tipo == 'SEMANAL':
-                fecha_pago += relativedelta(weeks=1)
-            else:
-                fecha_pago += relativedelta(months=1)
+        for _ in range(total_pagos):
+            # Ajustar siempre al mismo día de la semana que el préstamo
+                diferencia = dia_prestamo - fecha_pago.weekday()
+                fecha_ajustada = fecha_pago + timedelta(days=diferencia)
+
+                fechas_pagos.append(fecha_ajustada)
+
+                # Siguiente fecha
+                if tipo_pago == 'SEMANAL':
+                    fecha_pago += relativedelta(weeks=1)
+                else:
+                    fecha_pago += timedelta(days=30)
 
     # Calcular detalle de pagos
     detalle_pagos = []
@@ -226,21 +269,20 @@ def detalle_prestamo(request, pk):
     multa_total = Decimal('0')
 
     for i, fecha_programada in enumerate(fechas_pagos):
-        # Lógica de pagos realizados y multas (igual que antes)
-        # Ordenar pagos por fecha y obtener por índice
+        # Lógica para los pagos realizados y multas (si es necesario)
         pagos_ordenados = list(prestamo.pagos.all().order_by('fecha_pago'))
         pago_realizado = pagos_ordenados[i] if i < len(pagos_ordenados) else None
-        
+
         # Ajustar último pago para evitar decimales
         if i == total_pagos - 1:
             abono_capital = saldo_restante
-            interes = interes_base
-            iva = iva_base
+            interes = interes_por_periodo
+            iva = iva_por_periodo
             cuota = abono_capital + interes + iva
         else:
             abono_capital = abono_capital_base
-            interes = interes_base
-            iva = iva_base
+            interes = interes_por_periodo
+            iva = iva_por_periodo
             cuota = cuota_base
 
         # Calcular multas y actualizar saldos
@@ -254,39 +296,49 @@ def detalle_prestamo(request, pk):
             if timezone.now().date() > fecha_programada:
                 dias_atraso = (timezone.now().date() - fecha_programada).days
                 multa = Decimal(dias_atraso) * Decimal('15')
-        
+
         multa_total += multa
         saldo_restante -= abono_capital
         total_intereses += interes
         total_iva += iva
 
+        # Añadir el detalle de cada pago con fecha en letras
         detalle_pagos.append({
             'numero': i + 1,
             'fecha_programada': fecha_programada,
+            'fecha_programada_letras': fecha_a_letras(fecha_programada),  # Convertir la fecha a letras
             'abono_capital': float(abono_capital.quantize(Decimal('0.01'))),
             'interes': float(interes.quantize(Decimal('0.01'))),
             'iva': float(iva.quantize(Decimal('0.01'))),
             'total': float(cuota.quantize(Decimal('0.01'))),
-            'realizado': pago_realizado is not None,
+            'estado_pago': pago_realizado.estado_pago if pago_realizado else False,
             'pago': pago_realizado,
             'dias_atraso': dias_atraso,
             'multa': float(multa)
         })
 
+    # Calcular los totales
+    multa_total = float(multa_total.quantize(Decimal('0.01')))
+    saldo_pendiente = float(saldo_restante.quantize(Decimal('0.01')))
+    total_intereses = float(total_intereses.quantize(Decimal('0.01')))
+    total_iva = float(total_iva.quantize(Decimal('0.01')))
+    total_a_pagar = monto + Decimal(total_intereses) + Decimal(total_iva)
+
+    # Contexto para la plantilla
     context = {
         'prestamo': prestamo,
-        'garantia_monto': garantia_monto, 
+        'garantia_monto': garantia_liquida,
         'detalle_pagos': detalle_pagos,
-        'multa_total': float(multa_total.quantize(Decimal('0.01'))),
+        'multa_total': multa_total,
         'total_pagado': float(prestamo.total_pagado),
-        'saldo_pendiente': float(saldo_restante.quantize(Decimal('0.01'))),
-        'total_intereses': float(total_intereses.quantize(Decimal('0.01'))),
-        'total_iva': float(total_iva.quantize(Decimal('0.01'))),
-        'total_a_pagar': float((monto + total_intereses + total_iva).quantize(Decimal('0.01')))
+        'saldo_pendiente': saldo_pendiente,
+        'total_intereses': total_intereses,
+        'total_iva': total_iva,
+        'total_a_pagar': float(total_a_pagar.quantize(Decimal('0.01'))),
+        'fecha_solicitud': prestamo.fecha_solicitud.strftime('%d/%m/%Y %H:%M'),
     }
-    
-    return render(request, 'detalle_prestamo.html', context)
 
+    return render(request, 'detalle_prestamo.html', context)
     def actualizar_estado_pagos(self):
         """Actualiza el estado de las cuotas relacionadas"""
         pagos = self.pagos.all().order_by('fecha_pago')
@@ -301,3 +353,438 @@ def detalle_prestamo(request, pk):
                 cuota.saldo_pendiente = cuota.total_cuota - cuota.monto_pagado
                 cuota.estado = 'PAGADO' if cuota.saldo_pendiente == 0 else 'PARCIAL'
                 cuota.save()
+
+
+def generar_contrato_pdf(request, prestamo_id):
+    cliente = get_object_or_404(Prestamo, id=prestamo_id)
+
+    # Validar si es mensual o semanal y calcular el periodo
+    if cliente.tipo == 'MENSUAL':
+        periodo = f"{cliente.total_pagos} meses"
+    elif cliente.tipo == 'SEMANAL':
+        periodo = f"{cliente.total_pagos} semanas"
+    else:
+        periodo = "Sin periodo definido"
+    
+     # Convertir el monto del crédito a letras en pesos mexicanos
+    credito_en_letras = num2words(cliente.monto, to='currency', lang='es', currency='MXN')
+
+    monto_formateado = f"{int(cliente.monto):,}"
+    
+
+    # Definir los meses en letras
+    meses = {
+        1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril', 5: 'mayo', 6: 'junio',
+        7: 'julio', 8: 'agosto', 9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+    }
+
+    # Obtener la fecha actual
+    fecha_actual = datetime.now()
+
+    # Extraer el día, mes y año de la fecha actual
+    dia = fecha_actual.day
+    mes = fecha_actual.month
+    año = fecha_actual.year
+
+    # Generar la fecha en letras
+    fecha_en_letras = f"{dia} de {meses[mes]} de {año}"
+      # ============================
+    # DETECTAR TIPO CONTRATO
+    # ============================
+
+    es_grupal = cliente.es_grupal
+
+    titulo_contrato = (
+        "Contrato de Apertura de Crédito Grupal"
+        if es_grupal else
+        "Contrato de Apertura de Crédito Individual"
+    )
+    # ============================
+    # OBTENER INTEGRANTES SI ES GRUPAL
+    # ============================
+
+    integrantes = []
+
+    if cliente.es_grupal:
+
+        grupo = cliente.grupo
+
+        integrantes = IntegranteGrupo.objects.select_related(
+            'cliente'
+        ).filter(grupo=grupo)
+
+        print("INTEGRANTES DEL GRUPO:")
+        for i in integrantes:
+            print(i.id, i.cliente.nombre)
+        
+
+
+    context = {
+        "titulo_contrato": titulo_contrato,
+        "nombre_acreditado": cliente.cliente.nombre,  # Ajusta según tus campos
+        "credito": monto_formateado,
+        "credito_en_letras": credito_en_letras,
+        "numero_pagos": cliente.total_pagos,
+        "interes": cliente.tasa_interes,
+        "direccion": cliente.cliente.domicilio,
+        "periodo": periodo, 
+        "fecha_en_letras": fecha_en_letras,
+        "folio": cliente.folio,
+        "es_grupal": cliente.es_grupal,
+        "integrantes": integrantes,
+        # Agrega aquí más datos necesarios
+    }
+
+    # Renderizar el HTML
+    html_string = render_to_string("contrato.html", context)
+
+    # Generar el PDF directamente en memoria
+    html = HTML(string=html_string)
+    pdf = html.write_pdf()
+
+    # Crear una respuesta HTTP con el PDF en memoria
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename=contrato_{cliente.cliente.nombre}.pdf'
+
+    return response
+    
+def generar_invitacion(request, prestamo_id):
+    # Obtener el préstamo correspondiente, incluyendo el cliente relacionado
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    cliente = prestamo.cliente  # Obtener el cliente relacionado con el préstamo
+
+    # Generar el contexto con los datos del cliente
+    contexto = {
+        'cliente_nombre': cliente.nombre.upper,
+        'fecha_actual': datetime.now().strftime('%d de %B de %Y').upper,
+    }
+
+    # Renderizar la plantilla HTML con el contexto
+    html_content = render_to_string('invitacion.html', contexto)
+
+    # Usamos WeasyPrint para generar el PDF
+    html = HTML(string=html_content)
+    pdf = html.write_pdf()
+
+    # Devolver el PDF como respuesta
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="invitacion_extrajudicial.pdf"'
+
+    return response
+    
+def generar_liquidacion(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+     # Datos para la liquidación
+    fecha_pago = prestamo.fecha_solicitud.strftime('%d de %B de %Y')  # Formato de fecha (ejemplo: 20 de julio de 2025)
+    monto_credito = "{:,.2f}".format(prestamo.monto)  # Monto formateado (ejemplo: 10,000.00)
+    nombre_deudor = prestamo.cliente.nombre
+    pagare = prestamo.id  # Este es un ejemplo de cómo podría almacenar el número del pagaré
+
+    # Generar el contexto para la plantilla
+    contexto = {
+        'fecha_pago': fecha_pago.upper,
+        'monto_credito': monto_credito,
+        'nombre_deudor': nombre_deudor.upper,
+        'pagare': pagare,
+        'fecha_actual': datetime.now().strftime('%d de %B de %Y').upper,
+    }
+
+    # Renderizamos la plantilla HTML
+    html_content = render_to_string('liquidacion.html', contexto)
+
+    # Usamos WeasyPrint para generar el PDF
+    html = HTML(string=html_content)
+    pdf = html.write_pdf()
+
+    # Devolver el PDF como respuesta
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="liquidacion_credito.pdf"'
+
+    return response
+    
+    
+
+def generar_pagare(request, prestamo_id):
+    cliente = get_object_or_404(Prestamo, id=prestamo_id)
+     # Traer el monto de pago del primer registro en la tabla Pago relacionado con este préstamo
+    pago = cliente.pagos.first()  # Esto obtiene el primer pago asociado al préstamo
+    monto_pago = pago.monto_pago if pago else 0  # Si no hay pagos, asigna 0
+    es_grupal = cliente.es_grupal
+
+
+    # Establecer la configuración regional en español de México
+    locale.setlocale(locale.LC_TIME, 'es_MX.UTF-8')  # Establece el locale para español
+
+   
+    # Definir los meses en letras
+    meses = {
+        1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril', 5: 'mayo', 6: 'junio',
+        7: 'julio', 8: 'agosto', 9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+    }
+
+    # Obtener la fecha actual
+    fecha_actual = datetime.now()
+
+    # Extraer el día, mes y año de la fecha actual
+    dia = fecha_actual.day
+    mes = fecha_actual.month
+    año = fecha_actual.year
+
+    # Generar la fecha en letras
+    fecha_en_letras = f"a los {dia} días del mes de {meses[mes]} de {año}"
+
+     # Convertir el monto del crédito a letras en pesos mexicanos
+    credito_en_letras = num2words(cliente.monto, to='currency', lang='es', currency='MXN')
+      
+    # Convertir el monto de pago a letras en pesos mexicanos
+    monto_pago_en_letras = num2words(round(monto_pago, 0), to='currency', lang='es', currency='MXN')
+        # Validar si es mensual o semanal y calcular el periodo
+    if cliente.tipo == 'MENSUAL':
+        periodo = f"{cliente.total_pagos} pagos mensuales"
+    elif cliente.tipo == 'SEMANAL':
+        periodo = f"{cliente.total_pagos} pagos semanales"
+    else:
+        periodo = "Sin periodo definido"
+
+    if cliente.tipo == 'MENSUAL':
+        periodo2 = f"mensual"
+    elif cliente.tipo == 'SEMANAL':
+        periodo2 = f"semanal"
+    else:
+        periodo2 = "Sin periodo definido"
+
+    if cliente.tipo == 'MENSUAL':
+        periodo3 = f"{cliente.total_pagos} MESES"
+    elif cliente.tipo == 'SEMANAL':
+        periodo3 = f"{cliente.total_pagos} SEMANAS"
+    else:
+        periodo3 = "Sin periodo definido"
+
+        # Obtener solo la fecha (sin la hora)
+        # Traer el primer pago relacionado con el préstamo, ordenado por fecha
+    primer_pago = cliente.pagos.order_by('fecha_pago').first()  # Ordena ascendentemente por la fecha del pago
+
+    # Si existe un primer pago, toma su fecha; si no, usa la fecha de aprobación por defecto
+    fecha_inicial = primer_pago.fecha_pago.date() if primer_pago else cliente.fecha_aprobacion.date()
+    
+    monto_formateado = f"{int(cliente.monto):,}"
+    monto_pago_redondeado = round(monto_pago)  # Redondea al número entero más cercano
+    monto_pago_formateado = f"{int(monto_pago_redondeado):,}"
+
+    integrantes = []
+
+    if cliente.es_grupal:
+
+        grupo = cliente.grupo
+
+        integrantes = IntegranteGrupo.objects.filter(
+            grupo=grupo
+    ).select_related('cliente').order_by('-es_representante')
+ 
+    
+
+    context = {
+        "numero": cliente.id,  # Ajusta según tus campos
+        "nombre_acreditado": cliente.cliente.nombre,  # Ajusta según tus campos
+        "credito": monto_formateado,
+        "credito_letras": credito_en_letras,  # Aquí se coloca el crédito en letras
+        "numero_pagos": cliente.total_pagos,
+        "interes": cliente.tasa_interes,
+        "direccion": cliente.cliente.domicilio,
+        "direccion_aval": cliente.cliente.domicilio_aval,
+        "periodo": periodo, 
+        "periodo2": periodo2, 
+        "periodo3": periodo3,
+        "fecha_inicial": fecha_inicial,
+        "ciudad": cliente.cliente.municipio,
+        "estado": cliente.cliente.estado,
+        "nombre_aval": cliente.cliente.aval,  # Ajusta según tus campos
+        "clave": cliente.cliente.clave_elector,
+        "clave_aval": cliente.cliente.clave_elector_aval,
+        "monto_pago": monto_pago_formateado,  # Agregar monto_pago aquí
+        "monto_pago_en_letras":monto_pago_en_letras,
+        "fecha_actual": fecha_en_letras,  # Fecha actual en formato deseado
+        "telefono1": cliente.cliente.telefono,
+        "telefono2": cliente.cliente.telefono_aval,
+        "nombre_aval2": cliente.cliente.aval2,
+        "direccion_aval2": cliente.cliente.domicilio_aval2,
+        "telefono_aval2": cliente.cliente.telefono_aval2,
+        "es_grupal": cliente.es_grupal,
+        "integrantes": integrantes,
+  
+        # Agrega aquí más datos necesarios
+    }
+
+    html_string = render_to_string("pagare.html", context)
+    
+    pdf = HTML(string=html_string).write_pdf()
+
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="pagare.pdf"'
+    return response
+    
+def subir_archivo(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    if request.method == 'POST' and request.FILES.get('archivo'):
+        archivo_firmado = request.FILES['archivo']
+        prestamo.archivo_firmado = archivo_firmado
+        messages.success(request, "Subido correctamente")
+        prestamo.save()
+    
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+def eliminar_archivo(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    default_storage.delete(prestamo.archivo_firmado.path)  # Elimina el archivo del almacenamiento
+    prestamo.archivo_firmado = None
+    messages.success(request, "Eliminado correctamente")
+    prestamo.save()
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+def descargar_archivo(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    if prestamo.archivo_firmado:
+        response = FileResponse(prestamo.archivo_firmado.open('rb'), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{prestamo.archivo_firmado.name}"'
+        return response
+
+    return HttpResponse("No hay archivo disponible", status=404)
+
+def subir_pagare(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    if request.method == 'POST' and request.FILES.get('pagare'):
+        pagare = request.FILES['pagare']
+        prestamo.pagare = pagare
+        messages.success(request, "Subido correctamente")
+        prestamo.save()
+    
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+def eliminar_pagare(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    default_storage.delete(prestamo.pagare.path)  # Elimina el archivo del almacenamiento
+    prestamo.pagare = None
+    messages.success(request, "Eliminado correctamente")
+    prestamo.save()
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+def descargar_pagare(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    if prestamo.pagare:
+        response = FileResponse(prestamo.pagare.open('rb'), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{prestamo.pagare.name}"'
+        return response
+
+    return HttpResponse("No hay archivo disponible", status=404)
+
+def subir_informacion(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    if request.method == 'POST' and request.FILES.get('informacion'):
+        informacion = request.FILES['informacion']
+        prestamo.informacion = informacion
+        messages.success(request, "Subido correctamente")
+        prestamo.save()
+    
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+def eliminar_informacion(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    default_storage.delete(prestamo.informacion.path)  # Elimina el archivo del almacenamiento
+    prestamo.informacion = None
+    messages.success(request, "Eliminado correctamente")
+    prestamo.save()
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+def descargar_informacion(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    if prestamo.informacion:
+        response = FileResponse(prestamo.informacion.open('rb'), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{prestamo.informacion.name}"'
+        return response
+
+    return HttpResponse("No hay archivo disponible", status=404)
+
+def descargar_lista(request, prestamo_id):
+
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+
+    # Seguridad
+    if not prestamo.es_grupal:
+        return HttpResponse("Este préstamo no es grupal", status=403)
+
+    grupo = prestamo.grupo
+        # Total del préstamo grupal
+    monto_prestamo = prestamo.monto
+    # Número de integrantes reales (los que tienen préstamo)
+    total_integrantes = DetallePrestamoGrupal.objects.filter(
+        prestamo=prestamo
+    ).count()
+
+    # ✅ Calcular monto individual
+    monto_individual = (
+        monto_prestamo / Decimal(total_integrantes)
+    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # Ahorro general del préstamo
+    ahorro_prestamo = prestamo.ahorro or Decimal('0.00')
+
+    # 🔥 AQUÍ está lo importante
+    detalles = DetallePrestamoGrupal.objects.select_related(
+        'integrante__cliente'
+    ).filter(prestamo=prestamo).order_by(
+        '-integrante__es_representante'
+    )
+    total_pago_general = Decimal('0.00')
+    total_ahorro_general = Decimal('0.00')
+    total_total_general = Decimal('0.00')
+    total_monto_general = Decimal('0.00')
+
+    integrantes = []
+
+    for d in detalles:
+
+        monto_pago = d.monto   # ✅ ESTE ES EL MONTO REAL
+
+        total = monto_pago + ahorro_prestamo
+
+        total_pago_general += monto_pago
+        total_ahorro_general += ahorro_prestamo
+        total_total_general += total
+        total_monto_general += monto_individual
+
+        integrantes.append({
+            'cliente': d.integrante.cliente,
+            'monto_pago': monto_pago,
+            'ahorro': ahorro_prestamo,
+            'total_pago': total,
+            'monto_total': monto_individual,   # 👈 AQUÍ
+        })
+
+    context = {
+        'prestamo': prestamo,
+        'grupo': grupo,
+        'integrantes': integrantes,
+        'total_pago_general': total_pago_general,
+        'total_ahorro_general': total_ahorro_general,
+        'total_total_general': total_total_general,
+        'total_monto_general': total_monto_general,
+    }
+
+    html_string = render_to_string('lista_miembros.html', context)
+
+    pdf_file = HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri()
+    ).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'filename="lista_miembros_{prestamo.id}.pdf"'
+
+    return response

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+<title>{% block title %}Editar Gasto{% endblock %}</title>
+{% block content %}
+<link href="/static/css/signup.css" rel="stylesheet">
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="bg-white p-4 rounded-5 text-secondary shadow-lg" style="width: 100%; max-width: 500px;">
+  
+        <div class="text-center fs-1 fw-bold mb-4">Editar Gasto</div>
+  
+        <!-- Mostrar errores si existen -->
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+  
+        <!-- Formulario de gasto -->
+        <form method="POST" class="card-body">
+            {% csrf_token %}
+                       
+           <!-- Campo Monto -->
+<div class="mb-3">
+    <label for="monto" class="form-label">Monto:</label>
+    {{ form.monto }}  <!-- Django renderiza el campo con el widget configurado -->
+</div>
+
+
+            <!-- Campo Concepto -->
+            <div class="mb-3">
+                <label for="concepto" class="form-label">Concepto:</label>
+                <textarea name="concepto" id="concepto" class="form-control" placeholder="Descripción del gasto" required>{{ gastos.concepto }}</textarea>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="d-flex gap-2">
+                <a href="{% url 'Gastos' %}" class="btn btn-secondary text-white w-100 mt-3 fw-semibold shadow-sm">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary text-white w-100 mt-3 fw-semibold shadow-sm">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

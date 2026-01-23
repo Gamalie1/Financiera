@@ -25,6 +25,7 @@ SECRET_KEY = 'django-insecure-7+vr_0hb8ejvh4=fyb-y1t805%l!iwzouqy8ur2c)_qt8@y=y!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = []
 
 
@@ -41,7 +42,10 @@ INSTALLED_APPS = [
     'Clientes',
     'Prestamos',
     'Pagos',
-    'Simulador'
+    'Simulador',
+    'Grupos',
+    'Gastos',
+    'documentos',
 ]
 
 MIDDLEWARE = [

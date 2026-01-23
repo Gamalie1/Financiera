@@ -1,66 +1,186 @@
 {% extends 'base.html' %}
+<title>{% block title %}Registro clientes{% endblock %}</title>
 {% block content %}
-<link href="/static/css/registroClientes.css" rel="stylesheet">
+<link href="/static/css/registroClientes.css" rel="stylesheet" />
 <div class="form-container">
-    <div class="form-header text-center">
-        Registrar Cliente
+  <div class="form-header text-center">Registrar Cliente</div>
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Selección de Usuario -->
+    <div class="form-group mb-3">
+      <label for="id_usuario">Promotor</label>
+      {{ form.usuario }}
+      <!-- Esto debería generar correctamente el campo de usuario como un dropdown -->
+    </div>
+    <!-- Nombre -->
+    <div class="form-group mb-3">
+      <label for="id_nombre">Nombre de la persona</label>
+      <input
+        type="text"
+        class="form-control"
+        id="id_nombre"
+        name="nombre"
+        required
+      />
     </div>
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-         <!-- Selección de Usuario -->
-         <div class="form-group mb-3">
-            <label for="id_usuario">Promotor</label>
-            {{ form.usuario }}  <!-- Esto debería generar correctamente el campo de usuario como un dropdown -->
-        </div>
-        <!-- Nombre -->
-        <div class="form-group mb-3">
-            <label for="id_nombre">Nombre de la persona</label>
-            <input type="text" class="form-control" id="id_nombre" name="nombre"  required>
-        </div>
+    <!-- CURP -->
+    <div class="form-group mb-3">
+      <label for="id_curp">CURP</label>
+      <input type="text" class="form-control" id="id_curp" name="curp" />
+    </div>
 
-        <!-- Aval -->
-        <div class="form-group mb-3">
-            <label for="id_aval">Aval</label>
-            <input type="text" class="form-control" id="id_aval" name="aval"  required>
-        </div>
+    <!-- CLAVE ELECTOR -->
+    <div class="form-group mb-3">
+      <label for="clave_elector">Clave de elector</label>
+      <input
+        type="text"
+        class="form-control"
+        id="clave_elector"
+        name="clave_elector"
+      />
+    </div>
 
-        <!-- Teléfono -->
-        <div class="form-group mb-3">
-            <label for="id_telefono">Teléfono</label>
-            <input type="text" class="form-control" id="id_telefono" name="telefono"  required>
-        </div>
+    <!-- Teléfono -->
+    <div class="form-group mb-3">
+      <label for="id_telefono">Teléfono</label>
+      <input
+        type="text"
+        class="form-control"
+        id="id_telefono"
+        name="telefono"
+        required
+      />
+    </div>
 
-        <!-- Domicilio -->
-        <div class="form-group mb-3">
-            <label for="id_domicilio">Domicilio</label>
-            <textarea class="form-control" id="id_domicilio" name="domicilio" rows="4" required></textarea>
-        </div>
+    <!-- Domicilio -->
+    <div class="form-group mb-3">
+      <label for="id_domicilio">Domicilio</label>
+      <textarea
+        class="form-control"
+        id="id_domicilio"
+        name="domicilio"
+        rows="4"
+        required
+      ></textarea>
+    </div>
 
-        <!-- Trabajo -->
-        <div class="form-group mb-3">
-            <label for="id_trabajo">Trabajo</label>
-            <input type="text" class="form-control" id="id_trabajo" name="trabajo"  required>
-        </div>
+    <!-- Aval -->
+    <div class="form-group mb-3">
+      <label for="id_aval">Nombre del aval</label>
+      <input
+        type="text"
+        class="form-control"
+        id="id_aval"
+        name="aval"
+        required
+      />
+    </div>
 
-        <!-- INE (Imagen) -->
-        <div class="form-group mb-3">
-            <label for="id_ine">INE</label>
-            <input type="file" class="form-control-file" id="id_ine" name="ine" accept="image/*">
-        </div>
+    <div class="form-group mb-3">
+      <label for="clave_elector_aval">Clave de elector aval</label>
+      <input
+        type="text"
+        class="form-control"
+        id="clave_elector_aval"
+        name="clave_elector_aval"
+      />
+    </div>
 
-        <!-- CURP -->
-        <div class="form-group mb-3">
-            <label for="id_curp">CURP</label>
-            <input type="text" class="form-control" id="id_curp" name="curp" >
-        </div>
+    <!-- Domicilio -->
+    <div class="form-group mb-3">
+      <label for="domicilio_aval">Domicilio aval </label>
+      <textarea
+        class="form-control"
+        id="domicilio_aval"
+        name="domicilio_aval"
+        rows="4"
+        required
+      ></textarea>
+    </div>
+    <!-- Teléfono -->
+    <div class="form-group mb-3">
+      <label for="telefono_aval">Teléfono aval</label>
+      <input
+        type="text"
+        class="form-control"
+        id="telefono_aval"
+        name="telefono_aval"
+        required
+      />
+    </div>
 
-        <!-- Botones de acción -->
-        <div class="d-flex justify-content-between">
-            <a href="{% url 'principalClientes' %}" class="btn btn-cancel">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Registrar Cliente</button>
-        </div>
-    </form>
+    <!-- Aval 2 -->
+    <div class="form-group mb-3">
+      <label for="aval2">Nombre del aval 2</label>
+      <input type="text" class="form-control" id="aval2" name="aval2" />
+    </div>
+
+    <div class="form-group mb-3">
+      <label for="clave_elector_aval2">Clave de elector aval 2</label>
+      <input
+        type="text"
+        class="form-control"
+        id="clave_elector_aval2"
+        name="clave_elector_aval2"
+      />
+    </div>
+
+    <!-- Domicilio -->
+    <div class="form-group mb-3">
+      <label for="domicilio_aval2">Domicilio aval 2</label>
+      <textarea
+        class="form-control"
+        id="domicilio_aval2"
+        name="domicilio_aval2"
+        rows="4"
+      ></textarea>
+    </div>
+
+    <!-- Teléfono -->
+    <div class="form-group mb-3">
+      <label for="telefono_aval2">Teléfono aval 2</label>
+      <input
+        type="text"
+        class="form-control"
+        id="telefono_aval2"
+        name="telefono_aval2"
+      />
+    </div>
+
+    <!-- Municipio -->
+    <div class="form-group mb-3">
+      <label for="municipio">Municipio</label>
+      <input
+        type="text"
+        class="form-control"
+        id="municipio"
+        name="municipio"
+        required
+      />
+    </div>
+
+    <!-- Estado-->
+    <div class="form-group mb-3">
+      <label for="estado">Estado</label>
+      <input
+        type="estado"
+        class="form-control"
+        id="estado"
+        name="estado"
+        required
+      />
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-between">
+      <a href="{% url 'principalClientes' %}" class="btn btn-cancel"
+        >Cancelar</a
+      >
+      <button type="submit" class="btn btn-primary">Registrar Cliente</button>
+    </div>
+  </form>
 </div>
 {% endblock %}

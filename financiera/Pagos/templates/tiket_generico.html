@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+<title>{% block title %}Ticket generico{% endblock %}</title>
+{% block content %}
+{% load static %}
+
+<div class="container mt-5">
+    <div class="card shadow-lg p-4 mb-5 rounded">
+        <div class="card-header text-center">
+            <h3>Generar Comprobante de Pago</h3>
+        </div>
+        <div class="card-body">
+               <form method="POST" id="form_comprobante">
+                {% csrf_token %}
+                <!-- Campos del formulario -->
+                <div class="form-group mb-3">
+                    <label for="cliente" class="form-label">Nombre de cliente</label>
+                    <input type="text" class="form-control" id="cliente" name="cliente" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="monto" class="form-label">Monto en efectivo</label>
+                    <input type="number" class="form-control" id="monto" name="monto" step="0.01" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="numero_ticket" class="form-label">Número de Abono</label>
+                    <input type="text" class="form-control" id="numero_ticket" name="numero_ticket" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="fecha" class="form-label">Fecha</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha" required>
+                </div>
+
+                <!-- Botones -->
+                <div class="form-group mb-3 text-center">
+                    <button type="submit" class="btn btn-success btn-lg" id="guardar_btn">Guardar</button>
+                    <button type="button" class="btn btn-primary btn-lg ml-3" id="imprimir_btn">Imprimir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    // Cambiar la acción del formulario para "Imprimir"
+    document.getElementById("imprimir_btn").addEventListener("click", function() {
+        // Cambiar la URL de acción del formulario para el método de impresión
+        document.getElementById("form_comprobante").action = "{% url 'imprimir_ticket' %}";
+        // Enviar el formulario para generar el ticket en PDF
+        document.getElementById("form_comprobante").submit();
+    });
+
+    // Si el botón guardar se presiona, el formulario sigue con la acción de guardar
+    document.getElementById("guardar_btn").addEventListener("click", function() {
+        // Aquí no cambiamos la acción, porque será el formulario estándar
+        document.getElementById("form_comprobante").action = "{% url 'generar_ticket_generico' %}";
+    });
+</script>
+{% endblock %}

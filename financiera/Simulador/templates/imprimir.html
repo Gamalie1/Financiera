@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Proyección de Pagos</title>
+    <style>
+      @page {
+        margin: 20mm 15mm;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+
+      .container {
+        width: 90%;
+        margin: 0 auto;
+        page-break-inside: avoid;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 20px 0 10px;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin: 0 auto 20px;
+      }
+
+      .table th,
+      .table td {
+        border: 1px solid #000;
+        padding: 5px 8px;
+        text-align: left;
+      }
+
+      .table th {
+        background-color: #b47804;
+        color: black;
+      }
+
+      .header-table {
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .header-table td {
+        vertical-align: top;
+      }
+
+      .info-cell {
+        width: 70%;
+        text-align: left;
+        padding-right: 10px;
+      }
+      .table tr {
+        page-break-inside: avoid;
+      }
+
+      .img-cell {
+        width: 30%;
+        text-align: center;
+      }
+
+      .header img {
+        width: 100%;
+        max-width: 150px;
+        height: auto;
+      }
+      /* Estilo para el texto en negritas */
+      .negrita {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Tabla de información -->
+      <table class="table header-table">
+        <tr>
+          <th
+            colspan="2"
+            style="
+              background-color: #999999;
+              color: #000;
+              font-weight: bold;
+              text-align: center;
+            "
+          >
+            {{ nombre_cliente }}
+          </th>
+        </tr>
+        <tr>
+          <td class="info-cell">
+            <p><strong>Capital por prestar:</strong> ${{ capital }}</p>
+            <p><strong>Tasa de interés:</strong> {{ tasa }}%</p>
+            <p><strong>Número de pagos:</strong> {{ numPagos }}</p>
+            <p><strong>Fecha de Desembolso:</strong> {{ fecha }}</p>
+            <p><strong>Día de pago:</strong> {{ dias }}</p>
+            <p><strong>Garantía líquida:</strong> {{ garantiaValor }}%</p>
+            <p>
+              <strong>Monto de garantía líquida:</strong> ${{ garantiaLiquida }}
+            </p>
+            <p>
+              <strong>Aportación social como socio:</strong> ${{ aportacion }}
+            </p>
+          </td>
+          <td class="img-cell">
+            <img
+              src="{% static 'img/financiera2.png' %}"
+              alt="Logo"
+              class="header"
+            />
+          </td>
+        </tr>
+      </table>
+
+      <!-- Tabla de pagos (inmediatamente debajo) -->
+      <table class="table">
+        <thead>
+          <tr>
+            <th>PAGO</th>
+            <th>FECHA</th>
+            <th>SALDO CAPITAL</th>
+            <th>ABONO DE CAPITAL</th>
+            <th>PAGO DE INTERÉS</th>
+            {% if ahorroActivo %}
+            <th>AHORRO</th>
+            {% endif %}
+            <th>PAGO DE IVA DE INTERÉS</th>
+            <th>PAGO</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pago in pagos %}
+          <tr>
+            <td>{{ pago.numero_pago }}</td>
+            <td>{{ pago.fecha }}</td>
+            <td>${{ pago.saldo_capital }}</td>
+            <td>${{ pago.abono_capital|floatformat:0 }}</td>
+            {% if ahorroActivo %}
+            <td>${{ pago.ahorro }}</td>
+            {% endif %}
+            <td>${{ pago.pago_interes|floatformat:0 }}</td>
+            <td>${{ pago.pago_iva_interes|floatformat:0 }}</td>
+            <td>${{ pago.total_pago|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <!-- Frase al final en negritas -->
+      <p class="negrita">
+        En caso de que se llegue al último pago y no se cubra la deuda, en
+        automático se reestructura.
+      </p>
+    </div>
+  </body>
+</html>

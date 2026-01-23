@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Cliente
 from .forms import ClienteForm
 from django.contrib import messages
-
-
+from weasyprint import HTML
+from django.http import HttpResponse
+import tempfile
+from django.template.loader import render_to_string
 #Pagina principal
 def inicio_clientes(request):
      # Obtener todos los usuarios registrados

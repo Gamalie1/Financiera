@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante de Pago</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        @page {
+            size: A4;
+            margin: 25mm;
+        }
+
+        .ticket {
+            background-color: #fff;
+            padding: 25px;
+            border: 1px solid #000;
+            font-size: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .header img {
+            max-width: 180px;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 25px;
+        }
+
+        .info {
+            margin-bottom: 25px;
+        }
+
+        .info p {
+            margin: 10px 0;
+        }
+
+        .info .label {
+            font-weight: bold;
+            display: inline-block;
+            width: 260px;
+        }
+
+        .amount {
+            font-size: 18px;
+            font-weight: bold;
+            border: 1px solid #000;
+            display: inline-block;
+            padding: 6px 12px;
+            margin-top: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .separator {
+            border-top: 1px dashed #000;
+            margin: 40px 0;
+        }
+
+        .center {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .firma {
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .firma-line {
+            border-top: 1px solid #000;
+            width: 250px;
+            margin: 0 auto;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 13px;
+            color: #555;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket">
+        <div class="header">
+            <img src="{% static 'img/logo.png' %}" alt="Logo">
+            <div class="title">Comprobante de Pago</div>
+        </div>
+
+        <div class="info">
+            <p><span class="label">RECIBÍ DE LA C.:</span> {{ cliente }}</p>
+            <p><span class="label">LA CANTIDAD EN EFECTIVO DE:</span> 
+                <span class="amount">${{ monto|floatformat:2 }}</span>
+            </p>
+            <p><span class="label">EN LETRAS:</span> {{ monto_letras }}</p>
+            <p><span class="label">POR CONCEPTO DEL ABONO NÚMERO:</span> {{ numero_ticket }}</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <p class="center"><b>RECIBÍ DE CONFORMIDAD.</b></p>
+        <p class="center"><b>UNIÓN DE SOCIEDADES CIVILES FINANCIERAS.</b></p>
+
+        <div class="firma">
+            <img src="{% static 'img/firma.png' %}" alt="Firma" class="firma-img">
+            <p>Firma y Sello</p>
+        </div>
+
+        <div class="footer">
+            MIAHUATLÁN DE PORFIRIO DÍAZ, OAXACA A {{ fecha }}.
+        </div>
+    </div>
+</body>
+</html>

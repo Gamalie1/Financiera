@@ -1,0 +1,122 @@
+{% extends 'base.html' %} 
+<title>{% block title %}Grupo{% endblock %}</title> 
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="fas fa-users me-2"></i>
+        {{ grupo|default_if_none:"Crear Grupo" }}
+      </h4>
+    </div>
+
+    <div class="card-body">
+      <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-4">
+          <!-- Nombre del grupo -->
+          <div class="col-md-6">
+            <label for="id_nombre" class="form-label fw-bold">
+              Nombre del Grupo*
+            </label>
+            <div class="input-group input-group-lg has-validation">
+              <span class="input-group-text">
+                <i class="fas fa-users"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control py-3"
+                id="id_nombre"
+                name="nombre"
+                value="{{ grupo.nombre|default:'' }}"
+                placeholder="Ej. Grupo Primavera"
+                required
+              />
+              <div class="invalid-feedback">
+                El nombre del grupo es obligatorio.
+              </div>
+            </div>
+          </div>
+
+          <!-- Responsable -->
+                    <div class="col-md-6">
+                        <label for="id_responsable" class="form-label fw-bold">
+                            Responsable del Grupo
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <select
+                                class="form-select py-3"
+                                id="id_responsable"
+                                name="responsable"
+                            >
+                                <option value="">Seleccione un responsable</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}">
+                                        {{ cliente.nombre }} - {{ cliente.dni }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+          <!-- Descripción -->
+          <div class="col-md-12">
+            <label for="id_descripcion" class="form-label fw-bold">
+              Descripción
+            </label>
+            <div class="input-group input-group-lg">
+              <span class="input-group-text">
+                <i class="fas fa-align-left"></i>
+              </span>
+              <textarea
+                class="form-control py-3"
+                id="id_descripcion"
+                name="descripcion"
+                rows="4"
+                placeholder="Descripción del grupo (opcional)"
+              >
+    {{ grupo.descripcion|default:'' }}</textarea
+              >
+            </div>
+          </div>
+        </div>
+
+        
+                    <!-- Activo -->
+                    <div class="col-md-12">
+                        <div class="form-check form-switch mt-2">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="id_activo"
+                                name="activo"
+                                checked
+                            >
+                            <label class="form-check-label fw-bold" for="id_activo">
+                                Grupo activo
+                            </label>
+                        </div>
+                    </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-between mt-4">
+          <a
+            href="{% url 'crear-prestamo' %}"
+            class="btn btn-outline-secondary btn-lg"
+          >
+            <i class="fas fa-arrow-left me-2"></i>Cancelar
+          </a>
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-save me-2"></i>Guardar Grupo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

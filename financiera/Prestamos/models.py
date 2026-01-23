@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from Clientes.models import Cliente
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta  
+from datetime import timedelta
+from django.contrib.auth.models import User  # Importar el modelo User de Django
 
 class Prestamo(models.Model):
 
@@ -18,54 +20,47 @@ class Prestamo(models.Model):
         ('SEMANAL', 'Semanal'),
         ('MENSUAL', 'Mensual'),
     ]
+
+    ES_GRUPAL_CHOICES = [
+        (False, 'Individual'),
+        (True, 'Grupal')
+    ]
     
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='prestamos')
+    
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='prestamos', null=True, blank=True)
+    grupo = models.ForeignKey('Grupos.Grupo', on_delete=models.CASCADE, related_name='prestamos', null=True, blank=True)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
     tasa_interes = models.DecimalField(max_digits=5, decimal_places=2) 
-    tipo = models.CharField(
-        max_length=10,
-        choices=TIPO_CHOICES,
-        default='SEMANAL',
-        verbose_name="Tipo de pago"
-    )
-    total_pagos = models.IntegerField(
-        verbose_name="Total de pagos",
-        help_text="Número total de pagos a realizar según el tipo seleccionado"
-    )
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='SEMANAL', verbose_name="Tipo de pago")
+    total_pagos = models.IntegerField(verbose_name="Total de pagos", help_text="Número total de pagos a realizar según el tipo seleccionado")
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
     fecha_aprobacion = models.DateTimeField(null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='SOLICITADO')
-    iva_sobre_intereses = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0, 
-        verbose_name="IVA sobre intereses"
-    )
-    garantia_liquida = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        verbose_name="Garantía líquida"
-    )
-    aportacion_social = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        verbose_name="Aportación social"
-    )
+    iva_sobre_intereses = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="IVA sobre intereses")
+    garantia_liquida = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Garantía líquida")
+    aportacion_social = models.DecimalField( max_digits=12, decimal_places=2, default=0, verbose_name="Aportación social")
+    es_grupal = models.BooleanField( choices=ES_GRUPAL_CHOICES, default=False, verbose_name="Tipo de préstamo")
+     # Campo para el archivo firmado
+    archivo_firmado = models.FileField(upload_to='Prestamos/firmados/', null=True, blank=True, verbose_name="Archivo firmado")
+    pagare = models.FileField(upload_to='Prestamos/pagares/', null=True, blank=True, verbose_name="Pagare")
+    informacion = models.FileField(upload_to='Prestamos/informacions/', null=True, blank=True, verbose_name="informacion")
+    promotor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='Promotor')
+    ahorro = models.DecimalField(max_digits=10,decimal_places=2,default=0,verbose_name="Ahorro por periodo")
+    folio = models.CharField(max_length=50,verbose_name="Folio de solicitud",null=True)
+    pago_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
 
     def __str__(self):
         return f"Préstamo #{self.id} - {self.cliente.nombre}"
     
-    @property
-    def tasa_periodo(self):
-        """Calcula la tasa de interés efectiva según el periodo"""
-        if self.tipo == 'SEMANAL':
-            # Tasa semanal efectiva: (1 + tasa_anual)^(1/52) - 1
-            return (Decimal(1) + self.tasa_interes/Decimal(100))**(Decimal(1)/Decimal(52)) - Decimal(1)
-        else:
-            # Tasa mensual efectiva: (1 + tasa_anual)^(1/12) - 1
-            return (Decimal(1) + self.tasa_interes/Decimal(100))**(Decimal(1)/Decimal(12)) - Decimal(1)
+    def clean(self):
+        """Valida que el préstamo tenga cliente O grupo, pero no ambos"""
+        if not self.cliente and not self.grupo:
+            raise ValidationError("Debe especificar un cliente o un grupo.")
+        if self.cliente and self.grupo:
+            raise ValidationError("Un préstamo no puede ser individual y grupal simultáneamente.")
+        self.es_grupal = bool(self.grupo) # Actualiza el campo es_grupal según la presencia del grupo
+
     
     @property
     def cuota(self):
@@ -101,12 +96,16 @@ class Prestamo(models.Model):
             return self.fecha_aprobacion + relativedelta(months=self.total_pagos)
     
     def save(self, *args, **kwargs):
-        """Maneja fechas de aprobación"""
+        """Maneja fechas de aprobación y genera los pagos"""
         if self.estado == 'APROBADO' and not self.fecha_aprobacion:
-            self.fecha_aprobacion = timezone.now()
+            # Si el estado es 'APROBADO' pero no se ha asignado fecha_aprobacion,
+            # asignamos la fecha que el usuario ha proporcionado en el formulario
+            if self.fecha_aprobacion is None:  # Aseguramos que no sobrescriba si ya tiene valor
+                pass  # No hacemos nada si ya tiene una fecha de aprobación asignada
         elif self.estado != 'APROBADO':
-            self.fecha_aprobacion = None
+            self.fecha_aprobacion = None  # Si no está aprobado, eliminamos la fecha de aprobación
         super().save(*args, **kwargs)
+
 
     @property
     def total_pagado(self):
@@ -130,20 +129,115 @@ class Prestamo(models.Model):
  
     @property
     def tasa_periodo(self):
-        """Convierte la tasa mensual a tasa periódica según el tipo de préstamo"""
-        tasa_mensual = self.tasa_interes / Decimal(100)  # Convertir porcentaje a decimal
+        """Calcula la tasa de interés efectiva según el periodo"""
+        tasa_anual = self.tasa_interes / Decimal(100)  # Convertir la tasa anual a decimal
         
         if self.tipo == 'SEMANAL':
-            # Convertir tasa mensual a semanal: (1 + tasa_mensual)^(1/4) - 1
-            return (Decimal(1) + tasa_mensual)**(Decimal(1)/Decimal(4)) - Decimal(1)
+            # Convertir tasa anual a semanal: (1 + tasa_anual)^(1/52) - 1
+            return (Decimal(1) + tasa_anual)**(Decimal(1)/Decimal(52)) - Decimal(1)
         else:
-            # Mantener tasa mensual directamente
-            return tasa_mensual
+            # Mantener tasa mensual directamente (tasa anual / 12)
+            return tasa_anual / Decimal(12)
+
+    def generar_pagos(self):
+        from Pagos.models import Pago  # Importación dentro de la función
+        """Genera y guarda los pagos en la base de datos basados en el tipo de pago"""
+
+        # Verificar que el campo iva_sobre_intereses esté disponible y tenga el valor esperado
+        print(f"IVA sobre intereses: {self.iva_sobre_intereses}")  # Verificar valor del IVA
+
+        # Recibiendo los valores del préstamo y asegurando que todo sea de tipo Decimal
+        monto = Decimal(self.monto)
+        tasa_interes = Decimal(self.tasa_interes) / Decimal('100')  # Convertir a porcentaje
+        iva_porcentaje = Decimal(self.iva_sobre_intereses) / Decimal('100')
+        total_pagos = self.total_pagos
+        tipo_pago = self.tipo  # 'SEMANAL' o 'MENSUAL'
+        ahorro_por_pago = Decimal(self.ahorro or 0)
+        pago_final_manual = Decimal(self.pago_final or 0)
+
+        # Calcular componentes fijos de cada pago
+        abono_capital_base = Decimal(monto / total_pagos)  # Abono a capital por pago
+        interes_por_periodo = Decimal(monto * tasa_interes)  # Interés fijo por cada pago
+        iva_por_periodo = Decimal(interes_por_periodo * iva_porcentaje)  # IVA sobre el interés
+        cuota_base = abono_capital_base + interes_por_periodo + iva_por_periodo  # Cuota total por pago
+
+        # Generar fechas de pagos
+        fechas_pagos = []
+        if self.fecha_aprobacion:
+            fecha_base = self.fecha_aprobacion.date()
+            dia_prestamo = fecha_base.weekday()  # Día de la semana de la fecha de aprobación
+
+            # Primer pago
+            if tipo_pago == 'SEMANAL':
+                fecha_pago = fecha_base + relativedelta(weeks=1)
+            else:
+                fecha_pago = fecha_base + timedelta(days=30)
+
+            for _ in range(total_pagos):
+
+                # Ajustar siempre al mismo día de la semana que el préstamo
+                diferencia = dia_prestamo - fecha_pago.weekday()
+                fecha_ajustada = fecha_pago + timedelta(days=diferencia)
+
+                fechas_pagos.append(fecha_ajustada)
+
+                # Siguiente fecha
+                if tipo_pago == 'SEMANAL':
+                    fecha_pago += relativedelta(weeks=1)
+                else:
+                    fecha_pago += timedelta(days=30)
+
+
+
+        responsable = self.promotor  # aquí tomamos el responsable desde el préstamo
+
+        # Generar los pagos en la base de datos
+        for i, fecha_pago in enumerate(fechas_pagos):
+           
+            if pago_final_manual > 0:
+
+                monto_total_pago = pago_final_manual
+
+            else:
+
+                abono_capital = abono_capital_base
+                interes = interes_por_periodo
+                iva = iva_por_periodo
+
+                cuota = abono_capital + interes + iva
+
+                monto_total_pago = cuota + ahorro_por_pago 
+
+            Pago.objects.create(
+                prestamo=self,
+                fecha_pago=fecha_pago,
+                monto_pago=round(monto_total_pago, 0),
+                numero_pago=i + 1,
+                cobrador_asignado=responsable
+            )
+
+
+    def save(self, *args, **kwargs):
+        """Maneja fechas de aprobación y genera los pagos"""
+        
+        if self.estado == 'APROBADO' and not self.fecha_aprobacion:
+            # Si el préstamo está aprobado y no tiene fecha de aprobación, asignamos la fecha actual
+            self.fecha_aprobacion = timezone.now()
+
+        if self.estado == 'APROBADO' and self.fecha_aprobacion:
+            # Llamamos a generar_pagos si el préstamo está aprobado y tiene fecha de aprobación
+            self.generar_pagos()
+
+        elif self.estado != 'APROBADO':
+            # Si el préstamo no está aprobado, eliminamos la fecha de aprobación
+            self.fecha_aprobacion = None 
+
+        # Guardamos el objeto Prestamo después de procesar la fecha y generar pagos
+        super().save(*args, **kwargs)
 
     
-  
-
     class Meta:
         verbose_name = "Préstamo"
         verbose_name_plural = "Préstamos"
         ordering = ['-fecha_solicitud']
+        

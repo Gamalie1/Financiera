@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Editar pago{% endblock %}</title>
 {% block content %}
 
 <link href="/static/css/signup.css" rel="stylesheet">
@@ -16,10 +17,9 @@
         <form method="post" class="card-body">
             {% csrf_token %}
             
-            <!-- Campo Préstamo -->
-            <div class="mb-3">
+            <div class="mb-3" style="display:none;">
                 <label for="prestamo_id" class="form-label">Préstamo:</label>
-                <select name="prestamo_id" id="prestamo_id" class="form-control" required>
+                <select name="prestamo_id" id="prestamo_id" class="form-control">
                     {% for prestamo in prestamos %}
                     <option value="{{ prestamo.id }}" {% if prestamo.id == pago.prestamo.id %}selected{% endif %}>
                         Préstamo #{{ prestamo.id }}
@@ -30,16 +30,27 @@
             
             <!-- Campo Monto -->
             <div class="mb-3">
-                <label for="monto_pago" class="form-label">Monto:</label>
-                <input type="number" name="monto_pago" id="monto_pago" class="form-control" 
-                value="{{ pago.monto_pago|stringformat:'.2f' }}" step="0.01" min="0" placeholder="Ingrese el monto" required>
+                <label for="monto_pagado" class="form-label">Monto:</label>
+                <input type="number" name="monto_pagado" id="monto_pago" class="form-control" 
+                value="{{ pago.monto_pagado|stringformat:'.2f' }}" step="0.01" min="0" placeholder="Ingrese el monto" required>
             </div>
           
             <!-- Campo Fecha -->
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="fecha_pago" class="form-label">Fecha:</label>
                 <input type="date" name="fecha_pago" id="fecha_pago" class="form-control"
-                       value="{{ pago.fecha_pago|date:'Y-m-d' }}" required>
+                       value="{{ pago.fecha_pago|date:'Y-m-d' }}" >
+            </div>
+            <div class="mb-3">
+                <label for="fecha_programada" class="form-label">Fecha:</label>
+                <input 
+                    type="date" 
+                    name="fecha_programada" 
+                    id="fecha_programada" 
+                    class="form-control"
+                    value="{{ pago.fecha_programada|date:'Y-m-d' }}"
+                    required
+                >
             </div>
             
             <!-- Campo Método de Pago -->
@@ -57,7 +68,7 @@
             
             <!-- Botones de acción -->
             <div class="d-flex gap-2">
-                <a href="{% url 'pagos' %}" class="btn btn-secondary text-white w-100 mt-3 fw-semibold shadow-sm">
+                <a href="{% url 'detalle_pago' prestamo.pk %}" class="btn btn-secondary text-white w-100 mt-3 fw-semibold shadow-sm">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary text-white w-100 mt-3 fw-semibold shadow-sm">

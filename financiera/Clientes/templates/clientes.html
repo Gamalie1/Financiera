@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Clientes{% endblock %}</title>
 {% block content %}
 <!-- Custom styles for this template-->
 <link href="/static/css/usuarios.css" rel="stylesheet">
@@ -40,7 +41,7 @@
                                 <td>{{ cliente.usuario.first_name }}</td>  <!-- Cambié 'Clientes' por 'cliente' -->
                                 <td>
                                     <ul class="action-list">
-                                        <li><a href="{% url 'editarCliente' cliente_id=cliente.id %}" data-tip="edit"><i class="fa fa-edit"></i></a> Editar</li>
+                                        <li><a href="{% url 'editarCliente' cliente_id=cliente.id %}" data-tip="edit"><i class="fa fa-edit"></i> Editar</li>
                                         <li><a href="#" data-tip="delete" onclick="eliminarRegistro({{ cliente.id }})"><i class="fa fa-trash"></i> Eliminar</li>
                                     </ul>
                                 </td>

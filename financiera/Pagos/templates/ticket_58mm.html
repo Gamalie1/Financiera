@@ -1,0 +1,157 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comprobante de Pago</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      @page {
+        size: 80mm;
+        margin: 0;
+      }
+
+      .ticket {
+        width: 100%;
+        padding: 5mm;
+        font-size: 18px; /* Aumentar tamaño de la fuente */
+        line-height: 1.25;
+      }
+
+      .center {
+        text-align: center;
+      }
+
+      .right {
+        text-align: right;
+      }
+
+      .bold {
+        font-weight: bold;
+      }
+
+      .sep {
+        border-top: 1px dashed #000;
+        margin: 6px 0;
+      }
+
+      .logo {
+        width: 32mm; /* Logo pequeño para 80mm */
+        max-width: 100%;
+      }
+
+      .h1 {
+        font-size: 20px; /* Aumentar tamaño del título */
+        font-weight: bold;
+        text-transform: uppercase;
+        margin: 2px 0 4px 0;
+      }
+
+      .muted {
+        color: #333;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .mt2 {
+        margin-top: 2px;
+      }
+
+      .mb2 {
+        margin-bottom: 2px;
+      }
+
+      .small {
+        font-size: 14px; /* Aumentar el tamaño de las letras pequeñas */
+      }
+
+      .box {
+        border: 1px solid #000;
+        padding: 5px 8px; /* Aumentar el padding para que el monto destaque */
+        display: inline-block;
+        font-size: 18px; /* Tamaño grande para el monto */
+      }
+
+      .no-break {
+        page-break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ticket">
+      <!-- Encabezado Empresa -->
+      <div class="center no-break">
+        <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo" />
+        <div class="h1">COMPROBANTE</div>
+        <div class="h1">DE PAGO</div>
+        <div class="bold">UNIÓN DE</div>
+        <div class="bold">SOCIEDADES</div>
+        <div class="bold">CIVILES</div>
+        <div class="bold">FINANCIERAS</div>
+        <div class="small">Calle 5 de febrero #414,</div>
+        <div class="small">Centro Miahuatlán de</div>
+        <div class="small">Porfirio Díaz, Oaxaca</div>
+        <div class="small">Tel. 951 391 2292</div>
+        <div class="small">Tel. 951 641 1118</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="small mt2">
+        <span class="bold">FECHA</span> {{ fecha_corta }}
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Cliente y Concepto -->
+      <div class="no-break">
+        <div class="mb2"><span class="bold">RECIBÍ DE LA C.</span></div>
+        <div class="mb2">{{ cliente }}</div>
+        <div class="mb2"><span class="bold">CONCEPTO</span> {{ concepto }}</div>
+      </div>
+
+      <!-- Monto -->
+      <div class="no-break mt2">
+        <div class="mb2"><span class="bold">LA CANTIDAD DE</span></div>
+        <div class="box bold">${{ monto }}</div>
+        <div class="mt2"><span class="bold">{{ monto_letras }}</span></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Conformidad y firma -->
+      <div class="center no-break">
+        <div class="bold">RECIBÍ DE</div>
+        <div class="bold">CONFORMIDAD</div>
+        <div class="bold">UNIÓN DE</div>
+        <div class="bold">SOCIEDADES</div>
+        <div class="bold">CIVILES</div>
+        <div class="bold">FINANCIERAS</div>
+        <div
+          style="
+            margin: 14px auto 2px auto;
+            width: 32mm;
+            border-top: 1px solid #000;
+          "
+        ></div>
+        <div class="firma">
+          <img
+            src="{% static 'img/firma.png' %}"
+            alt="Firma"
+            class="firma-img"
+          />
+        </div>
+        <div class="small">Firma y sello</div>
+      </div>
+    </div>
+  </body>
+</html>

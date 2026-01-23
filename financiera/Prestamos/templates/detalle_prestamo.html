@@ -1,193 +1,607 @@
 <!-- templates/prestamos/detalle_prestamo.html -->
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block content %}
+<style>
+  /* Mejorando los botones */
+  .btn {
+    transition: all 0.3s ease; /* Transición suave */
+    border-radius: 5px; /* Bordes redondeados */
+    padding: 8px 16px; /* Aumento del tamaño del botón */
+  }
 
-{% block content %}
+  .btn-sm {
+    font-size: 14px; /* Aumentar legibilidad */
+  }
+
+  .btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+  }
+
+  .btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b; /* Mejor contraste al hacer hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  }
+
+  .btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+  }
+
+  .btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+  }
+
+  .btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+  }
+
+  .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Ajuste en la alineación y espaciado de los botones */
+  .card-body {
+    padding: 16px;
+  }
+
+  .d-flex {
+    justify-content: flex-start;
+    gap: 12px; /* Espacio entre los botones */
+  }
+
+  .col-md-4 {
+    padding: 10px;
+  }
+
+  /* Mejora en la apariencia de los iconos */
+  .fa-download {
+    margin-right: 8px; /* Espacio entre el icono y el texto */
+  }
+
+  /* Botones de archivo subir */
+  .form-control-file {
+    display: none;
+  }
+</style>
 <div class="container py-4">
-    <div class="card shadow mb-4">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="mb-0">Detalle del Préstamo #{{ prestamo.id }}</h3>
-                <a href="{% url 'principalPrestamos' %}" class="btn btn-light btn-sm">
-                    <i class="fa fa-arrow-left"></i> Volver
-                </a>
-            </div>
-        </div>
-        
-        <div class="card-body">
-            <!-- Información general del préstamo -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <h5>Información del Préstamo</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <strong>Cliente:</strong> {{ prestamo.cliente.nombre }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Monto:</strong> ${{ prestamo.monto|floatformat:2 }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Tasa interés:</strong> {{ prestamo.tasa_interes }}%
-                        </li>
-                        <li class="list-group-item">
-                            <strong>IVA sobre intereses:</strong> {{ prestamo.iva_sobre_intereses }}%
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="col-md-4">
-                    <h5>Datos del Plan</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <strong>Total de Pagos:</strong> {{ prestamo.total_pagos }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Frecuencia:</strong> {{ prestamo.get_tipo_display }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Solicitud:</strong> {{ prestamo.fecha_solicitud|date:"d/m/Y" }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Finalización Estimada:</strong> 
-                            {% if prestamo.fecha_finalizacion %}
-                                {{ prestamo.fecha_finalizacion|date:"d/m/Y" }}
-                            {% else %}
-                                Por definir
-                            {% endif %}
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="col-md-4">
-                    <h5>Estado Actual</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <strong>Estado:</strong>
-                            <span class="badge 
-                                {% if prestamo.estado == 'APROBADO' %}bg-success
-                                {% elif prestamo.estado == 'RECHAZADO' %}bg-danger
-                                {% else %}bg-warning{% endif %}">
-                                {{ prestamo.get_estado_display }}
-                            </span>
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Pagado:</strong> ${{ total_pagado|floatformat:2 }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Pendiente:</strong> ${{ saldo_pendiente|floatformat:2 }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Próximo Pago:</strong> 
-                            {% if prestamo.proximo_pago %}
-                                {{ prestamo.proximo_pago|date:"d/m/Y" }}
-                            {% else %}
-                                Sin pagos pendientes
-                            {% endif %}
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Resumen de pagos -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">Resumen de Pagos</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-success">
-                                <strong>Total Pagado:</strong> ${{ total_pagado|floatformat:2 }}
-                            </div>
-                            <div class="alert alert-warning">
-                                <strong>Saldo Pendiente:</strong> ${{ saldo_pendiente|floatformat:2 }}
-                            </div>
-                            <div class="alert alert-danger">
-                                <strong>Multas por Atraso:</strong> ${{ multa_total|floatformat:2 }}
-                            </div>
-                            <div class="alert alert-secondary">
-                                <strong>Costos Adicionales:</strong>
-                                <ul class="mb-0">
-                                    <li>Garantía: ${{ garantia_monto|floatformat:2 }}</li>
-                                    <li>Aportación Social: ${{ prestamo.aportacion_social|floatformat:2 }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">Desglose Financiero</h5>
-                        </div>
-                        <div class="card-body">
-                            <dl class="row mb-0">
-                                <dt class="col-6">Monto original:</dt>
-                                <dd class="col-6 text-end">${{ prestamo.monto|floatformat:2 }}</dd>
-                                
-                                <dt class="col-6">Total intereses:</dt>
-                                <dd class="col-6 text-end">${{ total_intereses|floatformat:2 }}</dd>
-                                
-                                <dt class="col-6">IVA sobre intereses ({{ prestamo.iva_sobre_intereses }}%):</dt>
-                                <dd class="col-6 text-end">${{ total_iva|floatformat:2 }}</dd>
-                                
-                                <dt class="col-6">Total a pagar:</dt>
-                                <dd class="col-6 text-end">${{ total_a_pagar|floatformat:2 }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tabla de detalle de pagos -->
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Detalle de Pagos ({{ prestamo.get_tipo_display }})</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th># Pago</th>
-                                    <th>Fecha Programada</th>
-                                    <th class="text-end">Cuota</th>
-                                    <th class="text-end">Capital</th>
-                                    <th class="text-end">Interés</th>
-                                    <th class="text-end">IVA</th>
-                                    <th>Estado</th>
-                                    <th class="text-end">Días Atraso</th>
-                                    <th class="text-end">Multa</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pago in detalle_pagos %}
-                                <tr class="{% if pago.realizado %}table-success{% elif pago.dias_atraso > 0 %}table-danger{% else %}table-warning{% endif %}">
-                                    <td>{{ pago.numero }}/{{ prestamo.total_pagos }}</td>
-                                    <td>{{ pago.fecha_programada|date:"d/m/Y" }}</td>
-                                    <td class="text-end">${{ pago.total|floatformat:2 }}</td>                                    <td class="text-end">${{ pago.abono_capital|floatformat:2 }}</td>
-                                    <td class="text-end">${{ pago.interes|floatformat:2 }}</td>
-                                    <td class="text-end">${{ pago.iva|floatformat:2 }}</td>
-                                    <td>
-                                        {% if pago.realizado %}
-                                            <span class="badge bg-success">Pagado</span>
-                                            <small class="text-muted d-block">{{ pago.pago.fecha_pago|date:"d/m/Y" }}</small>
-                                        {% elif pago.dias_atraso > 0 %}
-                                            <span class="badge bg-danger">Atrasado</span>
-                                        {% else %}
-                                            <span class="badge bg-warning text-dark">Pendiente</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">{{ pago.dias_atraso }}</td>
-                                    <td class="text-end">${{ pago.multa|floatformat:2 }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Detalle del Préstamo #{{ prestamo.id }}</h3>
+        <a href="{% url 'principalPrestamos' %}" class="btn btn-light btn-sm">
+          <i class="fa fa-arrow-left"></i> Volver
+        </a>
+      </div>
     </div>
+
+    <div class="card-body">
+      {% if user.is_staff %}
+      <!-- Información general del préstamo -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <h5>Información del Préstamo</h5>
+          <ul class="list-group">
+            <li class="list-group-item">
+              <strong>Cliente:</strong> {{ prestamo.cliente.nombre }}
+            </li>
+            <li class="list-group-item">
+              <strong>Monto:</strong> ${{ prestamo.monto|floatformat:2 }}
+            </li>
+            <li class="list-group-item">
+              <strong>Tasa interés:</strong> {{ prestamo.tasa_interes }}%
+            </li>
+            <li class="list-group-item">
+              <strong>IVA sobre intereses:</strong> 
+              {{ prestamo.iva_sobre_intereses }}%
+            </li>
+          </ul>
+        </div>
+
+        <div class="col-md-4">
+          <h5>Datos del Plan</h5>
+          <ul class="list-group">
+            <li class="list-group-item">
+              <strong>Total de Pagos:</strong> {{ prestamo.total_pagos }}
+            </li>
+            <li class="list-group-item">
+              <strong>Frecuencia:</strong> {{ prestamo.get_tipo_display }}
+            </li>
+            <li class="list-group-item">
+              <strong>Solicitud:</strong> 
+              {{ prestamo.fecha_solicitud|date:"d/m/Y" }}
+            </li>
+            <li class="list-group-item">
+              <strong>Finalización Estimada:</strong>
+              {% if prestamo.fecha_finalizacion %} 
+              {{ prestamo.fecha_finalizacion|date:"d/m/Y" }} {% else %} Por definir
+              {% endif %}
+            </li>
+          </ul>
+        </div>
+
+        <div class="col-md-4">
+          <h5>Estado Actual</h5>
+          <ul class="list-group">
+            <li class="list-group-item">
+              <strong>Estado:</strong>
+              <span
+                class="badge {% if prestamo.estado == 'APROBADO' %}bg-success {% elif prestamo.estado == 'RECHAZADO' %}bg-danger {% else %}bg-warning{% endif %}"
+              >
+                {{ prestamo.get_estado_display }}
+              </span>
+            </li>
+            <li class="list-group-item">
+              <strong>Pagado:</strong> ${{ total_pagado|floatformat:2 }}
+            </li>
+            <li class="list-group-item">
+              <strong>Pendiente:</strong> ${{ saldo_pendiente|floatformat:2 }}
+            </li>
+            <li class="list-group-item">
+              <strong>Próximo Pago:</strong>
+              {% if prestamo.proximo_pago %} 
+              {{ prestamo.proximo_pago|date:"d/m/Y" }} 
+              {% else %} 
+              Sin pagos pendientes {% endif %}
+            </li>
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Resumen de pagos -->
+      {% if user.is_staff %}
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">Resumen de Pagos</h5>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-success">
+                <strong>Total Pagado:</strong> ${{ total_pagado|floatformat:2 }}
+              </div>
+              <div class="alert alert-warning">
+                <strong>Saldo Pendiente:</strong> 
+                ${{ saldo_pendiente|floatformat:2 }}
+              </div>
+              <div class="alert alert-danger">
+                <strong>Multas por Atraso:</strong> 
+                ${{ multa_total|floatformat:2 }}
+              </div>
+              <div class="alert alert-secondary">
+                <strong>Costos Adicionales:</strong>
+                <ul class="mb-0">
+                  <li>Garantía: ${{ garantia_monto|floatformat:2 }}</li>
+                  <li>
+                    Aportación Social: 
+                    ${{ prestamo.aportacion_social|floatformat:2 }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">Desglose Financiero</h5>
+            </div>
+            <div class="card-body">
+              <dl class="row mb-0">
+                <dt class="col-6">Monto original:</dt>
+                <dd class="col-6 text-end">
+                  ${{ prestamo.monto|floatformat:2 }}
+                </dd>
+
+                <dt class="col-6">Total intereses:</dt>
+                <dd class="col-6 text-end">
+                  ${{ total_intereses|floatformat:2 }}
+                </dd>
+
+                <dt class="col-6">
+                  IVA sobre intereses ({{ prestamo.iva_sobre_intereses }}%):
+                </dt>
+                <dd class="col-6 text-end">${{ total_iva|floatformat:2 }}</dd>
+
+                <dt class="col-6">Total a pagar:</dt>
+                <dd class="col-6 text-end">
+                  ${{ total_a_pagar|floatformat:2 }}
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <div class="card-body"></div>
+      <div class="card-body">
+        <!-- Sección de Subir Documentos -->
+        <div class="col-md-12 mt-4">
+          <h5>Documentos Relacionados</h5>
+          <div class="row">
+            <!-- Contrato -->
+            {% if user.is_staff %}
+            <div class="col-md-4 mb-3">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h6>Contrato</h6>
+                </div>
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <a
+                      href="{% url 'contrato_pdf' prestamo.id %}"
+                      class="btn btn-warning btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                    <form
+                      action="{% url 'subir_archivo' prestamo.id %}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      class="d-inline"
+                    >
+                      {% csrf_token %}
+                      <input
+                        type="file"
+                        name="archivo"
+                        class="form-control-file d-none"
+                        id="fileInputArchivo{{ prestamo.id }}"
+                        onchange="this.form.submit()"
+                      />
+                      <label
+                        for="fileInputArchivo{{ prestamo.id }}"
+                        class="btn btn-info btn-block d-flex align-items-center justify-content-center"
+                      >
+                        <i class="fa fa-upload mr-2"></i> Subir
+                      </label>
+                    </form>
+                  </div>
+                  {% if prestamo.archivo_firmado %}
+                  <div class="mt-2">
+                    <a
+                      href="{% url 'descargar_archivo' prestamo.id %}"
+                      class="btn btn-success btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                    <a
+                      href="#"
+                      class="btn btn-danger btn-block d-flex align-items-center justify-content-center"
+                      onclick="eliminarArchivo({{ prestamo.id }})"
+                    >
+                      <i class="fa fa-trash mr-2"></i> Eliminar
+                    </a>
+                  </div>
+                  {% else %}
+                  <span class="text-muted">No hay archivo</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endif %} {% if user.is_staff %}
+            <!-- Pagaré -->
+            <div class="col-md-4 mb-3">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h6>Pagaré</h6>
+                </div>
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <a
+                      href="{% url 'pagare_pdf' prestamo.id %}"
+                      class="btn btn-warning btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                    <form
+                      action="{% url 'subir_pagare' prestamo.id %}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      class="d-inline"
+                    >
+                      {% csrf_token %}
+                      <input
+                        type="file"
+                        name="pagare"
+                        class="form-control-file d-none"
+                        id="fileInputPagare{{ prestamo.id }}"
+                        onchange="this.form.submit()"
+                      />
+                      <label
+                        for="fileInputPagare{{ prestamo.id }}"
+                        class="btn btn-info btn-block d-flex align-items-center justify-content-center"
+                      >
+                        <i class="fa fa-upload mr-2"></i> Subir
+                      </label>
+                    </form>
+                  </div>
+                  {% if prestamo.pagare %}
+                  <div class="mt-2">
+                    <a
+                      href="{% url 'descargar_pagare' prestamo.id %}"
+                      class="btn btn-success btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                    <a
+                      href="#"
+                      class="btn btn-danger btn-block d-flex align-items-center justify-content-center"
+                      onclick="eliminarPagare({{ prestamo.id }})"
+                    >
+                      <i class="fa fa-trash mr-2"></i> Eliminar
+                    </a>
+                  </div>
+                  {% else %}
+                  <span class="text-muted">No hay archivo</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Información Adicional -->
+            <div class="col-md-4 mb-3">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h6>Información Adicional</h6>
+                </div>
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <form
+                      action="{% url 'subir_informacion' prestamo.id %}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      class="d-inline"
+                    >
+                      {% csrf_token %}
+                      <input
+                        type="file"
+                        name="informacion"
+                        class="form-control-file d-none"
+                        id="fileInputInformacion{{ prestamo.id }}"
+                        onchange="this.form.submit()"
+                      />
+                      {% if user.is_staff %}
+                      <label
+                        for="fileInputInformacion{{ prestamo.id }}"
+                        class="btn btn-info btn-block d-flex align-items-center justify-content-center"
+                      >
+                        <i class="fa fa-upload mr-2"></i> Subir
+                      </label>
+                      {% endif %}
+                    </form>
+                  </div>
+                  {% if prestamo.informacion %}
+                  <div class="mt-2">
+                    <a
+                      href="{% url 'descargar_informacion' prestamo.id %}"
+                      class="btn btn-success btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                    {% if user.is_staff %}
+                    <a
+                      href="#"
+                      class="btn btn-danger btn-block d-flex align-items-center justify-content-center"
+                      onclick="eliminarInformacion({{ prestamo.id }})"
+                    >
+                      <i class="fa fa-trash mr-2"></i> Eliminar
+                    </a>
+                    {% endif %}
+                  </div>
+                  {% else %}
+                  <span class="text-muted">No hay archivo</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- INVITACIÓN EXTRAJUDICIAL -->
+            <div class="col-md-4 mb-3">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h6>Invitación Extrajudicial</h6>
+                </div>
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <a
+                      href="{% url 'invitacion_pdf' prestamo.id %}"
+                      class="btn btn-warning btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Liquidación de Crédito -->
+            <div class="col-md-4 mb-3">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h6>Liquidación de Crédito</h6>
+                </div>
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <a
+                      href="{% url 'liquidacion_pdf' prestamo.id %}"
+                      class="btn btn-warning btn-block d-flex align-items-center justify-content-center"
+                    >
+                      <i class="fa fa-download mr-2"></i> Descargar
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {% if prestamo.es_grupal %}
+        <!-- LISTA DE MIEMBROS -->
+            <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-header bg-primary text-white">
+              <h6>Lista de Miembros del Grupo</h6>
+            </div>
+
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <a
+                  href="{% url 'descargar_lista' prestamo.id %}"
+                  class="btn btn-success btn-block d-flex align-items-center justify-content-center"
+                >
+                  <i class="fa fa-users mr-2"></i> Descargar
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+          </div>
+        </div>
+      </div>
+       </div>
+
+      
+
+      <!-- Tabla de detalle de pagos -->
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            Detalle de Pagos ({{ prestamo.get_tipo_display }})
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="thead-light">
+                <tr>
+                  <th># Pago</th>
+                  <th>Fecha Programada</th>
+                  <th class="text-end">Saldo Capital</th>
+                  <th class="text-end">Abono Capital</th>
+                  <th class="text-end">Pago Interés</th>
+                  <th class="text-end">IVA</th>
+                  <th class="text-end">Pago</th>
+                  <th>Estado</th>
+                  <th class="text-end">Días Atraso</th>
+                  <th class="text-end">Multa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pago in detalle_pagos %}
+                <tr
+                  class="{% if pago.realizado %}table-success{% elif pago.dias_atraso > 0 %}table-danger{% else %}table-warning{% endif %}"
+                >
+                  <td>{{ pago.numero }}/{{ prestamo.total_pagos }}</td>
+                  <td>{{ pago.fecha_programada_letras }}</td>
+                  <td class="text-end">${{ prestamo.monto|floatformat:2 }}</td>
+                  <td class="text-end">
+                    ${{ pago.abono_capital|floatformat:2 }}
+                  </td>
+                  <td class="text-end">${{ pago.interes|floatformat:2 }}</td>
+                  <td class="text-end">${{ pago.iva|floatformat:2 }}</td>
+                  <td class="text-end">${{ pago.total|floatformat:2 }}</td>
+                  <td>
+                    {% if pago.estado_pago == 'pagado' %}
+                    <span class="badge bg-success">Pagado</span>
+                    <small class="text-muted d-block"
+                      >{{ pago.fecha_pago|date:"d/m/Y" }}</small
+                    >
+                    {% elif pago.dias_transcurridos > 0 %}
+                    <span class="badge bg-danger">Atrasado</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Pendiente</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">{{ pago.dias_atraso }}</td>
+                  <td class="text-end">${{ pago.multa|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+  function eliminarArchivo(id) {
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás deshacer esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/Prestamos/eliminar-archivo/" + id + "/";
+      }
+    });
+  }
+
+  function eliminarPagare(id) {
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás deshacer esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/Prestamos/eliminar-pagare/" + id + "/";
+      }
+    });
+  }
+
+  function eliminarInformacion(id) {
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás deshacer esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/Prestamos/eliminar-informacion/" + id + "/";
+      }
+    });
+  }
+</script>
+
 {% endblock %}

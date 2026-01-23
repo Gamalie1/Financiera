@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Pagos{% endblock %}</title>
 {% block content %}
 
 <link href="/static/css/usuarios.css" rel="stylesheet">
@@ -9,14 +10,7 @@
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col col-sm-3 col-xs-12">
-                            <h4 class="title">Listado <span>de Pagos</span></h4>
-                        </div>
-                        <div class="col-sm-9 col-xs-12 text-right">
-                            <div class="btn_group">
-                                <a href="{% url 'createPago' %}" class="btn btn-sm btn-primary pull-left">
-                                    <i class="fa fa-plus-circle"></i> Nuevo Pago
-                                </a>
-                            </div>
+                            <h4 class="title">Listado <span>de prestamos</span></h4>
                         </div>
                     </div>
                 </div>
@@ -25,31 +19,23 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Préstamo</th>
-                                <th>Monto</th>
-                                <th>Fecha</th>
-                                <th>Método</th>
+                                <th>Cliente</th>
+                                <th>Estatus</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for pago in pagos %}
+                            {% for prestamo in prestamos %}
                             <tr>
-                                <td>{{ pago.id }}</td>
-                                <td>{{ pago.prestamo.id }}</td>
-                                <td>${{ pago.monto_pago|floatformat:2 }}</td>
-                                <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
-                                <td>{{ pago.metodo_pago }}</td>
-                                <td>
+                                <td>{{ prestamo.id  }}</td>
+                                <td>{{ prestamo.cliente.nombre }}</td>
+                                <td>{{ prestamo.estado }}</td>
+                                 <td>
                                     <ul class="action-list">
-                                        <li><a href="{% url 'editar' pago.id %}" class="btn btn-sm btn-warning" data-tip="edit">
-                                            <i class="fa fa-edit"></i> Editar
-                                        </a></li>
-                                        <li><a href="#" class="btn btn-sm btn-danger" data-tip="delete" onclick="eliminarRegistros({{pago.id}})">
-                                            <i class="fa fa-trash"></i> Eliminar
-                                        </a></li>
+                                        <li><a href="{% url 'detalle_pago' prestamo.pk %}" data-tip="view"><i class="fa fa-eye"></i></a> Ver</li>
                                     </ul>
                                 </td>
+                     
                             </tr>
                             {% empty %}
                             <tr>

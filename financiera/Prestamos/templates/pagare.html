@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 50px;
+      }
+      .titulo {
+        text-align: center;
+        font-weight: bold;
+        font-size: 18pt;
+      }
+      .subtitulo {
+        display: flex;
+        justify-content: space-between; /* Espacia los elementos entre sí */
+        align-items: center; /* Alinea los elementos verticalmente al centro */
+      }
+      .contenido {
+        font-size: 11pt;
+        text-align: justify;
+      }
+      .rojo {
+        color: #d90000;
+        font-weight: bold;
+      }
+      .centrado {
+        text-align: center;
+      }
+      .firmas {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .firma-box {
+        width: 48%;
+        border: 1px solid #fff;
+        padding: 10px;
+        font-size: 10pt;
+      }
+      .firma-box .sub {
+        margin-top: 30px;
+        text-align: center;
+      }
+      .subrayado {
+        text-decoration: underline;
+      }
+      .firmas {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+
+      .firma-box {
+        width: 48%;
+        padding: 10px;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+        font-size: 12px;
+        page-break-inside: avoid;
+      }
+
+      .sub {
+        text-align: center;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="titulo">P A G A R E</div>
+    <p class="subtitulo">
+      <span class="numero-pagare">Pagaré No. {{ numero }}</span>
+      <span class="bueno-por"
+        >Bueno por: <strong class="subrayado">${{ credito }}.00</strong></span
+      >
+    </p>
+
+    <p class="contenido">
+      Por este <strong>pagaré</strong>
+      {% if es_grupal %} nos obligamos {% else%} me obligo {% endif %}
+      incondicionalmente a pagar a la orden de
+      <strong
+        >“UNIÓN DE SOCIEDADES CIVILES FINANCIERAS” SOCIEDAD CIVIL.,</strong
+      >
+      en el domicilio
+      <strong class="subrayado"
+        >calle 5 de febrero número 414, Centro, Miahuatlan de Porfirio Diaz,
+        Oaxaca, CP:7005</strong
+      >, o en cualquier otro que se me requiera, la cantidad de
+      <strong class="subrayado"
+        >${{ credito }}.00 ({{ credito_letras }} 00/100 M.N)</strong
+      >
+      valor que he recibido en efectivo a mi entera satisfacción y que nos
+      obligamos a cubrir en <strong class="subrayado">{{ periodo }}</strong>,
+      vencidos y sucesivos, cada uno por la cantidad de
+      <strong class="subrayado"
+        >$ {{ monto_pago }}.00 ({{ monto_pago_en_letras }}) 00/100 M.N</strong
+      >, en la fecha de cada pago, debiendo realizar<strong class="subrayado">
+        el primer pago el día
+      </strong>
+      <strong class="subrayado">{{ fecha_inicial }}</strong>. Obligándonos a
+      pagar un
+      <strong class="subrayado"
+        >interés ordinario {{ periodo2 }} de {{ interes }}%</strong
+      >
+      que deberá pagarse con cada abono {{ periodo2 }} incluyendo el IVA
+      correspondiente. , y para el caso de incumplimiento un
+      <strong class="subrayado"
+        >interés moratorio de 10% sobre saldo insoluto.</strong
+      >
+    </p>
+
+    <p class="contenido">
+      El incumplimiento en el pago de dos mensualidades, da derecho al tenedor a
+      exigir anticipadamente el cumplimiento del saldo insoluto y sus
+      accesorios.
+    </p>
+    <p class="contenido">
+      Suscrito en Miahuatlán de Porfirio Díaz, Oaxaca, {{ fecha_actual }}.
+    </p>
+
+    {% if es_grupal %}
+
+    <div class="firmas">
+      {% for integrante in integrantes %}
+      <div class="firma-box">
+        <strong>
+          {% if integrante.es_representante %} EL SUSCRIPTOR {% else %} AVAL
+          {%endif %} </strong
+        ><br />
+
+        Nombre: {{ integrante.cliente.nombre }}<br />
+        Domicilio: {{ integrante.cliente.domicilio }}<br />
+        Teléfono: {{ integrante.cliente.telefono }}<br />
+
+        <div class="sub">
+          Acepto<br /><br />
+          ___________________________<br />
+          Firma
+        </div>
+      </div>
+
+      {% endfor %}
+    </div>
+
+    {% else %}
+
+    <!-- 🔹 INDIVIDUAL NORMAL -->
+
+    <div class="firmas">
+      <div class="firma-box">
+        <strong>EL SUSCRIPTOR</strong><br />
+        Nombre: {{ nombre_acreditado }}<br />
+        Domicilio: {{ direccion }}<br />
+        Teléfono: {{ telefono1 }}<br />
+
+        <div class="sub">
+          Acepto<br /><br />
+          ___________________________<br />
+          Firma
+        </div>
+      </div>
+
+      <div class="firma-box">
+        <strong>EL AVAL</strong><br />
+        Nombre: {{ nombre_aval }}<br />
+        Domicilio: {{ direccion_aval }}<br />
+        Teléfono: {{ telefono2 }}<br />
+
+        <div class="sub">
+          Acepto<br /><br />
+          ___________________________<br />
+          Firma
+        </div>
+      </div>
+    </div>
+
+    {% if nombre_aval2 %}
+    <div class="firmas">
+      <div class="firma-box">
+        <strong>EL AVAL 2</strong><br />
+        Nombre: {{ nombre_aval2 }}<br />
+        Domicilio: {{ direccion_aval2 }}<br />
+        Teléfono: {{ telefono_aval2 }}<br />
+
+        <div class="sub">
+          Acepto<br /><br />
+          ___________________________<br />
+          Firma
+        </div>
+      </div>
+    </div>
+    {% endif %} {% endif %}
+  </body>
+</html>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Registro usuarios{% endblock %}</title>
 {% block content %}
 <link href="/static/css/signup.css" rel="stylesheet">
 <div class="d-flex justify-content-center align-items-center vh-100">
@@ -34,14 +35,10 @@
             </div>
   
             <!-- Tipo de usuario (ocupación) -->
-            <div class="form-group mb-3">
-                <label for="ocupacion" class="form-label">Tipo de usuario:</label>
-                <select id="ocupacion" name="ocupacion" class="form-control" required>
-                    <option value="psicologa">Administrador</option>
-                    <option value="maestra">Empleado</option>
-                </select>
-            </div>
-        
+            <select id="tipo_usuario" name="tipo_usuario" class="form-control" required>
+                <option value="admin" {% if tipo_usuario == 'admin' %}selected{% endif %}>Administrador</option>
+                <option value="empleado" {% if tipo_usuario == 'empleado' %}selected{% endif %}>Empleado</option>
+            </select>
             <!-- Correo electrónico -->
             <div class="mb-3">
                 <label for="email" class="form-label">Correo electrónico:</label>

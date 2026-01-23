@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Contrato de Crédito</title>
+    <style>
+      @page {
+        margin: 25mm 20mm;
+        @bottom-right {
+          content: "Página " counter(page) " de " counter(pages);
+          font-size: 15px;
+        }
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        font-size: 12px;
+        line-height: 1.6;
+        text-align: justify;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1,
+      h2 {
+        text-align: center;
+        margin: 10px 0;
+      }
+
+      .referenciado {
+        font-weight: normal;
+        text-align: justify;
+      }
+
+      .centrado {
+        text-align: center;
+        font-weight: bold;
+        margin-top: 20px;
+      }
+
+      .alineado-izquierda {
+        text-align: left;
+        margin-top: 10px;
+        font-weight: bold;
+      }
+
+      table {
+        width: 100%;
+        border: 1px solid #000;
+        border-collapse: collapse;
+        margin: 15px 0;
+      }
+
+      table th,
+      table td {
+        border: 1px solid #000;
+        padding: 6px;
+      }
+
+      table th {
+        background-color: #999999;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .firma {
+        margin-top: 50px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .firma div {
+        width: 45%;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="centrado">{{ titulo_contrato }}</div>
+
+    <p class="referenciado">
+      <strong>
+        CONTRATO DE APERTURA DE CRÉDITO SIMPLE QUE CELEBRAN “UNIÓN DE SOCIEDADES
+        CIVILES FINANCIERAS”, SOCIEDAD CIVIL., A QUIEN EN LO SUCESIVO SE
+        DESIGNARÁ COMO EL “EL ACREDITANTE”; Y POR OTRA PARTE EL SOCIO(A) CUYOS
+        DATOS APARECEN REGISTRADOS EN LA SOLICITUD DE CRÉDITO:
+        <u>{{ folio }}</u>, EN LO SUCESIVO EL “ACREDITADO”, ASÍ COMO LA(S)
+        PERSONA(S) CUYO(S) NOMBRE(S) SE SEÑALA(N) EN LA REFERIDA SOLICITUD DE
+        CREDITO, COMO AVAL(ES) SOLIDARIO(S) A LO SUBSECUENTE EL (LOS)
+        “OBLIGADO”(S) DE A CONFORMIDAD CON LAS SIGUIENTES DECLARACIONES Y
+        CLÁUSULAS.</strong
+      >
+    </p>
+
+    <div class="centrado">D E C L A R A C I O N E S</div>
+
+    <div class="alineado-izquierda">I.- DECLARA "EL ACREDITANTE":</div>
+    <p class="referenciado">
+      A. Que es una persona moral con personalidad jurídica y patrimonio propio,
+      lucrativa, organizada socialmente, con base en principios de
+      territorialidad, acción gremial, solidaridad y ayuda mutua, de intereses
+      comunes y con el propósito de satisfacer las necesidades individuales y
+      colectivas de sus socios.
+    </p>
+    <p class="referenciado">
+      B. La sociedad tendrá por objeto preponderante propiciar el ahorro y el
+      apoyo crediticio para el desarrollo de las actividades productivas del
+      sector rural a favor de sus socios, pudiendo recibir donativos y apoyos de
+      los Gobiernos, Federales, Estatales y Municipales.
+    </p>
+    <p class="referenciado">
+      C. Su representante acredita la legal existencia de su representada con el
+      acta y bases constitutivas, mediante el instrumento número seis mil
+      setecientos cuarenta y cuatro, volumen ciento veintiocho, de fecha 7 de
+      noviembre del año 2024, ante la fe de la Licenciada Gabriela Benítez
+      Castillejos, Notario Publico Numero Noventa y Dos, con funciones en el
+      Estado de Oaxaca.
+    </p>
+    <p class="referenciado">
+      D. El domicilio social de la Sociedad estará ubicado en calle 5 de febrero
+      número 414, Centro, Miahuatlan de Porfirio Diaz, Oaxaca 7005 y podrá
+      establecer sucursales, agencias y oficinas en otros lugares del Estado, de
+      la República Mexicana o el extranjero, o pactar domicilios convencionales,
+      sin que por ello se entienda cambio su domicilio social.
+    </p>
+
+    <div class="alineado-izquierda">II.- DECLARA EL ACREDITANTE QUE:</div>
+    <p class="referenciado">
+      a) Que ha presentado solicitud de ingreso a “EL ACREDITANTE” y que su
+      nombre y datos generales son los que han quedado establecidos en la
+      solicitud de crédito, carátula y encabezado de este contrato y cuenta con
+      la capacidad legal suficiente para celebrar el presente contrato como en
+      este acto, libremente lo hace.
+    </p>
+    <p class="referenciado">
+      b) Se encuentra inscrito en el Registro Federal de Contribuyentes con
+      Cédula Fiscal USC2411071M0 y se encuentra al corriente en el cumplimiento
+      de sus obligaciones fiscales.
+    </p>
+    <p class="referenciado">
+      c) Previo a la firma del presente instrumento, solicitó a “EL
+      ACREDITANTE”, el otorgamiento de un Crédito Individual por la cantidad
+      señalada en la cláusula primera de este contrato, para destinarlo al fin
+      indicado en la carátula de este contrato.
+    </p>
+    <p class="referenciado">
+      d) La información personal que ha presentado a “EL ACREDITANTE” para el
+      otorgamiento de este crédito, refleja de manera exacta su situación
+      económica.
+    </p>
+    <p class="referenciado">
+      e) No tiene conocimiento de procedimiento contencioso que se haya iniciado
+      en su contra, que afecte en forma adversa su patrimonio, bienes o
+      situación jurídica, en perjuicio de la validez o exigibilidad de este
+      contrato.
+    </p>
+    <p class="referenciado">
+      f) Ha exhibido copias de los documentos que se relacionan a continuación:
+      1. Documento comprobatorio de su domicilio; 2. Identificación Oficial con
+      fotografía; 3. Comprobante de Ingresos o declaratoria de ingresos.
+    </p>
+    <p class="referenciado">
+      g) Previo a la celebración del presente contrato, "EL ACREDITANTE" le
+      informó que en términos de lo dispuesto por la Ley General de
+      Organizaciones y Actividades Auxiliares del Crédito y Ley para la
+      Transparencia y Ordenamiento de los Servicios Financieros; los términos,
+      condiciones y contenido del presente contrato, están elaborados de acuerdo
+      a dicha normativa y en ese tenor de acuerdo a lo establecido, le fue
+      entregada la siguiente información:
+    </p>
+    <!-- Información adicional que deseas agregar -->
+    <p>
+      <strong>I)</strong> Los términos, condiciones, contenido y alcances
+      aplicables al crédito solicitado; así como, los documentos que deberán
+      suscribir, cargos, comisiones y gastos que se generarán, por la
+      celebración de este contrato; así como los montos y plazos para pagarlos.
+    </p>
+
+    <p>
+      <strong>II)</strong> El monto de la contraprestación a favor de "EL
+      ACREDITANTE"; el número de pagos parciales que deberán realizar, la forma
+      y periodicidad para liquidarlos; las cargas financieras; los accesorios; y
+      el derecho que tiene para liquidar anticipadamente el presente crédito y
+      las condiciones para ello;
+    </p>
+
+    <p class="referenciado">
+      Por lo anterior, las partes se obligan al tenor de las siguientes:
+    </p>
+    <div class="centrado">CLAUSULAS:</div>
+    <div class="alineado-izquierda">TÍTULO I. "DE LA APERTURA DE CRÉDITO".</div>
+    <p class="referenciado">
+      PRIMERA: <strong>Apertura de Crédito.</strong> En términos de lo dispuesto
+      por el Artículo 291 de la Ley General de Títulos y Operaciones de Crédito;
+      "El Acreditante" otorga en favor del Acreditado un Crédito Simple por la
+      cantidad de ${{ credito }}.00 ({{credito_en_letras}} 00/100 M.N) quedando
+      obligado el Acreditado a restituir esta cantidad a "El Acreditante".
+      Dentro de esta cantidad no quedan comprendidos los intereses, gastos y
+      demás accesorios que deba cubrir el Acreditado por la utilización del
+      presente crédito.
+    </p>
+    <div class="alineado-izquierda">TÍTULO II. "DEL CRÉDITO INDIVIDUAL".</div>
+    <p class="referenciado">
+      SEGUNDA: <strong>Disposición.</strong>- El Acreditado dispondrá del
+      crédito concedido en una sola exhibición. Los asientos contables y estados
+      de cuenta que emita "El Acreditante"; así como, los demás documentos que
+      éste obtenga con motivo de la entrega o abono a cuenta del Acreditado,
+      harán prueba plena de las disposiciones efectuadas del crédito.
+    </p>
+    <div class="alineado-izquierda">
+      TÍTULO III. "DE LOS PAGOS DEL ACREDITADO".
+    </div>
+    <div class="alineado-izquierda">A) FORMA Y LUGAR DE PAGO.</div>
+    <p class="referenciado">
+      TERCERA: <strong>Amortización.</strong>- El Acreditado se obliga:
+    </p>
+    <p class="referenciado">
+      a) A restituir a "El Acreditante" la cantidad de ${{ credito }}.00
+      ({{credito_en_letras}} 00/100 M.N) más el pago de intereses ordinarios y
+      demás accesorios que se causen, mediante amortizaciones de al calendario
+      de amortización adjunto.
+    </p>
+    <p class="referenciado">
+      b) A pagar a "El Acreditante" el capital, los intereses y demás accesorios
+      que se deriven de este contrato, en moneda nacional, en efectivo ; en las
+      oficinas de "El Acreditante", ubicado en calle 5 de febrero número 414,
+      Centro, Miahuatlan de Porfirio Diaz, Oaxaca 7005 o bien, en cualquier otra
+      sucursal o establecimiento que previamente le autorice el Acreditante.
+    </p>
+    <p class="referenciado">
+      "El Acreditante" tendrá la facultad de designar otro lugar de pago, previo
+      aviso que por escrito del Acreditado.
+    </p>
+
+    <p class="referenciado">
+      El Acreditado deberá efectuar los pagos a "El Acreditante", el día hábil
+      inmediato posterior a cada uno de los días de pago, si cualquiera de ellos
+      es inhábil. La falta de pago o falta de pago oportuno por parte de El
+      Acreditado en cualquiera de las fechas de amortización establecidas en la
+      presente cláusula, será causa especial de rescisión del contrato y
+      generará el derecho de "El Acreditante" para dar por vencidos
+      anticipadamente los plazos de las subsecuentes amortizaciones, siendo
+      exigible el monto total de los saldos insolutos desde el momento en que se
+      incurra en moratoria de pago de cualquier amortización.
+    </p>
+    <div class="alineado-izquierda">B) "DOMICILIACIÓN".</div>
+    <p class="referenciado">
+      CUARTA.-<strong>"Pagos Referenciados".</strong>- No obstante lo pactado en
+      la Cláusula TERCERA anterior, las partes convienen de manera especial que
+      en principio o como primera opción, El Acreditado deberá pagar a La
+      Sociedad, el importe de las amortizaciones en forma de a cuenta del
+      capital e intereses del crédito objeto presente, mediante pagos
+      referenciados o transferencia bancaria a la cuenta bancaria No. del banco.
+      El acreditado acepta que en caso de incumplimiento a lo aquí pactado será
+      causa especial de rescisión de contrato, por lo que se tendrán por
+      vencidas anticipadamente las amortizaciones pendientes, siendo exigibles
+      la totalidad del crédito otorgado.
+    </p>
+    <p class="referenciado">
+      En caso de suscitarse algún imprevisto a lo establecido en el párrafo
+      inmediato anterior, el Acreditado quedará obligado a efectuar los pagos
+      directamente a "El Acreditante" en términos de lo dispuesto por el inciso
+      b) de la cláusula TERCERA inmediata anterior.
+    </p>
+    <div class="alineado-izquierda">C) INTERESES</div>
+    <p class="referenciado">
+      QUINTA.- <strong>INTERESES</strong>.- El Acreditado se obliga a pagar a
+      “El Acreditante”, en forma, intereses ordinarios, a razón de una tasa
+      mensual del {{interes}}% sobre monto otorgado. Los intereses serán
+      calculados sobre la base de treinta días y serán pagaderos por
+      mensualidades vencidas conjuntamente. La tasa pactada se aplicará a los
+      días efectivamente transcurridos en el período de cómputo de intereses; y
+      su pago no podrá ser exigido por adelantado, sino únicamente por períodos
+      vencidos.
+    </p>
+    <p class="referenciado">
+      La tasa pactada se aplicará a los días efectivamente transcurridos en el
+      período de cómputo de intereses; y su pago no podrá ser exigido por
+      adelantado, sino únicamente por periodos vencidos. Si el Acreditado
+      incurre en mora en el pago de las amortizaciones pactadas, así como de
+      cualquier otra obligación a su cargo, que se cause por el crédito aquí
+      formalizado, "El Acreditante" aplicará intereses moratorios a la cantidad
+      no pagada a partir de la fecha en que debió ser cubierta y hasta la fecha
+      de su pago total a la tasa de interés moratoria anual a razón de 10.00%.
+    </p>
+    <p class="referenciado">
+      Los intereses moratorios se causarán sobre cualquier obligación
+      patrimonial a cargo del Acreditado que no fuera pagada oportunamente,
+      total o parcialmente por el Acreditado, en los términos del presente
+      contrato. Así mismo, las partes convienen que en caso de que el Acreditado
+      presente una moratoria de pago mayor a treinta días; el Acreditante estará
+      facultado para capitalizar exclusivamente dichos intereses moratorios y
+      los subsecuentes que se generen por cada periodo de treinta días naturales
+      en moratoria de pago.
+    </p>
+    <div class="alineado-izquierda">TÍTULO IV. "DE LAS GARANTÍAS DE PAGO"</div>
+    <div class="alineado-izquierda">A) "GARANTÍA(S)"</div>
+    <p class="referenciado">
+      <strong>SEXTA.- </strong><strong>Garantias(s).-</strong> Sin perjuicio de
+      la obligación que expresamente asume el Acreditado de responder con sus
+      bienes, presentes o futuros, del cumplimiento de las obligaciones que
+      contrae por virtud de este contrato; El Acreditado constituye en este acto
+      la(s) garantías(s) a satisfacción de "El Acreditante", señaladas en la
+      solicitud de crédito y carátula del presente contrato.
+    </p>
+    <p class="referenciado">
+      La(s) garantía(s) constituida(s) en los términos anteriores durará(n)
+      mientras permanezcan insolutos, en todo o en parte, el capital o sus
+      intereses. El Acreditado manifiesta su conformidad en que no habrá
+      disminución de garantías por la reducción del crédito.
+    </p>
+    <p class="referenciado">
+      <strong>SEPTIMA.- Obligación Solidaria.</strong> El(los) Obligado (s) se
+      obliga(n) solidaria e ilimitadamente en favor del Acreditante, por todas y
+      cada una de las obligaciones a cargo de los Acreditados, asumidas en este
+      instrumento, conviniendo desde ahora expresamente en no invocar por
+      ninguna causa ni motivo la división de la deuda, renunciando al efecto en
+      cuanto pudiere favorecerle lo dispuesto en el artículo 1989 del Código
+      Civil Federal, el cual señala que cada uno de los acreedores o todos
+      juntos pueden exigir de todos los deudores solidarios o de cualquiera de
+      ellos, el pago total o parcial de la deuda. Si reclaman todo de uno de los
+      deudores y resultare insolvente pueden reclamarlo de los demás o de
+      cualquiera de ellos, aplicable supletoriamente por lo que el Acreditante
+      podrá exigirles la totalidad de lo adeudado a cada uno de ellos.
+    </p>
+    <div class="alineado-izquierda">
+      TÍTULO V. "TERMINACIÓN, MODIFICACIÓN Y VENCIMIENTO ANTICIPADO"
+    </div>
+    <p class="referenciado">
+      <strong>OCTAVA.- Terminación.-</strong> El presente contrato se dará por
+      terminado EL DIA 18 DE NOVIEMBRE 2025, sin perjuicio de la obligación que
+      tiene el Acreditado de pagar los saldos insolutos que del crédito
+      existieren al vencimiento de cada disposición o de los pagarés suscritos
+      en los términos de este contrato.
+    </p>
+    <p class="referenciado">
+      <strong>NOVENA.-Modificación.-</strong> "El Acreditante" podrá modificar
+      el presente contrato de Adhesión en lo que se considere, mediante
+      notificación al Acreditado y que se realice con cuarenta días naturales de
+      anticipación a la entrada en vigor de la modificación, a través de un
+      aviso inserto en el estado de cuenta correspondiente al crédito, en el que
+      se incluyan las modificaciones a realizar.
+    </p>
+    <p class="referenciado">
+      En el evento de que el Acreditado no esté de acuerdo con las
+      modificaciones propuestas, podrá solicitar a "El Acreditante" la
+      terminación del Contrato de Adhesión dentro de los 60 días naturales
+      inmediatos posteriores a la fecha señalada para la entrada en vigor de
+      dichas modificaciones, sin responsabilidad ni comisión especial alguna a
+      su cargo; lo anterior, sin perjuicio de la obligación que tienen de cubrir
+      los adeudos que ya se hubieren generado a la fecha en que el Acreditado
+      solicite la terminación del contrato por este supuesto.
+    </p>
+    <p class="referenciado">
+      Una vez transcurrido el plazo establecido en el párrafo inmediato
+      anterior, sin que "El Acreditante" haya recibido comunicación alguna por
+      parte del Acreditado, se tendrán por aceptadas las modificaciones al
+      contrato.
+    </p>
+    <p class="referenciado">
+      El Acreditado en cualquier tiempo podrá solicitar la emisión de su estado
+      de cuenta en las sucursales u oficinas de atención a "El Acreditante".
+    </p>
+    <p class="referenciado">
+      <strong>DÉCIMA.- Obligaciones de Hacer.-</strong> El Acreditado, se obliga
+      de manera expresa, durante la vigencia del presente instrumento o en tanto
+      exista saldo insoluto del crédito, al cumplimiento de las obligaciones
+      siguientes:
+    </p>
+    <p class="referenciado">
+      a) Proporcionar el mismo tratamiento a "El Acreditante" que a sus demás
+      acreedores presentes o futuros.
+    </p>
+
+    <p class="referenciado">
+      b) El Acreditado deberá informar con oportunidad a "El Acreditante" de
+      cualquier acto o hecho que pueda afectar la recuperación del crédito, así
+      como del posible incumplimiento en los casos en que el propio Acreditado
+      conozca que no podrá cumplir en tiempo con sus obligaciones de dar o
+      hacer, para lo cual deberá solicitar una prórroga para cumplirlas. En
+      dicha solicitud deberá señalar las causas que originen dichos
+      incumplimientos, las acciones y los tiempos que tomarán para subsanarlos,
+      en el entendido de que el acreditante se reserva el derecho de otorgar al
+      Acreditado la prórroga antes indicada.
+    </p>
+
+    <p class="referenciado">
+      c) Las demás anexas y conexas que se desprendan de este instrumento, sus
+      anexos o la ley.
+    </p>
+    <p class="referenciado">
+      d) Todos los gastos que se originen con la ejecución del presente contrato
+      serán a cargo y por cuenta exclusiva del Acreditado, incluyendo los gastos
+      registrales y judiciales que en su caso se lleguen a ocasionar.
+    </p>
+
+    <p class="referenciado">
+      <strong>DÉCIMA PRIMERA.-Incremento de Costos.-</strong> Si durante la
+      vigencia de este contrato, las autoridades competentes emiten
+      disposiciones legales de carácter general, aplicables a créditos como el
+      que se formaliza en este contrato, emiten algún requerimiento específico
+      en la relación al crédito que en este contrato se otorga, y de ellos se
+      deriva un incremento en los costos del crédito, “El Acreditante”, mediante
+      notificación por escrito hará del conocimiento del Acreditado dicho
+      evento, con el objeto de que en un plazo de treinta días naturales,
+      contados a partir de la notificación, las partes negocien el pago
+      correspondiente para cubrir los costos que se generen por la aplicación de
+      dichas disposiciones o requerimientos, durante su vigencia.
+    </p>
+    <p class="referenciado">
+      <strong>DÉCIMA SEGUNDA.- Buró de Crédito.-</strong> El Acreditado
+      expresamente autoriza al Acreditante en términos de lo dispuesto por los
+      artículos 28 y 29 de la Ley General para Regular a las sociedades de
+      Información Crediticia, para que en cualquier momento solicite y
+      proporcione información crediticia a cualquiera de las sociedades de
+      información crediticia o a cualquier Entidad gubernamental que se lo
+      requiera; y a que utilice cualquier otro medio que considere pertinente
+      para obtener información de su historial crediticio y verificar la
+      información asentada en el presente contrato.
+    </p>
+    <p class="referenciado">
+      <strong>DÉCIMA TERCERA.- Legislación, jurisdicción y Competencia.-</strong
+      >Para el cumplimiento e interpretación del presente contrato, las partes
+      se somenten expresamente a la legislación mercantil vigente en la
+      República Mexicana y a la jurisdicción de los tribunales competentes de la
+      Ciudad de Oaxaca, Oax., renunciando expresamente a cualquier otro fuero
+      que por razón de sus domicilios presentes o futuros pudiere
+      corresponderles. Leído que fue el presente contrato, por quienes en el
+      mismo intervienen, enteradas del contenido y alcance de las cláusulas,
+      manifiestan que no existe error, dolo, violencia o engaño que vicie su
+      consentimiento, por lo que lo firman de conformidad el presente contrato
+      por duplicado al calce y al margen para constancia y para todos los
+      efectos que haya lugar, en Miahuatlán de Porfirio Díaz, Oax. el
+      {{fecha_en_letras }}.
+    </p>
+
+    <!-- Esta es la frase centrada entre las dos secciones -->
+    <div style="text-align: center; margin: 20px 0">
+      <strong>El (los) Acreditado(s)</strong>
+    </div>
+
+    <!-- Puedes continuar con más secciones aquí -->
+    <div class="firma">
+      <div>
+        <strong>Acreditado</strong
+        ><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+        ___________________________<br />
+        <strong>{{ nombre_acreditado }}</strong><br />
+      </div>
+
+      <div>
+        <strong>Acreditante</strong
+        ><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+        ___________________________<br />
+        <strong
+          >Representante legal de “UNIÓN DE SOCIEDADES CIVILES FINANCIERAS”,
+          SOCIEDAD CIVIL..</strong
+        ><br />
+      </div>
+    </div>
+
+    {% if es_grupal %}
+    <br /><br />
+    <div style="page-break-before: always">
+      <h4 style="text-align: center">AVALES:</h4>
+
+      <div style="width: 100%; text-align: center">
+        <!-- ENCABEZADOS -->
+        <div style="margin-bottom: 10px; font-weight: bold; font-size: 14px">
+          <span style="display: inline-block; min-width: 250px"> NOMBRE </span>
+
+          <span style="display: inline-block; width: 250px; margin-left: 20px">
+            FIRMA
+          </span>
+        </div>
+
+        <!-- LINEA SEPARADORA -->
+        <hr style="width: 80%; margin: 10px auto" />
+
+        {% for integrante in integrantes %} 
+        {% if not integrante.es_representante %}
+
+        <div style="margin-bottom: 20px; font-size: 14px">
+          <span
+            style="
+              display: inline-block;
+              min-width: 250px;
+              text-decoration: underline;
+            "
+          >
+            {{ integrante.cliente.nombre }}
+          </span>
+
+          <span
+            style="
+              display: inline-block;
+              width: 250px;
+              border-bottom: 1px solid black;
+              margin-left: 20px;
+            "
+          >
+          </span>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <br />
+    <p class="referenciado">
+      <strong
+        >LA PRESENTE PÁGINA FORMA PARTE INTEGRANDE DEL CONTRATO DE APERTURA DE
+        CRÉDITO GRUPAL QUE CELEBRAN “UNIÓN DE SOCIEDADES CIVILES FINANCIERAS”,
+        SOCIEDAD CIVIL, A QUIEN EN LO SUCESIVO SE DESIGNARÁ COMO EL “EL
+        ACREDITANTE”; Y POR OTRA PARTE LOS SOCIOS DESCRITOS.</strong
+      >
+    </p>
+
+    {% endif %}
+  </body>
+</html>

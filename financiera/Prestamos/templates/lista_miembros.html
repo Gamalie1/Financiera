@@ -1,0 +1,120 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lista de control de pagos</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 2cm;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 12pt;
+        color: #000;
+      }
+
+      .titulo {
+        text-align: center;
+        color: #d90000; /* rojo */
+        font-weight: bold;
+        font-size: 18pt;
+        margin-bottom: 10px;
+      }
+
+      .header-img {
+        display: block;
+        margin: 0 auto 20px auto;
+        width: 180px; /* ajusta tamaño si es necesario */
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        page-break-inside: auto;
+      }
+
+      th,
+      td {
+        border: 1px solid #000;
+        padding: 6px;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      tfoot td {
+        font-weight: bold;
+      }
+
+      /* Evitar que la fila se corte en PDF */
+      tr {
+        page-break-inside: avoid;
+      }
+
+      .total-row td {
+        background-color: #e0e0e0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="titulo">Lista de control de pagos</div>
+
+    <img
+      src="{% static 'img/financiera2.png' %}"
+      alt="Logo"
+      class="header-img"
+    />
+    <!-- Nombre del grupo -->
+    <div class="nombre-grupo">Nombre de grupo: {{ grupo.nombre }}</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nombre de socio</th>
+          <th>Pago</th>
+          <th>Ahorro</th>
+          <th>Total</th>
+          <th>Monto</th>
+          <th>Teléfono</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for integrante in integrantes %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ integrante.cliente.nombre }}</td>
+          <td>${{ integrante.monto_pago|floatformat:0 }}</td>
+          <td>${{ integrante.ahorro|floatformat:0 }}</td>
+          <td>
+            ${{ integrante.monto_pago|add:integrante.ahorro|floatformat:0 }}
+          </td>
+          <td>${{ integrante.monto_total|floatformat:0 }}</td>
+          <td>{{ integrante.cliente.telefono }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2">Totales</td>
+
+          <td>${{ total_pago_general|floatformat:0 }}</td>
+
+          <td>${{ total_ahorro_general|floatformat:0 }}</td>
+
+          <td>${{ total_total_general|floatformat:0 }}</td>
+
+          <td>${{ total_monto_general|floatformat:0 }}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </body>
+</html>

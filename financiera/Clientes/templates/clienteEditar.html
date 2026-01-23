@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Registro clientes{% endblock %}</title>
 {% block content %}
 <link href="/static/css/registroClientes.css" rel="stylesheet">
 <div class="form-container">
@@ -17,19 +18,25 @@
         <!-- Nombre -->
         <div class="form-group mb-3">
             <label for="id_nombre">Nombre de la persona</label>
-            <input type="text" class="form-control" id="id_nombre" name="nombre" value="{{ form.nombre.value }}" required>
+            <input type="text" class="form-control" id="id_nombre" name="nombre"  required value="{{ form.nombre.value }}">
         </div>
 
-        <!-- Aval -->
+         <!-- CURP -->
         <div class="form-group mb-3">
-            <label for="id_aval">Aval</label>
-            <input type="text" class="form-control" id="id_aval" name="aval" value="{{ form.aval.value }}" required>
+            <label for="id_curp">CURP</label>
+            <input type="text" class="form-control" id="id_curp" name="curp" value="{{ form.curp.value }}">
         </div>
 
-        <!-- Teléfono -->
+         <!-- CLAVE ELECTOR -->
+        <div class="form-group mb-3">
+            <label for="clave_elector">Clave de elector</label>
+            <input type="text" class="form-control" id="clave_elector" name="clave_elector" value="{{ form.clave_elector.value }}">
+        </div>
+
+          <!-- Teléfono -->
         <div class="form-group mb-3">
             <label for="id_telefono">Teléfono</label>
-            <input type="text" class="form-control" id="id_telefono" name="telefono" value="{{ form.telefono.value }}" required>
+            <input type="text" class="form-control" id="id_telefono" name="telefono"  required value="{{ form.telefono.value }}">
         </div>
 
         <!-- Domicilio -->
@@ -38,30 +45,74 @@
             <textarea class="form-control" id="id_domicilio" name="domicilio" rows="4" required>{{ form.domicilio.value }}</textarea>
         </div>
 
-        <!-- Trabajo -->
+
+        <!-- Aval -->
         <div class="form-group mb-3">
-            <label for="id_trabajo">Trabajo</label>
-            <input type="text" class="form-control" id="id_trabajo" name="trabajo" value="{{ form.trabajo.value }}" required>
+            <label for="id_aval">Nombre del aval</label>
+            <input type="text" class="form-control" id="id_aval" name="aval"  value="{{ form.aval.value }}" required>
         </div>
 
-        <!-- INE (Imagen) -->
         <div class="form-group mb-3">
-            <label for="id_ine">INE</label>
-            <input type="file" class="form-control-file" id="id_ine" name="ine" accept="image/*">
+            <label for="clave_elector_aval">Clave de elector aval</label>
+            <input type="text" class="form-control" id="clave_elector_aval" name="clave_elector_aval" value="{{ form.clave_elector_aval.value }}">
         </div>
 
-        <!-- CURP -->
+        <!-- Domicilio -->
         <div class="form-group mb-3">
-            <label for="id_curp">CURP</label>
-            <input type="text" class="form-control" id="id_curp" name="curp" value="{{ form.curp.value }}" required>
+            <label for="domicilio_aval">Domicilio aval </label>
+            <textarea class="form-control" id="domicilio_aval" name="domicilio_aval" rows="4" required>{{ form.domicilio_aval.value }}</textarea>
         </div>
+           <!-- Teléfono -->
+        <div class="form-group mb-3">
+            <label for="telefono_aval">Teléfono aval</label>
+            <input type="text" class="form-control" id="telefono_aval" name="telefono_aval"  value="{{ form.telefono_aval.value }}" required>
+        </div>
+
+                    <!-- Aval 2 -->
+            <div class="form-group mb-3">
+            <label for="aval2">Nombre del aval 2</label>
+            <input type="text" class="form-control" id="aval2" name="aval2" value="{{ form.aval2.value }}" >
+            </div>
+
+            <div class="form-group mb-3">
+            <label for="clave_elector_aval2">Clave de elector aval 2</label>
+            <input type="text" class="form-control" id="clave_elector_aval2" name="clave_elector_aval2" value="{{ form.clave_elector_aval2.value }}">
+            </div>
+
+            <!-- Domicilio -->
+            <div class="form-group mb-3">
+            <label for="domicilio_aval2">Domicilio aval 2</label>
+            <textarea class="form-control" id="domicilio_aval2" name="domicilio_aval2" rows="4" >{{ form.domicilio_aval2.value }}</textarea>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="form-group mb-3">
+            <label for="telefono_aval2">Teléfono aval 2</label>
+            <input type="text" class="form-control" id="telefono_aval2" name="telefono_aval2"  value="{{ form.telefono_aval2.value }}">
+            </div>
+
+           <!-- Municipio -->
+        <div class="form-group mb-3">
+            <label for="municipio">Municipio</label>
+            <input type="text" class="form-control" id="municipio" name="municipio"  required value="{{ form.municipio.value }}">
+        </div>
+
+           <!-- Estado-->
+        <div class="form-group mb-3">
+            <label for="estado">Estado</label>
+            <input type="estado" class="form-control" id="estado" name="estado"  required value="{{ form.estado.value }}">
+        </div>
+
+
+
+
+
 
         <!-- Botones de acción -->
         <div class="d-flex justify-content-between">
             <a href="{% url 'principalClientes' %}" class="btn btn-cancel">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <button type="submit" class="btn btn-primary">Registrar Cliente</button>
         </div>
     </form>
 </div>
-
 {% endblock %}

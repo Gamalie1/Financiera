@@ -41,12 +41,12 @@
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
-
+            {% if user.is_staff %}
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{% url 'principal' %}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span></a>
+                    <span>Informacion operacional</span></a>
             </li>
 
             <!-- Divider -->
@@ -54,7 +54,7 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
-                Interface
+                OPERACIONES
             </div>
             
                  <!-- Nav Item - Pages Collapse Menu -->
@@ -76,6 +76,7 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
 
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
@@ -90,6 +91,9 @@
                         <h6 class="collapse-header">Operaciones:</h6>
                         <a class="collapse-item" href="{% url 'principalPrestamos' %}">Prestamos</a>
                         <a class="collapse-item" href="{% url 'pagos' %}">Pagos</a>
+                         {% if user.is_staff %}
+                        <a class="collapse-item" href="{% url 'listar-grupos' %}">Grupos</a>
+                        {% endif %}
                     </div>
                 </div>
             </li>
@@ -131,14 +135,25 @@
                     <i class="fas fa-fw fa-calculator"></i>
                     <span>Simulador</span></a>
             </li>
-
-            <!-- Nav Item - Tables 
+             <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Tables</span></a>
+                <a class="nav-link" href="{% url 'ticket' %}">
+                    <i class="fas fa-fw fa-print"></i>
+                    <span>Ticket</span></a>
             </li>
-        -           ->
+             <!-- Nav Item - Charts -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'documentos' %}">
+                    <i class="fas fa-fw fa-book"></i>
+                    <span>Documentos</span></a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'Gastos' %}">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>Gastos</span></a>
+            </li>
+    
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">

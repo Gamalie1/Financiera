@@ -33,5 +33,11 @@ urlpatterns = [
     path('Pagos/', include('Pagos.urls')),
     #Simulador
     path('Simulador/', include('Simulador.urls')),
+    #Grupos
+    path('Grupos/', include('Grupos.urls')),
+    #Gastos
+    path('Gastos/', include('Gastos.urls')),
+    #Documentos
+    path('documentos/', include('documentos.urls'))
 
 ]

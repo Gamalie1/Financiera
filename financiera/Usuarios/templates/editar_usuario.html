@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+<title>{% block title %}Editar usuario{% endblock %}</title>
+
+{% block content %}
+<link href="/static/css/signup.css" rel="stylesheet">
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="bg-white p-4 rounded-5 text-secondary shadow-lg" style="width: 100%; max-width: 400px;">
+
+        <div class="text-center fs-1 fw-bold mb-4">Editar Usuario</div>
+
+        <!-- Mostrar errores si existen -->
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <!-- Formulario de edición -->
+        <form method="POST" class="card-body">
+            {% csrf_token %}
+
+            <!-- Nombre de usuario -->
+            <div class="mb-3">
+                <label for="username" class="form-label">Nombre de usuario:</label>
+                <input type="text" name="username" id="username" class="form-control"
+                    value="{{ usuario.username }}" required>
+            </div>
+
+            <!-- Nombre -->
+            <div class="mb-3">
+                <label for="first_name" class="form-label">Nombre:</label>
+                <input type="text" name="first_name" id="first_name" class="form-control"
+                    value="{{ usuario.first_name }}" required>
+            </div>
+
+            <!-- Apellido -->
+            <div class="mb-3">
+                <label for="last_name" class="form-label">Apellido:</label>
+                <input type="text" name="last_name" id="last_name" class="form-control"
+                    value="{{ usuario.last_name }}" required>
+            </div>
+
+            <!-- Tipo de usuario -->
+            <div class="mb-3">
+                <label class="form-label">Tipo de usuario:</label>
+                <select id="tipo_usuario" name="tipo_usuario" class="form-control" required>
+                    <option value="admin" {% if tipo_usuario == 'admin' %}selected{% endif %}>Administrador</option>
+                    <option value="empleado" {% if tipo_usuario == 'empleado' %}selected{% endif %}>Empleado</option>
+                </select>
+            </div>
+
+            <!-- Correo electrónico -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Correo electrónico:</label>
+                <input type="email" name="email" id="email" class="form-control"
+                    value="{{ usuario.email }}" required>
+            </div>
+
+            <hr>
+
+            <!-- Cambio de contraseña opcional -->
+            <div class="fs-5 fw-bold mb-2 text-center">Cambiar contraseña (opcional)</div>
+
+            <div class="mb-3">
+                <label for="password1" class="form-label">Nueva contraseña:</label>
+                <input type="password" name="password1" id="password1" class="form-control"
+                    placeholder="Dejar en blanco si no cambiará">
+            </div>
+
+            <div class="mb-3">
+                <label for="password2" class="form-label">Confirmar contraseña:</label>
+                <input type="password" name="password2" id="password2" class="form-control"
+                    placeholder="Confirmar solo si cambiará">
+            </div>
+
+            <!-- Botón para guardar -->
+            <button type="submit" class="btn btn-primary text-white w-100 mt-4 fw-semibold shadow-sm">
+                Guardar cambios
+            </button>
+
+            <!-- Regresar -->
+            <a href="{% url 'usuarios' %}" class="btn btn-secondary w-100 mt-3">
+                Cancelar
+            </a>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<link href="/static/css/registroClientes.css" rel="stylesheet">
+<div class="form-container">
+    <div class="form-header text-center">
+        {% if integrante.pk %}Editar Integrante{% else %}Agregar Integrante al Grupo: {{ grupo.nombre }}{% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if not integrante.pk %}
+        <!-- Selección de Cliente -->
+        <div class="form-group mb-3">
+            <label for="cliente">Cliente</label>
+            <select class="form-control" id="cliente" name="cliente" required>
+                <option value="">--- Seleccionar cliente ---</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente.id }}" {% if form.cliente.value == cliente.id %}selected{% endif %}>{{ cliente.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <!-- Checkbox para representante -->
+        <div class="form-group mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="es_representante" name="es_representante" {% if integrante.es_representante %}checked{% endif %}>
+            <label class="form-check-label" for="es_representante">Es representante del grupo</label>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="d-flex justify-content-between">
+            <a href="{% if integrante.pk %}{% url 'detalle-grupo' integrante.grupo.pk %}{% else %}{% url 'detalle-grupo' grupo.pk %}{% endif %}" class="btn btn-cancel">
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                {% if integrante.pk %}Actualizar{% else %}Agregar{% endif %} Integrante
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
