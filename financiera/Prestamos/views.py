@@ -23,22 +23,49 @@ import locale
 from datetime import datetime
 from django.contrib.auth.models import User  # Importar el modelo User de Django
 from django.http import HttpResponseForbidden
+from django.db.models import Q
 
 
-
+@login_required
 def principal(request):
+    es_grupal = request.GET.get('es_grupal')
+    buscar = request.GET.get('buscar')
+
+    # ==============================
+    # FILTRO POR USUARIO
+    # ==============================
     if request.user.is_staff:
-        # Admin ve todos los préstamos
-        prestamos = Prestamo.objects.all().select_related('cliente')
+        prestamos = Prestamo.objects.all()
     else:
-        # Empleado SOLO ve préstamos aprobados
         prestamos = Prestamo.objects.filter(
             estado='APROBADO'
-        ).select_related('cliente')
+        )
 
-    context = {'prestamos': prestamos}
+    prestamos = prestamos.select_related('cliente', 'grupo', 'promotor')
+
+    # ==============================
+    # FILTRO GRUPAL
+    # ==============================
+    if es_grupal == 'true':
+        prestamos = prestamos.filter(es_grupal=True)
+
+    # ==============================
+    # BUSCADOR
+    # ==============================
+    if buscar:
+        prestamos = prestamos.filter(
+            Q(cliente__nombre__icontains=buscar) |
+            Q(folio__icontains=buscar) |
+            Q(grupo__nombre__icontains=buscar) |
+            Q(promotor__username__icontains=buscar)
+        )
+
+    context = {
+        'prestamos': prestamos,
+        'tipo_actual': es_grupal,
+    }
+
     return render(request, 'prestamos.html', context)
-
 @login_required
 def create_prestamo(request):
     clientes = Cliente.objects.all()
@@ -270,7 +297,7 @@ def detalle_prestamo(request, pk):
 
     for i, fecha_programada in enumerate(fechas_pagos):
         # Lógica para los pagos realizados y multas (si es necesario)
-        pagos_ordenados = list(prestamo.pagos.all().order_by('fecha_pago'))
+        pagos_ordenados = list(prestamo.pagos.all().order_by('fecha_programada'))
         pago_realizado = pagos_ordenados[i] if i < len(pagos_ordenados) else None
 
         # Ajustar último pago para evitar decimales
@@ -289,8 +316,8 @@ def detalle_prestamo(request, pk):
         multa = Decimal('0')
         dias_atraso = 0
         if pago_realizado:
-            if pago_realizado.fecha_pago.date() > fecha_programada:
-                dias_atraso = (pago_realizado.fecha_pago.date() - fecha_programada).days
+            if pago_realizado.fecha_programada > fecha_programada:
+                dias_atraso = (pago_realizado.fecha_programada - fecha_programada).days
                 multa = Decimal(dias_atraso) * Decimal('15')
         else:
             if timezone.now().date() > fecha_programada:
@@ -339,6 +366,7 @@ def detalle_prestamo(request, pk):
     }
 
     return render(request, 'detalle_prestamo.html', context)
+
     def actualizar_estado_pagos(self):
         """Actualiza el estado de las cuotas relacionadas"""
         pagos = self.pagos.all().order_by('fecha_pago')
@@ -355,6 +383,7 @@ def detalle_prestamo(request, pk):
                 cuota.save()
 
 
+@login_required
 def generar_contrato_pdf(request, prestamo_id):
     cliente = get_object_or_404(Prestamo, id=prestamo_id)
 
@@ -447,7 +476,8 @@ def generar_contrato_pdf(request, prestamo_id):
     response['Content-Disposition'] = f'inline; filename=contrato_{cliente.cliente.nombre}.pdf'
 
     return response
-    
+
+@login_required
 def generar_invitacion(request, prestamo_id):
     # Obtener el préstamo correspondiente, incluyendo el cliente relacionado
     prestamo = get_object_or_404(Prestamo, id=prestamo_id)
@@ -471,7 +501,8 @@ def generar_invitacion(request, prestamo_id):
     response['Content-Disposition'] = 'inline; filename="invitacion_extrajudicial.pdf"'
 
     return response
-    
+
+@login_required
 def generar_liquidacion(request, prestamo_id):
     prestamo = get_object_or_404(Prestamo, id=prestamo_id)
 
@@ -504,7 +535,7 @@ def generar_liquidacion(request, prestamo_id):
     return response
     
     
-
+@login_required
 def generar_pagare(request, prestamo_id):
     cliente = get_object_or_404(Prestamo, id=prestamo_id)
      # Traer el monto de pago del primer registro en la tabla Pago relacionado con este préstamo

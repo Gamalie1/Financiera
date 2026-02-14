@@ -38,13 +38,15 @@
     <tbody>
       {% for pago in pagos_hoy_detalles %}
       <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
-        <!-- Nombre del cliente -->
-        <td>{{ pago.prestamo__tipo_prestamo }}</td>
-        <!-- Tipo de préstamo -->
-        <td>{{ pago.fecha_pago }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
+        <td>{{ pago.pago__prestamo__tipo }}</td>
+        <td>{{ pago.fecha }}</td>
+        <td>${{ pago.monto|floatformat:2 }}</td>
         <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">No hay pagos hoy</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -77,13 +79,23 @@
     <tbody>
       {% for pago in pagos_semana_detalles %}
       <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
         <!-- Nombre del cliente -->
-        <td>{{ pago.prestamo__tipo }}</td>
+
+        <td>{{ pago.pago__prestamo__tipo }}</td>
         <!-- Tipo de préstamo -->
-        <td>{{ pago.fecha_pago }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+
+        <td>{{ pago.fecha }}</td>
+        <!-- Fecha real del abono -->
+
+        <td>${{ pago.monto|floatformat:2 }}</td>
+        <!-- Monto realmente abonado -->
+
         <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">No hay pagos esta semana</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -116,13 +128,23 @@
     <tbody>
       {% for pago in pagos_mes_detalles %}
       <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
         <!-- Nombre del cliente -->
-        <td>{{ pago.prestamo__tipo }}</td>
+
+        <td>{{ pago.pago__prestamo__tipo }}</td>
         <!-- Tipo de préstamo -->
-        <td>{{ pago.fecha_pago }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+
+        <td>{{ pago.fecha }}</td>
+        <!-- Fecha real del abono -->
+
+        <td>${{ pago.monto|floatformat:2 }}</td>
+        <!-- Monto abonado -->
+
         <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">No hay pagos este mes</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -155,13 +177,23 @@
     <tbody>
       {% for pago in pagos_totales_detalles %}
       <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
+        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
         <!-- Nombre del cliente -->
-        <td>{{ pago.prestamo__tipo }}</td>
+
+        <td>{{ pago.pago__prestamo__tipo }}</td>
         <!-- Tipo de préstamo -->
-        <td>{{ pago.fecha_pago }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+
+        <td>{{ pago.fecha }}</td>
+        <!-- Fecha real del abono -->
+
+        <td>${{ pago.monto|floatformat:2 }}</td>
+        <!-- Monto realmente abonado -->
+
         <td>{{ pago.metodo_pago }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">No hay pagos registrados</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -198,7 +230,7 @@
         <!-- Nombre del promotor -->
         <td>${{ gasto.monto|floatformat:2 }}</td>
         <!-- Monto del gasto -->
-        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.programada }}</td>
         <!-- Fecha del gasto -->
         <td>{{ gasto.concepto }}</td>
         <!-- Concepto del gasto -->
@@ -235,7 +267,7 @@
       <tr>
         <td>{{ gasto.usuario__username }}</td>
         <td>${{ gasto.monto|floatformat:2 }}</td>
-        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.fecha_programada }}</td>
         <td>{{ gasto.concepto }}</td>
       </tr>
       {% endfor %}
@@ -270,7 +302,7 @@
       <tr>
         <td>{{ gasto.usuario__username }}</td>
         <td>${{ gasto.monto|floatformat:2 }}</td>
-        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.fecha_programada }}</td>
         <td>{{ gasto.concepto }}</td>
       </tr>
       {% endfor %}
@@ -305,7 +337,7 @@
       <tr>
         <td>{{ gasto.usuario__username }}</td>
         <td>${{ gasto.monto|floatformat:2 }}</td>
-        <td>{{ gasto.fecha_registro }}</td>
+        <td>{{ gasto.fecha_programada }}</td>
         <td>{{ gasto.concepto }}</td>
       </tr>
       {% endfor %}
@@ -344,7 +376,7 @@
         <!-- Nombre del cliente -->
         <td>{{ pago.prestamo__tipo }}</td>
         <!-- Tipo de préstamo -->
-        <td>{{ pago.fecha_pago }}</td>
+        <td>{{ pago.fecha_programada }}</td>
         <td>${{ pago.monto_pago|floatformat:2 }}</td>
       </tr>
       {% endfor %}
@@ -377,7 +409,7 @@
       <tr>
         <td>{{ pago.prestamo__cliente__nombre }}</td>
         <td>{{ pago.prestamo__tipo }}</td>
-        <td>{{ pago.fecha_pago }}</td>
+        <td>{{ pago.fecha_programada }}</td>
         <td>${{ pago.monto_pago|floatformat:2 }}</td>
       </tr>
       {% endfor %}
@@ -410,7 +442,7 @@
       <tr>
         <td>{{ pago.prestamo__cliente__nombre }}</td>
         <td>{{ pago.prestamo__tipo }}</td>
-        <td>{{ pago.fecha_pago }}</td>
+        <td>{{ pago.fecha_programada }}</td>
         <td>${{ pago.monto_pago}}</td>
       </tr>
       {% endfor %}
@@ -443,7 +475,7 @@
       <tr>
         <td>{{ pago.prestamo__cliente__nombre }}</td>
         <td>{{ pago.prestamo__tipo }}</td>
-        <td>{{ pago.fecha_pago }}</td>
+        <td>{{ pago.fecha_programada }}</td>
         <td>${{ pago.monto_pago|floatformat:2 }}</td>
       </tr>
       {% endfor %}

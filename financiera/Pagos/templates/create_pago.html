@@ -1,101 +1,88 @@
-{% extends 'base.html' %}
-<title>{% block title %}Realizar pago{% endblock %}</title>
-{% block content %}
+{% extends 'base.html' %} {% block title %}Registrar Abono{% endblock %} {% block content %}
 
 <link href="/static/css/signup.css" rel="stylesheet" />
+
 <div class="d-flex justify-content-center align-items-center vh-100">
   <div
     class="bg-white p-4 rounded-5 text-secondary shadow-lg"
     style="width: 100%; max-width: 500px"
   >
-    <div class="text-center fs-1 fw-bold mb-4">Crear Nuevo Pago</div>
+    <div class="text-center fs-1 fw-bold mb-4">Registrar Abono</div>
 
-    <!-- Mostrar errores si existen -->
-    {% if error %}
-    <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
+    <div class="mb-3 text-center">
+      <p class="mb-1"><strong>Cuota #{{ pago.numero_pago }}</strong></p>
 
-    <!-- Formulario de pago -->
-    <form method="post" class="card-body">
+      <p class="mb-1">Monto cuota: ${{ pago.monto_pago|floatformat:2 }}</p>
+
+      <p class="mb-1">
+        Saldo restante:
+        <span class="text-danger fw-bold">
+          ${{ pago.saldo_restante|floatformat:2 }}
+        </span>
+      </p>
+    </div>
+
+    <form method="post">
       {% csrf_token %}
 
-      <!-- Campo Monto -->
+      <!-- MONTO ABONO -->
+
       <div class="mb-3">
-        <label for="monto_pagado" class="form-label">Monto:</label>
+        <label class="form-label">Monto recibido</label>
+
         <input
           type="number"
           name="monto_pagado"
-          id="monto_pagado"
           class="form-control"
-          value="{{ pago.monto_pagado|stringformat:'.2f' }}"
           step="0.01"
-          min="0"
-          placeholder="Ingrese el monto"
+          min="0.01"
+          max="{{ pago.saldo_restante }}"
           required
-          inputmode="decimal"
-          pattern="[0-9]+([.,][0-9]{1,2})?"
-          oninput="this.value = this.value.replace(/[^0-9.]/g, '');"
+          placeholder="Ingrese monto recibido"
         />
+
+        <small class="text-muted">
+          Máximo permitido: ${{ pago.saldo_restante|floatformat:2 }}
+        </small>
       </div>
 
-      <!-- Campo Fecha -->
-      <div class="mb-3">
-        <label for="fecha_programada" class="form-label">Fecha:</label>
-        <input
-          type="date"
-          name="fecha_programada"
-          id="fecha_programada"
-          class="form-control"
-          value="{{ pago.fecha_pago|date:'Y-m-d' }}"
-          required
-        />
-      </div>
+      <!-- METODO PAGO -->
 
-      <!-- Campo Método de Pago -->
       <div class="mb-3">
-        <label for="metodo_pago" class="form-label">Método de pago:</label>
-        <select
-          name="metodo_pago"
-          id="metodo_pago"
-          class="form-control"
-          required
-        >
-          <option value="" disabled selected>Seleccione un método</option>
+        <label class="form-label">Método de pago</label>
+
+        <select name="metodo_pago" class="form-control" required>
+          <option value="">Seleccione método</option>
           <option value="EFECTIVO">Efectivo</option>
-          <option value="TARJETA">Tarjeta de crédito/débito</option>
-          <option value="TRANSFERENCIA">Transferencia bancaria</option>
+          <option value="TARJETA">Tarjeta</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
           <option value="CHEQUE">Cheque</option>
-          <option value="OTRO">Otro método</option>
         </select>
       </div>
-      <!-- Comentarios -->
-      <div class="form-group mb-3">
-        <label for="comentarios">Comentarios </label>
-        <textarea
-          class="form-control"
-          id="comentarios"
-          name="comentarios"
-          rows="4"
-        ></textarea>
+
+      <!-- COMENTARIO -->
+
+      <div class="mb-3">
+        <label class="form-label">Comentario (opcional)</label>
+
+        <textarea name="comentarios" class="form-control" rows="3"></textarea>
       </div>
 
-      <!-- Botones de acción -->
+      <!-- BOTONES -->
+
       <div class="d-flex gap-2">
         <a
-          href="{% url 'detalle_pago' prestamo.pk %}"
-          class="btn btn-secondary text-white w-100 mt-3 fw-semibold shadow-sm"
+          href="{% url 'detalle_pago' pago.prestamo.id %}"
+          class="btn btn-secondary w-100"
         >
           Cancelar
         </a>
-        <button
-          type="submit"
-          class="btn btn-primary text-white w-100 mt-3 fw-semibold shadow-sm"
-        >
-          Guardar Pago
+
+        <button type="submit" class="btn btn-primary w-100">
+          Registrar Abono
         </button>
       </div>
     </form>
   </div>
 </div>
-
 {% endblock %}

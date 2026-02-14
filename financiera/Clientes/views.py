@@ -7,11 +7,15 @@ from django.http import HttpResponse
 import tempfile
 from django.template.loader import render_to_string
 #Pagina principal
+from django.contrib.auth.decorators import login_required
+
+@login_required
 def inicio_clientes(request):
      # Obtener todos los usuarios registrados
     Clientes = Cliente.objects.all()
     return render(request, 'clientes.html', {'Clientes': Clientes})
 
+@login_required
 def registronuevo(request):
     # Variables adicionales para el contexto
     context = {
@@ -36,7 +40,7 @@ def registronuevo(request):
     return render(request, 'clienteNuevo.html', context)
 
 
-
+@login_required
 def editarcliente(request, cliente_id):
     # Obtener el cliente
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -61,7 +65,7 @@ def editarcliente(request, cliente_id):
 
     # Renderizar la plantilla
     return render(request, 'clienteEditar.html', context)
-
+@login_required
 def eliminarcliente(request, id):
     cliente = Cliente.objects.get(id = id)
     cliente.delete()

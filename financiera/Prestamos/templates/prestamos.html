@@ -11,18 +11,51 @@
       <div class="col col-sm-3 col-xs-12">
         <h4 class="title">Lista <span>de préstamos</span></h4>
       </div>
-     {% if user.is_staff %}
-      <div class="col-sm-9 col-xs-12 text-right">
-        <div class="btn_group">
-          <a
-            href="{% url 'createPrestamo' %}"
-            class="btn btn-sm btn-primary pull-left"
+
+  <div class="col-sm-9 col-xs-12 text-right">
+      <div class="btn_group d-flex justify-content-end align-items-center">
+
+        <!-- BUSCADOR -->
+        <form method="get" class="form-inline mr-2">
+          <input
+            type="text"
+            name="buscar"
+            class="form-control form-control-sm"
+            placeholder="Buscar por nombre..."
+            value="{{ request.GET.buscar }}"
           >
-            <i class="fa fa-plus-circle"></i> Nuevo préstamo
-          </a>
-        </div>
+
+          <!-- Mantener filtro grupal -->
+          {% if tipo_actual %}
+            <input type="hidden" name="es_grupal" value="{{ tipo_actual }}">
+          {% endif %}
+
+          <button type="submit" class="btn btn-sm btn-info ml-1">
+            <i class="fa fa-search"></i>
+          </button>
+        </form>
+
+        <!-- BOTON TODOS -->
+        <a href="{% url 'principalPrestamos' %}"
+           class="btn btn-sm {% if not tipo_actual %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+          Todos
+        </a>
+
+        <!-- BOTON GRUPAL -->
+        <a href="?es_grupal=true"
+           class="btn btn-sm {% if tipo_actual == 'true' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+          <i class="fa fa-users"></i> Grupal
+        </a>
+
+        {% if user.is_staff %}
+        <a href="{% url 'createPrestamo' %}"
+           class="btn btn-sm btn-primary">
+          <i class="fa fa-plus-circle"></i> Nuevo préstamo
+        </a>
+        {% endif %}
+
       </div>
-      {% endif %}
+  </div>
     </div>
   </div>
 
@@ -36,7 +69,9 @@
       >
         <thead>
           <tr>
-            <th>Cliente</th>
+            <th>
+              {% if tipo_actual == 'true' %} Grupo {% else %} Cliente {% endif %}
+            </th>
             <th>Monto</th>
             <th>Tasa de Interés</th>
             <th>Tipo</th>
@@ -51,17 +86,14 @@
         <tbody>
           {% for prestamo in prestamos %}
           <tr>
-            
-    {% if prestamo.es_grupal %}
-        <td>{{ prestamo.grupo.responsable.nombre }}</td>
-    {% else %}
-        <td>{{ prestamo.cliente.nombre }}</td>
-    {% endif %}
             <td>
-              {% if prestamo.monto %} 
-              ${{ prestamo.monto|floatformat:2 }} 
-              {%else%} 
-              $0.00 {% endif %}
+              {% if prestamo.es_grupal %} {{ prestamo.grupo.nombre }} {% else %}
+              {{ prestamo.cliente.nombre }} {% endif %}
+            </td>
+
+            <td>
+              {% if prestamo.monto %} ${{ prestamo.monto|floatformat:2 }}
+              {%else%} $0.00 {% endif %}
             </td>
             <td>{{ prestamo.tasa_interes|floatformat:2 }}%</td>
             <td>{{ prestamo.tipo }}</td>
@@ -76,7 +108,6 @@
             </td>
             {% if user.is_staff %}
             <td>
-              
               <ul class="action-list">
                 <li>
                   <a
@@ -96,7 +127,6 @@
                   </a>
                 </li>
               </ul>
-              
             </td>
             {% endif %}
             <td>

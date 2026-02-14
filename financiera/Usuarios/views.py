@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.contrib import messages
 from django.db.models import Sum
 from django.utils import timezone
-from Pagos.models import Pago
+from Pagos.models import Pago, Abono
 from Gastos.models import Gasto
 from Prestamos.models import Prestamo
 from datetime import timedelta
@@ -48,8 +48,10 @@ def signin(request):
 def principal(request):
     hoy = timezone.now().date()
 
-    # Obtener todos los usuarios (cobradores)
-    users = User.objects.all()
+    if request.user.is_staff:
+        users = User.objects.all()
+    else:
+        users = User.objects.filter(id=request.user.id)
 
     # Crear diccionarios para almacenar los totales
     totales_cobradores = {}
@@ -60,8 +62,12 @@ def principal(request):
     # Iterar sobre los usuarios y obtener el total de lo que han recaudado, los gastos y pagos retrasados
     for user in users:
         # Total de pagos de hoy
-        pagos_hoy = Pago.objects.filter(cobrador=user, fecha_pago__date=hoy)
-        total_pagado = pagos_hoy.aggregate(Sum('monto_pago'))['monto_pago__sum'] or 0.00
+        pagos_hoy = Abono.objects.filter(
+                cobrador=user,
+                fecha__date=hoy
+                    )
+
+        total_pagado = pagos_hoy.aggregate(Sum('monto'))['monto__sum'] or 0.00
         
         # Total de gastos de hoy (filtrado por el usuario)
         gastos_hoy = Gasto.objects.filter(usuario=user, fecha_registro=hoy)
@@ -71,7 +77,7 @@ def principal(request):
         pagos_pendientes = Pago.objects.filter(
             cobrador_asignado=user,         # <<--- en Pago
             estado_pago='pendiente',
-            fecha_pago__date=hoy
+            fecha_programada=hoy
         )
 
         total_pagos_retrasados = pagos_pendientes.aggregate(
@@ -87,7 +93,8 @@ def principal(request):
         
         
         # Guardar los totales en los diccionarios
-        totales_cobradores[user.username] = total_pagado
+        total_neto = total_pagado - total_gasto
+        totales_cobradores[user.username] = total_neto
         totales_gastos[user.username] = total_gasto
         pagos_retrasados[user.username] = total_pagos_retrasados
         
@@ -107,6 +114,7 @@ def principal(request):
 
 def detalles_cobrador(request, cobrador):
     hoy = timezone.now().date()
+    
     tipo = request.GET.get('tipo', 'pagos')  # Obtener el tipo de detalle que se solicita (pagos, gastos, prestamos)
         # Lunes (weekday = 0)
     inicio_semana = hoy - timedelta(days=hoy.weekday())
@@ -128,21 +136,76 @@ def detalles_cobrador(request, cobrador):
     
     # Datos de los pagos
     if tipo == 'pagos':
-        pagos_hoy = Pago.objects.filter(cobrador=user, fecha_pago__date=hoy)
-        pagos_semana = Pago.objects.filter(cobrador=user, fecha_pago__gte=hoy - timedelta(days=7))
-        pagos_mes = Pago.objects.filter(cobrador=user, fecha_pago__month=hoy.month)
-        pagos_totales = Pago.objects.filter(cobrador=user)
         
-        total_pagado_hoy = pagos_hoy.aggregate(Sum('monto_pago'))['monto_pago__sum'] or 0.00
-        total_pagado_semana = pagos_semana.aggregate(Sum('monto_pago'))['monto_pago__sum'] or 0.00
-        total_pagado_mes = pagos_mes.aggregate(Sum('monto_pago'))['monto_pago__sum'] or 0.00
-        total_pagado_general = pagos_totales.aggregate(Sum('monto_pago'))['monto_pago__sum'] or 0.00
+        abonos_hoy = Abono.objects.filter(
+                cobrador=user,
+                fecha__date=hoy
+            )
+        abonos_semana = Abono.objects.filter(
+                cobrador=user,
+                fecha__date__gte=inicio_semana,
+                fecha__date__lte=fin_semana
+            )
+        abonos_mes = Abono.objects.filter(
+                    cobrador=user,
+                    fecha__year=hoy.year,
+                    fecha__month=hoy.month
+                )
+        abonos_totales = Abono.objects.filter(
+                    cobrador=user
+                )
+        
+        total_pagado_hoy = abonos_hoy.aggregate(
+                total=Sum('monto')
+            )['total'] or 0
+        total_pagado_semana = abonos_semana.aggregate(
+                total=Sum('monto')
+            )['total'] or 0
+        total_pagado_mes = abonos_mes.aggregate(
+                total=Sum('monto')
+            )['total'] or 0
+        total_pagado_general = abonos_totales.aggregate(
+                    total=Sum('monto')
+                )['total'] or 0
+      
+        
 
           # Traer los clientes relacionados con esos pagos
-        pagos_hoy_detalles = pagos_hoy.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago', 'metodo_pago')
-        pagos_semana_detalles = pagos_semana.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago', 'metodo_pago')
-        pagos_mes_detalles = pagos_mes.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago', 'metodo_pago')
-        pagos_totales_detalles = pagos_totales.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago', 'metodo_pago')
+        abonos_hoy_detalles = abonos_hoy.select_related(
+                    'pago__prestamo__cliente'
+                ).values(
+                    'pago__prestamo__cliente__nombre',
+                    'pago__prestamo__tipo',
+                    'monto',
+                    'fecha',
+                    'metodo_pago')
+        abonos_semana_detalles = abonos_semana.select_related(
+                    'pago__prestamo__cliente'
+                ).values(
+                    'pago__prestamo__cliente__nombre',
+                    'pago__prestamo__tipo',
+                    'fecha',              # fecha real del abono
+                    'monto',              # monto real pagado
+                    'metodo_pago'
+                )
+        abonos_mes_detalles = abonos_mes.select_related(
+                        'pago__prestamo__cliente'
+                    ).values(
+                        'pago__prestamo__cliente__nombre',
+                        'pago__prestamo__tipo',
+                        'fecha',
+                        'monto',
+                        'metodo_pago'
+                    )
+        abonos_totales_detalles = abonos_totales.select_related(
+                        'pago__prestamo__cliente'
+                    ).values(
+                        'pago__prestamo__cliente__nombre',
+                        'pago__prestamo__tipo',
+                        'fecha',
+                        'monto',
+                        'metodo_pago'
+                    )
         
         # Imprimir los totales de pagos
         print(f"Pagos hoy: {total_pagado_hoy}")
@@ -161,10 +224,10 @@ def detalles_cobrador(request, cobrador):
             'total_pagado_general': total_pagado_general,
         })
         context.update({
-            'pagos_hoy_detalles': pagos_hoy_detalles,
-            'pagos_semana_detalles': pagos_semana_detalles,
-            'pagos_mes_detalles': pagos_mes_detalles,
-            'pagos_totales_detalles': pagos_totales_detalles,
+            'pagos_hoy_detalles': abonos_hoy_detalles,
+            'pagos_semana_detalles': abonos_semana_detalles,
+            'pagos_mes_detalles': abonos_mes_detalles,
+            'pagos_totales_detalles': abonos_totales_detalles,
         })
 
     
@@ -202,9 +265,9 @@ def detalles_cobrador(request, cobrador):
     # Datos de los préstamos pendientes
     elif tipo == 'prestamos':
          # Obtener los pagos pendientes
-        pagos_pendientes_hoy = Pago.objects.filter( cobrador_asignado=user, estado_pago='pendiente', fecha_pago__date=hoy)
-        pagos_pendientes_semana = Pago.objects.filter(cobrador_asignado=user,estado_pago='pendiente',fecha_pago__date__gte=inicio_semana,fecha_pago__date__lte=fin_semana)
-        pagos_pendientes_mes = Pago.objects.filter( cobrador_asignado=user, estado_pago='pendiente', fecha_pago__month=hoy.month)
+        pagos_pendientes_hoy = Pago.objects.filter( cobrador_asignado=user, estado_pago='pendiente', fecha_programada=hoy)
+        pagos_pendientes_semana = Pago.objects.filter(cobrador_asignado=user,estado_pago='pendiente',fecha_programada__gte=inicio_semana,fecha_programada__lte=fin_semana)
+        pagos_pendientes_mes = Pago.objects.filter( cobrador_asignado=user, estado_pago='pendiente', fecha_programada__month=hoy.month)
         pagos_pendientes_totales = Pago.objects.filter( cobrador_asignado=user, estado_pago='pendiente')
 
         # Contamos los pagos pendientes por día, semana, mes y total
@@ -214,10 +277,10 @@ def detalles_cobrador(request, cobrador):
         pagos_totales = pagos_pendientes_totales.count()
 
         # Obtener detalles de los pagos pendientes (Nombre cliente, tipo de préstamo, fecha, monto, método de pago)
-        pagos_hoy_detalles = pagos_pendientes_hoy.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago')
-        pagos_semana_detalles = pagos_pendientes_semana.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago')
-        pagos_mes_detalles = pagos_pendientes_mes.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago')
-        pagos_totales_detalles = pagos_pendientes_totales.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_pago', 'monto_pago')
+        pagos_hoy_detalles = pagos_pendientes_hoy.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_programada', 'monto_pago')
+        pagos_semana_detalles = pagos_pendientes_semana.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_programada', 'monto_pago')
+        pagos_mes_detalles = pagos_pendientes_mes.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_programada', 'monto_pago')
+        pagos_totales_detalles = pagos_pendientes_totales.select_related('prestamo__cliente').values('prestamo__cliente__nombre', 'prestamo__tipo', 'fecha_programada', 'monto_pago')
         
         print("Pagos hoy:", pagos_pendientes_hoy)
         print("Pagos semana:", pagos_pendientes_semana)

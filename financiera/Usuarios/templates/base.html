@@ -41,7 +41,7 @@
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
-            {% if user.is_staff %}
+            
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
                 <a class="nav-link" href="{% url 'principal' %}">
@@ -51,7 +51,7 @@
 
             <!-- Divider -->
             <hr class="sidebar-divider">
-
+            {% if user.is_staff %}
             <!-- Heading -->
             <div class="sidebar-heading">
                 OPERACIONES

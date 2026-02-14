@@ -1,5 +1,6 @@
 <!-- templates/prestamos/detalle_prestamo.html -->
 {% extends 'base.html' %} {% block content %}
+
 <div class="container py-4">
   <div class="card shadow mb-4">
     <div class="card-header bg-primary text-white">
@@ -12,116 +13,112 @@
     </div>
 
     <div class="card-body">
-      <!-- Información general del préstamo -->
+      <!-- INFO PRESTAMO -->
       <div class="row mb-4">
         <div class="col-md-4">
           <h5>Información del Préstamo</h5>
           <ul class="list-group">
             <li class="list-group-item">
               <strong>Cliente:</strong> {{ prestamo.cliente.nombre }}
-              <!-- Aquí se accede al cliente del préstamo -->
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Tabla de detalle de pagos -->
+      <!-- TABLA CUOTAS -->
+
       <div class="card">
         <div class="card-header bg-info text-white">
           <h5 class="mb-0">
             Detalle de Pagos ({{ prestamo.get_tipo_display }})
           </h5>
         </div>
+
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover mb-0">
               <thead class="thead-light">
                 <tr>
-                  <th># Pago</th>
+                  <th>#</th>
                   <th>Fecha Programada</th>
-                  <th>Fecha Pago</th>
-                  <th class="text-end">Días Atraso</th>
-                  <th class="text-end">Pago</th>
-                  <th class="text-end">Abono</th>
-                  <th class="text-end">Restante</th>
+                  <th class="text-end">Días atraso</th>
+                  <th class="text-end">Cuota</th>
+                  <th class="text-end">Abonado</th>
+                  <th class="text-end">Saldo</th>
                   <th>Estado</th>
-                  <th>Pagar</th>
+                  <th>Cobrar</th>
                   <th>Ticket</th>
                 </tr>
               </thead>
+
               <tbody>
                 {% for pago in pagos %}
+
                 <tr
-                  class="{% if pago.realizado %}table-success{% elif pago.dias_atraso > 0 %}table-danger{% else %}table-warning{% endif %}"
+                  class="{% if pago.estado_pago == 'pagado' %} table-success {% elif pago.dias_atraso > 0 %} table-danger {% else %} table-warning {% endif %}"
                 >
                   <td>{{ pago.numero_pago }}/{{ prestamo.total_pagos }}</td>
-                  <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+
                   <td>{{ pago.fecha_programada|date:"d/m/Y" }}</td>
+
+                  <td class="text-end">{{ pago.dias_atraso }}</td>
+
+                  <td class="text-end">${{ pago.monto_pago|floatformat:2 }}</td>
+
                   <td class="text-end">
-                    {% if pago.dias_transcurridos is None or pago.dias_transcurridos < 1 %} 
-                    0 
+                    ${{ pago.total_abonado|floatformat:2 }}
+                  </td>
+
+                  <td class="text-end">
+                    ${{ pago.saldo_restante|floatformat:2 }}
+                  </td>
+
+                  <td>
+                    {% if pago.estado_pago == 'pagado' %}
+                    <span class="badge bg-success">Pagado</span>
+
+                    {% elif pago.estado_pago == 'parcial' %}
+                    <span class="badge text-dark" style="background: #ff9800"
+                      >Parcial</span
+                    >
+
                     {% else %}
-                    {{pago.dias_transcurridos }} 
+                    <span class="badge bg-warning text-dark">Pendiente</span>
                     {% endif %}
                   </td>
-                  <td class="text-end">${{ pago.monto_pago|floatformat:2 }}</td>
-                  <td class="text-end">
-                    ${{ pago.monto_pagado|floatformat:2 }}
-                  </td>
-                  <td class="text-end">
-                    ${{ pago.saldo_restante|floatformat:0 }}
-                  </td>
-                  <td>
-                   {% if pago.estado_pago == 'pagado' %}
-                      <span class="badge bg-success">Pagado</span>
 
-                  {% elif pago.pago_parcial %}
-                      <span class="badge text-dark" style="background-color: #ff9800;">Pago parcial</span>
-
-                  {% else %}
-                      <span class="badge bg-warning text-dark">Pendiente</span>
-                  {% endif %}
-                  </td>
                   <td>
-                    {% if pago.estado_pago == 'pendiente' %}
+                    {% if pago.estado_pago != 'pagado' %}
                     <a
                       href="{% url 'createPago' id=pago.id %}"
-                      data-tip="pagar"
+                      title="Registrar abono"
                     >
                       <i class="fa fa-money-bill"></i>
                     </a>
                     {% endif %}
-
-                    <!-- EDITAR SOLO SI YA ESTÁ PAGADO -->
-                    {% if user.is_staff and pago.estado_pago == 'pagado' %}
-                    <a href="{% url 'editar' id=pago.id %}" data-tip="editar">
-                      <i class="fa fa-edit"></i>
-                    </a>
-                    {% endif %}
                   </td>
+
                   <td>
                     {% if pago.estado_pago == 'pagado' %}
-                    <!-- Ticket normal -->
+
                     <a
                       href="{% url 'generar_ticket' id=pago.id %}"
                       class="btn btn-sm btn-primary"
-                      title="Ticket"
                     >
-                      <i class="fa fa-print"></i>
+                      <i class="fa fa-print"></i> Ticket
                     </a>
 
-                    <!-- Reimpresión -->
                     <a
-                      href="{% url 'generar_ticket2' id=pago.id %}?reimpresion=1"
-                      class="btn btn-sm btn-primary"
-                      title="Reimpresión"
-                      target="_blank"
+                      href="{% url 'generar_ticket2' id=pago.id %}"
+                      class="btn btn-sm btn-success"
                     >
-                      <i class="fa fa-film"></i>
+                      <i class="fa fa-receipt"></i> Ticket 2
                     </a>
+
                     {% endif %}
                   </td>
                 </tr>
+
                 {% endfor %}
               </tbody>
             </table>
@@ -131,4 +128,5 @@
     </div>
   </div>
 </div>
+
 {% endblock %}

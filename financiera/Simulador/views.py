@@ -6,10 +6,13 @@ from django.templatetags.static import static
 from dateutil.relativedelta import relativedelta
 import locale
 import platform
+from django.contrib.auth.decorators import login_required
 #Pagina principal
+@login_required
 def principal(request):
     return render(request, 'simulador.html')
 
+@login_required
 def generar_pdf(request):
     if platform.system() == 'Windows':
         locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')

@@ -11,11 +11,15 @@ from Prestamos.models import Prestamo
 from django.db import transaction
 from django.http import JsonResponse
 
+from django.contrib.auth.decorators import login_required
+
 # CRUD para Grupo
+@login_required
 def listar_grupos(request):
     grupos = Grupo.objects.all()
     return render(request, 'grupo_list.html', {'grupos': grupos})
 
+@login_required
 def crear_prestamo_grupal(request):
 
     grupos = Grupo.objects.all()
@@ -108,6 +112,7 @@ def crear_prestamo_grupal(request):
         "grupo_seleccionado": request.POST.get("grupo")
     })
 
+@login_required
 def crear_grupo(request):
     
     if request.method == 'POST':
@@ -144,6 +149,7 @@ def detalle_grupo(request, pk):
         'integrantes': integrantes
     })
 
+@login_required
 def editar_grupo(request, pk):
     grupo = get_object_or_404(Grupo, pk=pk)
     
@@ -162,6 +168,7 @@ def editar_grupo(request, pk):
         'clientes': clientes
     })
 
+@login_required
 def eliminar_grupo(request, pk):
     grupo = get_object_or_404(Grupo, pk=pk)
     if request.method == 'POST':
@@ -197,6 +204,7 @@ def agregar_integrante(request, grupo_id):
         'clientes': clientes_disponibles
     })
 
+@login_required
 def editar_integrante(request, pk):
     integrante = get_object_or_404(IntegranteGrupo, pk=pk)
     
@@ -207,6 +215,7 @@ def editar_integrante(request, pk):
     
     return render(request, 'integrante_form.html', {'integrante': integrante})
 
+@login_required
 def eliminar_integrante(request, pk):
     integrante = get_object_or_404(IntegranteGrupo, pk=pk)
     grupo_id = integrante.grupo.pk
@@ -244,6 +253,7 @@ def agregar_prestamo_grupal(request, integrante_id):
         'prestamos': prestamos
     })
 
+@login_required
 def editar_prestamo_grupal(request, pk):
     prestamo_grupal = get_object_or_404(DetallePrestamoGrupal, pk=pk)
     
@@ -260,6 +270,7 @@ def editar_prestamo_grupal(request, pk):
         'prestamos': prestamos
     })
 
+@login_required
 def eliminar_prestamo_grupal(request, pk):
     prestamo_grupal = get_object_or_404(DetallePrestamoGrupal, pk=pk)
     grupo_id = prestamo_grupal.integrante.grupo.pk

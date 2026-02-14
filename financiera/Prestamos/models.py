@@ -6,6 +6,7 @@ from decimal import Decimal
 from dateutil.relativedelta import relativedelta  
 from datetime import timedelta
 from django.contrib.auth.models import User  # Importar el modelo User de Django
+from django.apps import apps
 
 class Prestamo(models.Model):
 
@@ -50,6 +51,7 @@ class Prestamo(models.Model):
     pago_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
 
+
     def __str__(self):
         return f"Préstamo #{self.id} - {self.cliente.nombre}"
     
@@ -60,6 +62,24 @@ class Prestamo(models.Model):
         if self.cliente and self.grupo:
             raise ValidationError("Un préstamo no puede ser individual y grupal simultáneamente.")
         self.es_grupal = bool(self.grupo) # Actualiza el campo es_grupal según la presencia del grupo
+    @property
+    def color_estado(self):
+        pagos = self.pagos.all()
+
+        if not pagos.exists():
+            return ""
+
+        # 🔴 Si hay algún pago con atraso
+        for pago in pagos:
+            if pago.dias_atraso > 0:
+                return "table-danger"
+
+        # 🟡 Si todos están pendientes
+        if pagos.filter(estado_pago='pagado').count() == 0:
+            return "table-warning"
+
+        # 🟢 Caso contrario está al corriente
+        return "table-success"
 
     
     @property
@@ -117,16 +137,26 @@ class Prestamo(models.Model):
 
     @property
     def proximo_pago(self):
-        """Calcula la fecha del próximo pago pendiente"""
-        if not self.pagos.exists():
-            return self.fecha_aprobacion
-            
-        ultimo_pago = self.pagos.latest('fecha_pago')
-        if self.tipo == 'SEMANAL':
-            return ultimo_pago.fecha_pago + timezone.timedelta(weeks=1)
-        else:
-            return ultimo_pago.fecha_pago + relativedelta(months=1)
- 
+        """
+        Devuelve la fecha del próximo pago pendiente del préstamo.
+        """
+        Pago = apps.get_model('Pagos', 'Pago')
+
+        pago_pendiente = (
+            Pago.objects
+            .filter(
+                prestamo=self,
+                estado_pago__in=['pendiente', 'parcial']
+            )
+            .order_by('fecha_programada')
+            .first()
+        )
+
+        if pago_pendiente:
+            return pago_pendiente.fecha_programada
+
+        return None  # o self.fecha_aprobacion si prefieres
+    
     @property
     def tasa_periodo(self):
         """Calcula la tasa de interés efectiva según el periodo"""
@@ -140,34 +170,40 @@ class Prestamo(models.Model):
             return tasa_anual / Decimal(12)
 
     def generar_pagos(self):
-        from Pagos.models import Pago  # Importación dentro de la función
-        """Genera y guarda los pagos en la base de datos basados en el tipo de pago"""
+        from Pagos.models import Pago
+        from decimal import Decimal
+        from dateutil.relativedelta import relativedelta
+        from datetime import timedelta
 
-        # Verificar que el campo iva_sobre_intereses esté disponible y tenga el valor esperado
-        print(f"IVA sobre intereses: {self.iva_sobre_intereses}")  # Verificar valor del IVA
+        print(f"IVA sobre intereses: {self.iva_sobre_intereses}")
 
-        # Recibiendo los valores del préstamo y asegurando que todo sea de tipo Decimal
         monto = Decimal(self.monto)
-        tasa_interes = Decimal(self.tasa_interes) / Decimal('100')  # Convertir a porcentaje
+        tasa_interes = Decimal(self.tasa_interes) / Decimal('100')
         iva_porcentaje = Decimal(self.iva_sobre_intereses) / Decimal('100')
+
         total_pagos = self.total_pagos
-        tipo_pago = self.tipo  # 'SEMANAL' o 'MENSUAL'
+        tipo_pago = self.tipo
+
         ahorro_por_pago = Decimal(self.ahorro or 0)
         pago_final_manual = Decimal(self.pago_final or 0)
 
-        # Calcular componentes fijos de cada pago
-        abono_capital_base = Decimal(monto / total_pagos)  # Abono a capital por pago
-        interes_por_periodo = Decimal(monto * tasa_interes)  # Interés fijo por cada pago
-        iva_por_periodo = Decimal(interes_por_periodo * iva_porcentaje)  # IVA sobre el interés
-        cuota_base = abono_capital_base + interes_por_periodo + iva_por_periodo  # Cuota total por pago
+        # ----- CALCULOS BASE -----
 
-        # Generar fechas de pagos
+        abono_capital_base = monto / total_pagos
+        interes_por_periodo = monto * tasa_interes
+        iva_por_periodo = interes_por_periodo * iva_porcentaje
+
+        cuota_base = abono_capital_base + interes_por_periodo + iva_por_periodo
+
+        # ----- GENERAR FECHAS -----
+
         fechas_pagos = []
-        if self.fecha_aprobacion:
-            fecha_base = self.fecha_aprobacion.date()
-            dia_prestamo = fecha_base.weekday()  # Día de la semana de la fecha de aprobación
 
-            # Primer pago
+        if self.fecha_aprobacion:
+
+            fecha_base = self.fecha_aprobacion.date()
+            dia_prestamo = fecha_base.weekday()
+
             if tipo_pago == 'SEMANAL':
                 fecha_pago = fecha_base + relativedelta(weeks=1)
             else:
@@ -175,43 +211,34 @@ class Prestamo(models.Model):
 
             for _ in range(total_pagos):
 
-                # Ajustar siempre al mismo día de la semana que el préstamo
                 diferencia = dia_prestamo - fecha_pago.weekday()
                 fecha_ajustada = fecha_pago + timedelta(days=diferencia)
 
                 fechas_pagos.append(fecha_ajustada)
 
-                # Siguiente fecha
                 if tipo_pago == 'SEMANAL':
                     fecha_pago += relativedelta(weeks=1)
                 else:
                     fecha_pago += timedelta(days=30)
 
+        responsable = self.promotor # aquí tomamos el responsable desde el préstamo
 
+        # ----- CREAR CUOTAS -----
 
-        responsable = self.promotor  # aquí tomamos el responsable desde el préstamo
-
-        # Generar los pagos en la base de datos
         for i, fecha_pago in enumerate(fechas_pagos):
-           
+
             if pago_final_manual > 0:
-
                 monto_total_pago = pago_final_manual
-
             else:
-
-                abono_capital = abono_capital_base
-                interes = interes_por_periodo
-                iva = iva_por_periodo
-
-                cuota = abono_capital + interes + iva
-
-                monto_total_pago = cuota + ahorro_por_pago 
+                cuota = cuota_base
+                monto_total_pago = cuota + ahorro_por_pago
 
             Pago.objects.create(
                 prestamo=self,
-                fecha_pago=fecha_pago,
-                monto_pago=round(monto_total_pago, 0),
+                fecha_programada=fecha_pago,   # ✅ CAMBIO IMPORTANTE
+                monto_pago=round(monto_total_pago, 2),
+                saldo_restante=round(monto_total_pago, 2),  # ✅ inicia igual
+                estado_pago='pendiente',
                 numero_pago=i + 1,
                 cobrador_asignado=responsable
             )
