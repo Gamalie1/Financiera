@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+<title>{% block title %}Generar prestamo{% endblock %}</title>
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Editar Préstamo Grupal
+                </h2>
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="needs-validation">
+                {% csrf_token %}
+                <input type="hidden" name="integrantes" id="integrantes-input">
+
+               <!-- Datos Administrativos -->
+<div class="border-bottom mb-4 pb-3">
+    <h5 class="fw-bold text-secondary">
+        <i class="fas fa-file-alt me-2"></i>Datos Administrativos
+    </h5>
+
+    <div class="row g-4 mt-1">
+        <!-- Nombre del Grupo -->
+        <div class="col-md-6">
+            <label for="id_nombre" class="form-label fw-bold">Nombre del Grupo*</label>
+            <input type="text" class="form-control form-control-lg" id="id_nombre" name="nombre"
+                   value="{{ grupo.nombre }}" required>
+        </div>
+
+        <!-- Descripción del Grupo -->
+        <div class="col-md-6">
+            <label for="id_descripcion" class="form-label fw-bold">Descripción</label>
+            <textarea class="form-control form-control-lg" id="id_descripcion" name="descripcion" rows="2">{{grupo.descripcion }}</textarea>
+        </div>
+    </div>
+
+ <div class="row g-4 mt-3">
+    <div class="col-md-6">
+        <label for="id_responsable" class="form-label fw-bold">
+            Responsable del Grupo*
+        </label>
+
+        <select name="responsable" id="id_responsable"
+                class="form-select form-select-lg py-3 bg-white" required>
+
+            <option value="">Seleccione un responsable</option>
+
+            {% for cliente in clientes %}
+                <option value="{{ cliente.id }}"
+                    {% if cliente.id == grupo.responsable_id %}
+                        selected
+                    {% endif %}
+                >
+                    {{ cliente.nombre }} - {{ cliente.dni }}
+                </option>
+            {% endfor %}
+
+        </select>
+    </div>
+</div>
+</div>
+
+              
+
+                <!-- Integrantes -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light fw-bold"><i class="fas fa-users me-2"></i>Integrantes del Grupo</div>
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-8">
+                                <label for="cliente_integrante" class="form-label fw-bold">Buscar cliente</label>
+                                <select id="cliente_integrante" class="form-select">
+                                    <option value="">Seleccione un cliente</option>
+                                    {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}">{{ cliente.nombre }} - {{ cliente.dni }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-success btn-lg w-100" onclick="agregarIntegrante()">
+                                    <i class="fas fa-plus me-2"></i>Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="fw-bold text-secondary mb-3">Integrantes agregados</h6>
+                        <table class="table table-bordered" id="tabla-integrantes">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Monto Individual</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for integrante in integrantes %}
+                               <tr>
+    <td>{{ forloop.counter }}</td>
+    <td>
+        {{ integrante.cliente.nombre }}
+        <input type="hidden" name="integrantes_ids[]" value="{{ integrante.cliente.id }}">
+    </td>
+    <td>
+        <input type="number" name="montos[]" class="form-control" value="0.00" step="0.01" required>
+    </td>
+    <td>
+        <button type="button" class="btn btn-danger btn-sm"
+                onclick="eliminarFila(this, {{ integrante.cliente.id }})">
+            ❌
+        </button>
+    </td>
+</tr>
+                                {% empty %}
+                                <tr id="sin-integrantes">
+                                    <td colspan="4" class="text-center text-muted">No hay integrantes agregados</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-lg btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Actualizar Préstamo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Arreglo para controlar duplicados
+    let integrantesAgregados = new Set([
+        {% for detalle in detalles %}
+            {{ detalle.integrante.cliente.id }},
+        {% endfor %}
+    ]);
+
+    function agregarIntegrante() {
+        const select = document.getElementById('cliente_integrante');
+        const clienteId = select.value;
+        const clienteNombre = select.options[select.selectedIndex].text;
+
+        if (!clienteId) return;
+
+        if (integrantesAgregados.has(clienteId)) {
+            alert("El cliente ya está agregado.");
+            return;
+        }
+
+        integrantesAgregados.add(clienteId);
+
+        // Eliminar fila "No hay integrantes" si existe
+        const sinIntegrantes = document.getElementById('sin-integrantes');
+        if (sinIntegrantes) sinIntegrantes.remove();
+
+        // Agregar nueva fila
+        const tbody = document.querySelector('#tabla-integrantes tbody');
+        const rowCount = tbody.rows.length + 1;
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+            <td>${rowCount}</td>
+            <td>
+                ${clienteNombre}
+                <input type="hidden" name="integrantes_ids[]" value="${clienteId}">
+            </td>
+            <td>
+                <input type="number" name="montos[]" class="form-control" value="0.00" step="0.01" required>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFila(this, ${clienteId})">❌</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    function eliminarFila(button, clienteId) {
+        button.closest('tr').remove();
+        integrantesAgregados.delete(clienteId);
+
+        // Si la tabla queda vacía, agregar fila de aviso
+        const tbody = document.querySelector('#tabla-integrantes tbody');
+        if (tbody.rows.length === 0) {
+            const tr = document.createElement('tr');
+            tr.id = 'sin-integrantes';
+            tr.innerHTML = `<td colspan="4" class="text-center text-muted">No hay integrantes agregados</td>`;
+            tbody.appendChild(tr);
+        }
+    }
+</script>
+
+{% endblock %}

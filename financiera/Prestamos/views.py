@@ -24,6 +24,7 @@ from datetime import datetime
 from django.contrib.auth.models import User  # Importar el modelo User de Django
 from django.http import HttpResponseForbidden
 from django.db.models import Q
+from zoneinfo import ZoneInfo
 
 
 @login_required
@@ -152,45 +153,54 @@ def create_prestamo(request):
 @login_required
 def editar_prestamo(request, pk):
     prestamo = get_object_or_404(Prestamo, pk=pk)
-    puede_editar = prestamo.estado == 'SOLICITADO'
     clientes = Cliente.objects.all()
-    
+    promotores = User.objects.all()
+
+    estado_anterior = prestamo.estado
+
     if request.method == 'POST':
         try:
+            prestamo.promotor_id = request.POST.get('promotor')
+            prestamo.folio = request.POST.get('folio', '').strip()
             cliente_id = request.POST.get('cliente')
-            monto = Decimal(request.POST.get('monto', '0').strip() or '0')
-            tasa_interes = Decimal(request.POST.get('tasa_interes', '0').strip() or '0')
+            monto = Decimal(request.POST.get('monto', '0') or '0')
+            tasa_interes = Decimal(request.POST.get('tasa_interes', '0') or '0')
             tipo = request.POST.get('tipo')
-            total_pagos = int(request.POST.get('total_pagos', '0').strip() or 0)
+            total_pagos = int(request.POST.get('total_pagos', '0') or 0)
             estado = request.POST.get('estado')
-            iva_sobre_intereses = Decimal(request.POST.get('iva_sobre_intereses', '0').strip() or '0')
-            garantia_liquida = Decimal(request.POST.get('garantia_liquida', '0').strip() or '0')
-            aportacion_social = Decimal(request.POST.get('aportacion_social', '0').strip() or '0')
-            fecha_aprobacion = request.POST.get('fecha_aprobacion')  # Obtener la fecha de aprobación
-       
-            if fecha_aprobacion:
-                prestamo.fecha_aprobacion = datetime.strptime(fecha_aprobacion, "%Y-%m-%d")
-            else:
-                prestamo.fecha_aprobacion = None
+
+            iva_sobre_intereses = Decimal(request.POST.get('iva_sobre_intereses', '0') or '0')
+            garantia_liquida = Decimal(request.POST.get('garantia_liquida', '0') or '0')
+            aportacion_social = Decimal(request.POST.get('aportacion_social', '0') or '0')
+
+            fecha_aprobacion = request.POST.get('fecha_aprobacion')
 
             errores = []
+
+            # VALIDACIONES
             if monto < 100:
                 errores.append("El monto mínimo es $100.00")
+
             if tipo not in ['SEMANAL', 'MENSUAL']:
                 errores.append("Tipo de préstamo inválido")
+
             if total_pagos < 1:
                 errores.append("El número mínimo de pagos es 1")
-                
-            # Validaciones específicas por tipo
+
             if tipo == 'SEMANAL' and total_pagos > 520:
-                errores.append("El máximo de pagos semanales es 520 (10 años)")
-            elif tipo == 'MENSUAL' and total_pagos > 120:
-                errores.append("El máximo de pagos mensuales es 120 (10 años)")
-                
+                errores.append("Máximo 520 pagos semanales")
+
+            if tipo == 'MENSUAL' and total_pagos > 120:
+                errores.append("Máximo 120 pagos mensuales")
+
             if tasa_interes < Decimal('0.1') or tasa_interes > Decimal('30'):
                 errores.append("La tasa debe estar entre 0.1% y 30%")
 
+
+
+            # SI NO HAY ERRORES
             if not errores:
+
                 prestamo.cliente_id = cliente_id
                 prestamo.monto = monto
                 prestamo.tasa_interes = tasa_interes
@@ -200,32 +210,39 @@ def editar_prestamo(request, pk):
                 prestamo.iva_sobre_intereses = iva_sobre_intereses
                 prestamo.garantia_liquida = garantia_liquida
                 prestamo.aportacion_social = aportacion_social
-                
-                if estado == 'APROBADO' and prestamo.estado != 'APROBADO':
-                    if fecha_aprobacion:
-                        prestamo.fecha_aprobacion = fecha_aprobacion  # Asigna directamente
-                    else:
-                        prestamo.fecha_aprobacion = None  # Si no se pasa, deja la fecha en None
-                elif estado != 'APROBADO':
-                    prestamo.fecha_aprobacion = None  # Si no está aprobado, eliminamos la fecha de a
+
+                # FECHA APROBACION
+                if estado == 'APROBADO':
+                  if fecha_aprobacion:
+                    prestamo.fecha_aprobacion = datetime.strptime(
+                        fecha_aprobacion, "%Y-%m-%d"
+                    ).date()
+                else:
+                    prestamo.fecha_aprobacion = None
+
                 
                 prestamo.save()
-                messages.success(request, 'Préstamo actualizado correctamente')
+
+                
+                
+
+                messages.success(request, "Préstamo actualizado correctamente")
                 return redirect('principalPrestamos')
-            
+
             for error in errores:
                 messages.error(request, error)
-                
+
         except Exception as e:
             messages.error(request, f"Error al procesar los datos: {str(e)}")
-    
+
     context = {
         'prestamo': prestamo,
         'clientes': clientes,
         'estados': Prestamo.ESTADO_CHOICES,
-        'puede_editar': puede_editar
+        'cliente_seleccionado': prestamo.cliente_id,
+        'promotores': promotores,
     }
-    
+
     return render(request, 'editar_prestamo.html', context)
 
 
@@ -237,10 +254,10 @@ def eliminar_prestamo(request, pk):
     return redirect('principalPrestamos')
 
 # Establecer el locale para español
-locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
 
 def fecha_a_letras(fecha):
-    locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')
+    locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
     """Convierte una fecha en formato 'día de mes de año, día de la semana' en español."""
     # Convertir la fecha en formato 'día de mes de año'
     dia_semana = fecha.strftime("%A")  # Obtener el día de la semana
@@ -408,7 +425,8 @@ def generar_contrato_pdf(request, prestamo_id):
     }
 
     # Obtener la fecha actual
-    fecha_actual = datetime.now()
+    
+    fecha_actual = datetime.now(ZoneInfo("America/Mexico_City"))
 
     # Extraer el día, mes y año de la fecha actual
     dia = fecha_actual.day
@@ -555,7 +573,7 @@ def generar_pagare(request, prestamo_id):
     }
 
     # Obtener la fecha actual
-    fecha_actual = datetime.now()
+    fecha_actual = datetime.now(ZoneInfo("America/Mexico_City"))
 
     # Extraer el día, mes y año de la fecha actual
     dia = fecha_actual.day
@@ -594,10 +612,10 @@ def generar_pagare(request, prestamo_id):
 
         # Obtener solo la fecha (sin la hora)
         # Traer el primer pago relacionado con el préstamo, ordenado por fecha
-    primer_pago = cliente.pagos.order_by('fecha_pago').first()  # Ordena ascendentemente por la fecha del pago
+    primer_pago = cliente.pagos.order_by('fecha_programada').first()  # Ordena ascendentemente por la fecha del pago
 
     # Si existe un primer pago, toma su fecha; si no, usa la fecha de aprobación por defecto
-    fecha_inicial = primer_pago.fecha_pago.date() if primer_pago else cliente.fecha_aprobacion.date()
+    fecha_inicial = primer_pago.fecha_programada if primer_pago else cliente.fecha_aprobacion
     
     monto_formateado = f"{int(cliente.monto):,}"
     monto_pago_redondeado = round(monto_pago)  # Redondea al número entero más cercano

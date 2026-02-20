@@ -16,8 +16,24 @@ from django.contrib.auth.decorators import login_required
 # CRUD para Grupo
 @login_required
 def listar_grupos(request):
-    grupos = Grupo.objects.all()
-    return render(request, 'grupo_list.html', {'grupos': grupos})
+    grupos = Grupo.objects.prefetch_related('integrantes__prestamos').all()
+
+    # Construimos una lista con cada grupo y su primer préstamo si existe
+    grupos_con_prestamo = []
+    for grupo in grupos:
+        prestamo = None
+        # Buscar el primer préstamo de cualquier integrante
+        for integrante in grupo.integrantes.all():
+            detalle = integrante.prestamos.first()
+            if detalle and detalle.prestamo:
+                prestamo = detalle.prestamo
+                break
+        grupos_con_prestamo.append({
+            'grupo': grupo,
+            'prestamo': prestamo
+        })
+
+    return render(request, 'grupo_list.html', {'grupos_con_prestamo': grupos_con_prestamo})
 
 @login_required
 def crear_prestamo_grupal(request):
@@ -151,21 +167,52 @@ def detalle_grupo(request, pk):
 
 @login_required
 def editar_grupo(request, pk):
+    # Obtener el grupo por pk
     grupo = get_object_or_404(Grupo, pk=pk)
-    
-    if request.method == 'POST':
-        grupo.nombre = request.POST.get('nombre')
-        grupo.descripcion = request.POST.get('descripcion')
-        responsable_id = request.POST.get('responsable')
-        grupo.responsable = get_object_or_404(Cliente, id=responsable_id) if responsable_id else None
-        grupo.activo = 'activo' in request.POST
-        grupo.save()
-        return redirect('detalle-grupo', pk=grupo.pk)
-    
+
+    # Clientes disponibles para seleccionar
     clientes = Cliente.objects.all()
-    return render(request, 'grupo_form.html', {
-        'grupo': grupo,
-        'clientes': clientes
+
+    # Detalles actuales del grupo (si existieran) o lista vacía
+    integrantes = grupo.integrantes.select_related('cliente').all()
+
+    if request.method == "POST":
+        form_data = request.POST.copy()
+
+        # Aquí puedes actualizar datos administrativos del grupo
+        grupo.nombre = form_data.get("nombre", grupo.nombre)
+        grupo.descripcion = form_data.get("descripcion", grupo.descripcion)
+
+        responsable_id = form_data.get("responsable")
+        if responsable_id:
+            grupo.responsable = Cliente.objects.get(id=responsable_id)
+
+        grupo.save()
+
+        # Actualizar integrantes si se envían
+        integrantes_ids = request.POST.getlist("integrantes_ids[]")
+        montos = request.POST.getlist("montos[]")
+
+        # Si quieres mantener un registro de préstamos grupales, podrías crear uno aquí
+        # pero si solo quieres editar integrantes del grupo, basta con actualizar DetallePrestamoGrupal
+        DetallePrestamoGrupal.objects.filter(prestamo__grupo=grupo).delete()  # Opcional, depende de tu modelo
+
+        for cliente_id, monto_individual in zip(integrantes_ids, montos):
+            integrante = IntegranteGrupo.objects.get(grupo=grupo, cliente_id=cliente_id)
+            # Puedes guardar el detalle de monto si quieres
+            DetallePrestamoGrupal.objects.create(
+                prestamo=None,  # Sin préstamo asociado
+                integrante=integrante,
+                monto=Decimal(monto_individual)
+            )
+
+        messages.success(request, "Grupo actualizado correctamente")
+        return redirect("principalPrestamos")
+
+    return render(request, "grupo_form_edit.html", {
+        "grupo": grupo,
+        "integrantes": integrantes,
+        "clientes": clientes
     })
 
 @login_required

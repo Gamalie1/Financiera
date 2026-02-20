@@ -2,71 +2,69 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <style>
-      body {
-        font-family: "Arial", sans-serif;
-        margin: 50px;
-      }
-      .titulo {
-        text-align: center;
-        font-weight: bold;
-        font-size: 18pt;
-      }
-      .subtitulo {
-        display: flex;
-        justify-content: space-between; /* Espacia los elementos entre sí */
-        align-items: center; /* Alinea los elementos verticalmente al centro */
-      }
-      .contenido {
-        font-size: 11pt;
-        text-align: justify;
-      }
-      .rojo {
-        color: #d90000;
-        font-weight: bold;
-      }
-      .centrado {
-        text-align: center;
-      }
-      .firmas {
-        margin-top: 40px;
-        display: flex;
-        justify-content: space-between;
-      }
-      .firma-box {
-        width: 48%;
-        border: 1px solid #fff;
-        padding: 10px;
-        font-size: 10pt;
-      }
-      .firma-box .sub {
-        margin-top: 30px;
-        text-align: center;
-      }
-      .subrayado {
-        text-decoration: underline;
-      }
-      .firmas {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        margin-top: 10px;
-      }
+   <style>
+  body {
+    font-family: "Arial", sans-serif;
+    margin: 25px; /* reducido para que no salte */
+  }
 
-      .firma-box {
-        width: 48%;
-        padding: 10px;
-        margin-bottom: 15px;
-        box-sizing: border-box;
-        font-size: 12px;
-        page-break-inside: avoid;
-      }
+  .titulo {
+    text-align: center;
+    font-weight: bold;
+    font-size: 18pt;
+  }
 
-      .sub {
-        text-align: center;
-        margin-top: 10px;
-      }
-    </style>
+  .subtitulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .contenido {
+    font-size: 10.5pt;
+    text-align: justify;
+  }
+
+  .subrayado {
+    text-decoration: underline;
+  }
+
+  .firmas {
+    margin-top: 10px;
+    font-size: 0;
+  }
+
+  .firma-box {
+    width: 48%;
+    display: inline-block;
+    vertical-align: top;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-size: 12px;
+
+    page-break-inside: avoid;
+  }
+
+  .firma-box .sub {
+    margin-top: 15px; /* reducido */
+    text-align: center;
+  }
+
+  .sub {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .bloque-firmas {
+    page-break-inside: avoid;
+    page-break-before: avoid;
+  }
+
+  .sin-salto {
+    page-break-after: avoid;
+  }
+</style>
   </head>
   <body>
     <div class="titulo">P A G A R E</div>
@@ -117,12 +115,12 @@
       exigir anticipadamente el cumplimiento del saldo insoluto y sus
       accesorios.
     </p>
-    <p class="contenido">
-      Suscrito en Miahuatlán de Porfirio Díaz, Oaxaca, {{ fecha_actual }}.
-    </p>
+   <p class="contenido sin-salto">
+  Suscrito en Miahuatlán de Porfirio Díaz, Oaxaca, {{ fecha_actual }}.
+  </p>
 
     {% if es_grupal %}
-
+<div class="bloque-firmas">
     <div class="firmas">
       {% for integrante in integrantes %}
       <div class="firma-box">
@@ -143,6 +141,7 @@
       </div>
 
       {% endfor %}
+    </div>
     </div>
 
     {% else %}

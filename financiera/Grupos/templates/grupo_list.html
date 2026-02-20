@@ -23,81 +23,70 @@
             </div>
           </div>
         </div>
-        <div class="panel-body table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>Responsable</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for grupo in grupos %}
-              <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ grupo.nombre }}</td>
-                <td>{{ grupo.responsable.nombre|default:"No asignado" }}</td>
-                <td>
-                  {% if grupo.activo %}
-                  <span class="label label-success">Activo</span>
-                  {% else %}
-                  <span class="label label-danger">Inactivo</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <ul class="action-list">
-                    <li>
-                      <a
-                        href="{% url 'detalle-grupo' grupo.pk %}"
-                        data-tip="view"
-                        ><i class="fa fa-eye"></i
-                      ></a>
-                      Ver
-                    </li>
-                    <li>
-                      <a
-                        href="{% url 'editar-grupo' grupo.pk %}"
-                        data-tip="edit"
-                        ><i class="fa fa-edit"></i
-                      ></a>
-                      Editar
-                    </li>
-                    <!-- ELIMINAR -->
-                    <li>
-                      <a
-                        href="javascript:void(0);"
-                        data-tip="delete"
-                        onclick="eliminarGrupo({{ grupo.pk }})"
-                      >
-                        <i class="fa fa-trash"></i>
-                      </a>
-                      Eliminar
-                    </li>
-                  </ul>
-                  <!-- FORM OCULTO POST -->
-                  <form
-                    id="form-eliminar-{{ grupo.pk }}"
-                    action="{% url 'eliminar-grupo' grupo.pk %}"
-                    method="POST"
-                    style="display: none"
-                  >
-                    {% csrf_token %}
-                  </form>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5" class="text-center">
-                  No hay grupos registrados
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+       <div class="panel-body table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Responsable</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+     {% for item in grupos_con_prestamo %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ item.grupo.nombre }}</td>
+    <td>{{ item.grupo.responsable.nombre|default:"No asignado" }}</td>
+    <td>
+        {% if item.grupo.activo %}
+        <span class="label label-success">Activo</span>
+        {% else %}
+        <span class="label label-danger">Inactivo</span>
+        {% endif %}
+    </td>
+    <td>
+        <ul class="action-list">
+            <li>
+              <a href="{% url 'detalle-grupo' item.grupo.pk %}" data-tip="view">
+                <i class="fa fa-eye"></i>
+              </a>
+              Ver
+            </li>
+
+          <li>
+  <a href="{% url 'editar-grupo' item.grupo.pk %}" data-tip="edit">
+    <i class="fa fa-edit"></i>
+  </a>
+  Editar
+</li> 
+
+            <!-- ELIMINAR -->
+            <li>
+              <a href="javascript:void(0);" data-tip="delete" onclick="eliminarGrupo({{ item.grupo.pk }})">
+                <i class="fa fa-trash"></i>
+              </a>
+              Eliminar
+            </li>
+        </ul>
+
+        <form id="form-eliminar-{{ item.grupo.pk }}" action="{% url 'eliminar-grupo' item.grupo.pk %}" method="POST" style="display: none">
+            {% csrf_token %}
+        </form>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="5" class="text-center">
+        No hay grupos registrados
+    </td>
+</tr>
+{% endfor %}
+    </tbody>
+  </table>
+</div>
       </div>
     </div>
   </div>

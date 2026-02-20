@@ -175,6 +175,12 @@ class Prestamo(models.Model):
         from dateutil.relativedelta import relativedelta
         from datetime import timedelta
 
+           # 🔥 eliminar pagos pendientes anteriores
+        Pago.objects.filter(
+            prestamo=self,
+            estado_pago='pendiente'
+        ).delete()
+
         print(f"IVA sobre intereses: {self.iva_sobre_intereses}")
 
         monto = Decimal(self.monto)
@@ -201,7 +207,7 @@ class Prestamo(models.Model):
 
         if self.fecha_aprobacion:
 
-            fecha_base = self.fecha_aprobacion.date()
+            fecha_base = self.fecha_aprobacion
             dia_prestamo = fecha_base.weekday()
 
             if tipo_pago == 'SEMANAL':
@@ -262,7 +268,6 @@ class Prestamo(models.Model):
         # Guardamos el objeto Prestamo después de procesar la fecha y generar pagos
         super().save(*args, **kwargs)
 
-    
     class Meta:
         verbose_name = "Préstamo"
         verbose_name_plural = "Préstamos"

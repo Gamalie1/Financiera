@@ -12,6 +12,7 @@ from Gastos.models import Gasto
 from Prestamos.models import Prestamo
 from datetime import timedelta
 from django.http import Http404
+from decimal import Decimal
 
 
 #Index
@@ -93,7 +94,7 @@ def principal(request):
         
         
         # Guardar los totales en los diccionarios
-        total_neto = total_pagado - total_gasto
+        total_neto = Decimal(total_pagado) -  Decimal(total_gasto)
         totales_cobradores[user.username] = total_neto
         totales_gastos[user.username] = total_gasto
         pagos_retrasados[user.username] = total_pagos_retrasados
