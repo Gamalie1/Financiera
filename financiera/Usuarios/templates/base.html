@@ -1,7 +1,20 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+     <!-- Favicon principal (32x32) -->
+    <link rel="icon" href="{% static 'img/favicon-32x32.png' %}" sizes="32x32" type="image/png">
+    
+    <!-- Favicon secundario (16x16) -->
+    <link rel="icon" href="{% static 'img/favicon-16x16.png' %}" sizes="16x16" type="image/png">
+
+    <!-- Favicon para dispositivos Apple -->
+    <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+
+    <!-- Favicon para Microsoft -->
+
+  <meta name="msapplication-TileImage" content="mstile-150x150.png">
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -308,6 +321,39 @@
         {% endif %}
     {% endfor %}
 {% endif %}
+
+
+<script type="text/javascript">
+    // Tiempo en milisegundos (5 minutos)
+    var tiempoInactividad = 5 * 60 * 1000;
+
+    // Variables para el temporizador
+    var tiempoUltimaAccion;
+    var timerInactividad;
+
+    // Función que reinicia el temporizador cada vez que haya interacción
+    function reiniciarTemporizador() {
+        clearTimeout(timerInactividad); // Limpiamos el temporizador anterior
+        timerInactividad = setTimeout(cerrarSesion, tiempoInactividad); // Iniciamos un nuevo temporizador
+    }
+
+    // Función para cerrar la sesión y redirigir al login
+    function cerrarSesion() {
+        // Obtener la URL de login de Django (usando la plantilla)
+        var urlLogin = "{% url 'logout' %}";  // 'login' es el nombre de la vista en urls.py
+
+        // Realizar la redirección al login
+        window.location.href = urlLogin;  // Redirige al login utilizando la URL generada por Django
+    }
+
+    // Detectamos actividad del usuario (movimiento del ratón, teclas, clics)
+    document.onmousemove = reiniciarTemporizador; // Detecta movimiento del ratón
+    document.onkeypress = reiniciarTemporizador;  // Detecta cuando se presiona una tecla
+    document.onclick = reiniciarTemporizador;    // Detecta clics
+
+    // Iniciar el temporizador cuando la página se carga por primera vez
+    reiniciarTemporizador();
+</script>
 </body>
 
 </html>

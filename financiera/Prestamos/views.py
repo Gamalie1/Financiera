@@ -155,8 +155,16 @@ def editar_prestamo(request, pk):
     prestamo = get_object_or_404(Prestamo, pk=pk)
     clientes = Cliente.objects.all()
     promotores = User.objects.all()
-
+     # Traer los integrantes del grupo si el préstamo es grupal
+    integrantes = []
+    if prestamo.es_grupal:
+        detalles = DetallePrestamoGrupal.objects.filter(prestamo_id=prestamo.id)
+    else:
+        detalles = []
+    print("DETALLES:", detalles)
     estado_anterior = prestamo.estado
+
+    
 
     if request.method == 'POST':
         try:
@@ -222,6 +230,14 @@ def editar_prestamo(request, pk):
 
                 
                 prestamo.save()
+                if prestamo.es_grupal:
+                    detalle_ids = request.POST.getlist('detalle_ids[]')
+                    montos = request.POST.getlist('montos[]')
+
+                    for i in range(len(detalle_ids)):
+                        detalle = DetallePrestamoGrupal.objects.get(id=detalle_ids[i])
+                        detalle.monto = Decimal(montos[i] or '0')
+                        detalle.save()
 
                 
                 
@@ -241,6 +257,8 @@ def editar_prestamo(request, pk):
         'estados': Prestamo.ESTADO_CHOICES,
         'cliente_seleccionado': prestamo.cliente_id,
         'promotores': promotores,
+         'integrantes': integrantes,  # Pasar los integrantes y sus montos al template
+          'detalles': detalles,  # Pasamos los detalles del préstamo grupal
     }
 
     return render(request, 'editar_prestamo.html', context)
