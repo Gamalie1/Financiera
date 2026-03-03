@@ -527,17 +527,22 @@
                   <td class="text-end">${{ pago.iva|floatformat:2 }}</td>
                   <td class="text-end">${{ pago.total|floatformat:2 }}</td>
                   <td>
-                    {% if pago.estado_pago == 'pagado' %}
-                    <span class="badge bg-success">Pagado</span>
-                    <small class="text-muted d-block"
-                      >{{ pago.fecha_pago|date:"d/m/Y" }}</small
-                    >
-                    {% elif pago.dias_transcurridos > 0 %}
-                    <span class="badge bg-danger">Atrasado</span>
-                    {% else %}
-                    <span class="badge bg-warning text-dark">Pendiente</span>
-                    {% endif %}
-                  </td>
+                      {% if pago.estado_pago == 'pagado' %}
+                        <span class="badge bg-success">Pagado</span>
+                        <small class="text-muted d-block">
+                          {{ pago.fecha_pago|date:"d/m/Y" }}
+                        </small>
+
+                      {% elif pago.estado_pago == 'parcial' %}
+                         <span class="badge text-dark" style="background: #ff9800">Pago Parcial</span>
+
+                      {% elif pago.estado_pago == 'pendiente' and pago.dias_atraso > 0 %}
+                        <span class="badge bg-danger">Atrasado</span>
+
+                      {% else %}
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                      {% endif %}
+                    </td>
                   <td class="text-end">{{ pago.dias_atraso }}</td>
                   <td class="text-end">${{ pago.multa|floatformat:2 }}</td>
                 </tr>

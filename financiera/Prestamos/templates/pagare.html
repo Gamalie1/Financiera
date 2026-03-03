@@ -2,69 +2,99 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-   <style>
-  body {
-    font-family: "Arial", sans-serif;
-    margin: 25px; /* reducido para que no salte */
-  }
+    <style>
+       {% if cambiar_a_oficio %}
+        @page {
+          size: 8.5in 13in;
+          margin: 20px;
+        }
+      {% else %}
+        @page {
+          size: letter;
+          margin: 20px;
+        }
+      {% endif %}
 
-  .titulo {
-    text-align: center;
-    font-weight: bold;
-    font-size: 18pt;
-  }
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 25px; /* reducido para que no salte */
+      }
 
-  .subtitulo {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+      .titulo {
+        text-align: center;
+        font-weight: bold;
+        font-size: 18pt;
+      }
 
-  .contenido {
-    font-size: 10.5pt;
-    text-align: justify;
-  }
+      .subtitulo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-  .subrayado {
-    text-decoration: underline;
-  }
+      .contenido {
+        font-size: 10.5pt;
+        text-align: justify;
+      }
 
-  .firmas {
-    margin-top: 10px;
-    font-size: 0;
-  }
+      .subrayado {
+        text-decoration: underline;
+      }
 
-  .firma-box {
-    width: 48%;
-    display: inline-block;
-    vertical-align: top;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-    font-size: 12px;
+      {% if cambiar_a_oficio %}
 
-    page-break-inside: avoid;
-  }
+          .firmas {
+            display: block;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+          }
 
-  .firma-box .sub {
-    margin-top: 15px; /* reducido */
-    text-align: center;
-  }
+          .firma-box {
+            width: 31%;              /* 3 columnas */
+            font-size: 10px;         /* letra un poco más chica */
+            padding: 6px;
+            box-sizing: border-box;
+            page-break-inside: auto;
+            float: left;
+          }
+        {% else %}
 
-  .sub {
-    text-align: center;
-    margin-top: 10px;
-  }
+      .firmas {
+        margin-top: 10px;
+        font-size: 0;
+      }
 
-  .bloque-firmas {
-    page-break-inside: avoid;
-    page-break-before: avoid;
-  }
+      .firma-box {
+        width: 48%;
+        display: inline-block;
+        vertical-align: top;
+        padding: 10px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        font-size: 12px;
+        page-break-inside: auto;
+      }
+      {% endif %}
 
-  .sin-salto {
-    page-break-after: avoid;
-  }
-</style>
+      .firma-box .sub {
+        margin-top: 15px; /* reducido */
+        text-align: center;
+      }
+
+      .sub {
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .bloque-firmas {
+        page-break-inside: auto;
+      }
+
+      .sin-salto {
+        page-break-after: auto;
+      }
+    </style>
   </head>
   <body>
     <div class="titulo">P A G A R E</div>
@@ -115,33 +145,33 @@
       exigir anticipadamente el cumplimiento del saldo insoluto y sus
       accesorios.
     </p>
-   <p class="contenido sin-salto">
-  Suscrito en Miahuatlán de Porfirio Díaz, Oaxaca, {{ fecha_actual }}.
-  </p>
+    <p class="contenido sin-salto">
+      Suscrito en Miahuatlán de Porfirio Díaz, Oaxaca, {{ fecha_actual }}.
+    </p>
 
     {% if es_grupal %}
-<div class="bloque-firmas">
-    <div class="firmas">
-      {% for integrante in integrantes %}
-      <div class="firma-box">
-        <strong>
-          {% if integrante.es_representante %} EL SUSCRIPTOR {% else %} AVAL
-          {%endif %} </strong
-        ><br />
+    <div class="bloque-firmas">
+      <div class="firmas">
+        {% for integrante in integrantes %}
+        <div class="firma-box">
+          <strong>
+            {% if integrante.es_representante %} EL SUSCRIPTOR {% else %} AVAL
+            {%endif %} </strong
+          ><br />
 
-        Nombre: {{ integrante.cliente.nombre }}<br />
-        Domicilio: {{ integrante.cliente.domicilio }}<br />
-        Teléfono: {{ integrante.cliente.telefono }}<br />
+          Nombre: {{ integrante.cliente.nombre }}<br />
+          Domicilio: {{ integrante.cliente.domicilio }}<br />
+          Teléfono: {{ integrante.cliente.telefono }}<br />
 
-        <div class="sub">
-          Acepto<br /><br />
-          ___________________________<br />
-          Firma
+          <div class="sub">
+            Acepto<br /><br />
+            ___________________________<br />
+            Firma
+          </div>
         </div>
-      </div>
 
-      {% endfor %}
-    </div>
+        {% endfor %}
+      </div>
     </div>
 
     {% else %}

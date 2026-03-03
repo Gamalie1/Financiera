@@ -242,8 +242,8 @@ class Prestamo(models.Model):
             Pago.objects.create(
                 prestamo=self,
                 fecha_programada=fecha_pago,   # ✅ CAMBIO IMPORTANTE
-                monto_pago=round(monto_total_pago, 2),
-                saldo_restante=round(monto_total_pago, 2),  # ✅ inicia igual
+                monto_pago=round(monto_total_pago, 0),
+                saldo_restante=round(monto_total_pago, 0),  # ✅ inicia igual
                 estado_pago='pendiente',
                 numero_pago=i + 1,
                 cobrador_asignado=responsable

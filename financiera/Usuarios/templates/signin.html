@@ -1,6 +1,15 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
+     <!-- Favicon principal (32x32) -->
+    <link rel="icon" href="{% static 'img/favicon-32x32.png' %}" sizes="32x32" type="image/png">
+    
+    <!-- Favicon secundario (16x16) -->
+    <link rel="icon" href="{% static 'img/favicon-16x16.png' %}" sizes="16x16" type="image/png">
+
+    <!-- Favicon para dispositivos Apple -->
+    <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

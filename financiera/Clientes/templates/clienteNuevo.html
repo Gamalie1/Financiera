@@ -44,17 +44,19 @@
     </div>
 
     <!-- Teléfono -->
-    <div class="form-group mb-3">
-      <label for="id_telefono">Teléfono</label>
-      <input
-        type="text"
-        class="form-control"
-        id="id_telefono"
-        name="telefono"
-        required
-      />
-    </div>
-
+   <div class="form-group mb-3">
+  <label for="id_telefono">Teléfono</label>
+  <input
+    type="tel"
+    class="form-control"
+    id="id_telefono"
+    name="telefono"
+    pattern="[0-9]+"
+    inputmode="numeric"
+    maxlength="10"
+    required
+  />
+</div>
     <!-- Domicilio -->
     <div class="form-group mb-3">
       <label for="id_domicilio">Domicilio</label>
@@ -101,16 +103,19 @@
       ></textarea>
     </div>
     <!-- Teléfono -->
-    <div class="form-group mb-3">
-      <label for="telefono_aval">Teléfono aval</label>
-      <input
-        type="text"
-        class="form-control"
-        id="telefono_aval"
-        name="telefono_aval"
-        required
-      />
-    </div>
+   <div class="form-group mb-3">
+  <label for="telefono_aval">Teléfono aval</label>
+  <input
+    type="tel"
+    class="form-control"
+    id="telefono_aval"
+    name="telefono_aval"
+    pattern="[0-9]+"
+    inputmode="numeric"
+    maxlength="10"
+    required
+  />
+</div>
 
     <!-- Aval 2 -->
     <div class="form-group mb-3">
@@ -183,4 +188,14 @@
     </div>
   </form>
 </div>
+<script>
+  function soloNumeros(inputId) {
+    document.getElementById(inputId).addEventListener("input", function () {
+      this.value = this.value.replace(/[^0-9]/g, "");
+    });
+  }
+
+  soloNumeros("id_telefono");
+  soloNumeros("telefono_aval");
+</script>
 {% endblock %}

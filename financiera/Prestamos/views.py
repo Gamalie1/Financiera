@@ -183,6 +183,9 @@ def editar_prestamo(request, pk):
 
             fecha_aprobacion = request.POST.get('fecha_aprobacion')
 
+            ahorro = Decimal(request.POST.get('ahorro', '0') or '0')
+            pago_final = Decimal(request.POST.get('pago_final', '0') or '0')
+
             errores = []
 
             # VALIDACIONES
@@ -218,6 +221,8 @@ def editar_prestamo(request, pk):
                 prestamo.iva_sobre_intereses = iva_sobre_intereses
                 prestamo.garantia_liquida = garantia_liquida
                 prestamo.aportacion_social = aportacion_social
+                prestamo.ahorro = ahorro
+                prestamo.pago_final = pago_final
 
                 # FECHA APROBACION
                 if estado == 'APROBADO':
@@ -231,13 +236,56 @@ def editar_prestamo(request, pk):
                 
                 prestamo.save()
                 if prestamo.es_grupal:
-                    detalle_ids = request.POST.getlist('detalle_ids[]')
+                    detalle_ids = request.POST.getlist('detalle_ids[]')  # existentes
+                    integrantes_ids = request.POST.getlist('integrantes_ids[]')  # nuevos
                     montos = request.POST.getlist('montos[]')
 
+                                    # 🚨 VALIDAR DUPLICADOS EN EL FORMULARIO
+                    if len(integrantes_ids) != len(set(integrantes_ids)):
+                        messages.error(request, "No puedes agregar el mismo integrante más de una vez.")
+                        return redirect('editar_prestamo', pk=prestamo.id)
+
+                    # 🚨 VALIDAR QUE NO YA EXISTA EN BD
+                    existentes = DetallePrestamoGrupal.objects.filter(
+                        prestamo=prestamo,
+                        integrante_id__in=integrantes_ids
+                    ).values_list('integrante_id', flat=True)
+
+                    if existentes:
+                        messages.error(request, "Uno de los integrantes ya existe en el préstamo.")
+                        return redirect('editar_prestamo', pk=prestamo.id)
+
+                    # 1️⃣ Eliminar los que ya no están
+                    DetallePrestamoGrupal.objects.filter(prestamo=prestamo)\
+                        .exclude(id__in=detalle_ids)\
+                        .delete()
+
+                    # 2️⃣ Actualizar existentes
                     for i in range(len(detalle_ids)):
                         detalle = DetallePrestamoGrupal.objects.get(id=detalle_ids[i])
                         detalle.monto = Decimal(montos[i] or '0')
                         detalle.save()
+
+                            # 3️⃣ Crear nuevos
+                    inicio_nuevos = len(detalle_ids)
+
+                    for i in range(len(integrantes_ids)):
+                        cliente_id = integrantes_ids[i]
+                        monto_nuevo = Decimal(montos[inicio_nuevos + i] or '0')
+
+                        # 🔎 Buscar el integrante correcto del grupo
+                        integrante = IntegranteGrupo.objects.get(
+                            grupo=prestamo.grupo,
+                            cliente_id=cliente_id
+                        )
+
+                        DetallePrestamoGrupal.objects.create(
+                            prestamo=prestamo,
+                            integrante=integrante,
+                            monto=monto_nuevo,
+                            tasa_interes=prestamo.tasa_interes,
+                            plazo_pagos=prestamo.total_pagos
+                        )
 
                 
                 
@@ -590,13 +638,16 @@ def generar_pagare(request, prestamo_id):
         7: 'julio', 8: 'agosto', 9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
     }
 
-    # Obtener la fecha actual
-    fecha_actual = datetime.now(ZoneInfo("America/Mexico_City"))
+    # Usar la fecha de aprobación
+    fecha_aprobacion = cliente.fecha_aprobacion
 
-    # Extraer el día, mes y año de la fecha actual
-    dia = fecha_actual.day
-    mes = fecha_actual.month
-    año = fecha_actual.year
+    # Asegurarnos que tenga zona horaria (opcional pero recomendable)
+    if fecha_aprobacion.tzinfo is None:
+        fecha_aprobacion = fecha_aprobacion.replace(tzinfo=ZoneInfo("America/Mexico_City"))
+
+    dia = fecha_aprobacion.day
+    mes = fecha_aprobacion.month
+    año = fecha_aprobacion.year
 
     # Generar la fecha en letras
     fecha_en_letras = f"a los {dia} días del mes de {meses[mes]} de {año}"
@@ -648,8 +699,11 @@ def generar_pagare(request, prestamo_id):
         integrantes = IntegranteGrupo.objects.filter(
             grupo=grupo
     ).select_related('cliente').order_by('-es_representante')
- 
     
+    cambiar_a_oficio = False
+
+    if cliente.es_grupal and len(integrantes) > 10:
+     cambiar_a_oficio = True
 
     context = {
         "numero": cliente.id,  # Ajusta según tus campos
@@ -679,6 +733,7 @@ def generar_pagare(request, prestamo_id):
         "telefono_aval2": cliente.cliente.telefono_aval2,
         "es_grupal": cliente.es_grupal,
         "integrantes": integrantes,
+         "cambiar_a_oficio": cambiar_a_oficio,
   
         # Agrega aquí más datos necesarios
     }

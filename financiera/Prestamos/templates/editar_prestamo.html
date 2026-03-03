@@ -1,419 +1,452 @@
-{% extends 'base.html' %}
-{% block title %}Editar Préstamo{% endblock %}
-
+{% extends 'base.html' %} 
+{% block title %}Editar Préstamo {% endblock %} 
 {% block content %}
 <div class="container py-4">
-    <div class="card shadow">
-        <div class="card-header bg-warning text-dark">
-            <h2 class="mb-0">
-                <i class="fas fa-edit me-2"></i>Editar Préstamo #{{ prestamo.id }}
-            </h2>
-        </div>
-
-        <div class="card-body">
-
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            {% endif %}
-
-       
-            <form method="post">
-                {% csrf_token %}
-                     <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light fw-bold">
-        <i class="fas fa-file-alt me-2"></i>Datos Administrativos
+  <div class="card shadow">
+    <div class="card-header bg-warning text-dark">
+      <h2 class="mb-0">
+        <i class="fas fa-edit me-2"></i>Editar Préstamo #{{ prestamo.id }}
+      </h2>
     </div>
 
     <div class="card-body">
-        <div class="row g-4">
+      {% if messages %} {% for message in messages %}
+      <div
+        class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+      {% endfor %} {% endif %}
 
-            <!-- PROMOTOR -->
-            <div class="col-md-4">
+      <form method="post">
+        {% csrf_token %}
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header bg-light fw-bold">
+            <i class="fas fa-file-alt me-2"></i>Datos Administrativos
+          </div>
+
+          <div class="card-body">
+            <div class="row g-4">
+              <!-- PROMOTOR -->
+              <div class="col-md-4">
                 <label class="form-label fw-bold">Promotor*</label>
 
                 <div class="input-group input-group-lg">
-                    <span class="input-group-text">
-                        <i class="fas fa-user"></i>
-                    </span>
+                  <span class="input-group-text">
+                    <i class="fas fa-user"></i>
+                  </span>
 
-                    <select name="promotor"
-                            class="form-select form-select-lg"
-                            required>
+                  <select
+                    name="promotor"
+                    class="form-select form-select-lg"
+                    required
+                  >
+                    <option value="">Seleccione un promotor</option>
 
-                        <option value="">Seleccione un promotor</option>
-
-                        {% for promotor in promotores %}
-                        <option value="{{ promotor.id }}"
-                            {% if prestamo.promotor.id == promotor.id %}selected{% endif %}>
-                            {{ promotor.username }}
-                        </option>
-                        {% endfor %}
-
-                    </select>
+                     {% for promotor in promotores %}
+                      <option value="{{ promotor.id }}"
+                        {% if prestamo.promotor.id == promotor.id %}selected{% endif %}>
+                        {{ promotor.first_name }}
+                      </option>
+                    {% endfor %}
+                  </select>
                 </div>
-            </div>
+              </div>
 
-            <!-- FOLIO SOLICITUD -->
-            <div class="col-md-4">
+              <!-- FOLIO SOLICITUD -->
+              <div class="col-md-4">
                 <label class="form-label fw-bold">Solicitud de crédito*</label>
 
                 <div class="input-group input-group-lg">
-                    <span class="input-group-text">
-                        <i class="fas fa-file-signature"></i>
-                    </span>
+                  <span class="input-group-text">
+                    <i class="fas fa-file-signature"></i>
+                  </span>
 
-                    <input type="text"
-                           name="folio"
-                           class="form-control"
-                           value="{{ prestamo.folio }}"
-                           required>
+                  <input
+                    type="text"
+                    name="folio"
+                    class="form-control"
+                    value="{{ prestamo.folio }}"
+                    required
+                  />
                 </div>
+              </div>
+
+              <!-- FECHA SOLICITUD -->
             </div>
-
-            <!-- FECHA SOLICITUD -->
-          
-
+          </div>
         </div>
-    </div>
-</div>
 
-                <!-- ================= CLIENTE ================= -->
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-light fw-bold">
-                        Información del Cliente
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-4">
+        <!-- ================= CLIENTE ================= -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header bg-light fw-bold">
+            Información del Cliente
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <!-- Cliente -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Cliente*</label>
+                <select
+                  name="cliente"
+                  class="form-select form-select-lg"
+                  required
+                >
+                  {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}"
+                      {% if prestamo.cliente and cliente.id == prestamo.cliente.id %}
+                        selected
+                      {% endif %}>
+                      
+                      {{ cliente.nombre }} - {{ cliente.dni }}
 
-                            <!-- Cliente -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Cliente*</label>
-                                <select name="cliente" class="form-select form-select-lg" required>
-                                    {% for cliente in clientes %}
-                                    <option value="{{ cliente.id }}"
-                                        {% if cliente.id == prestamo.cliente.id %}selected{% endif %}>
-                                        {{ cliente.nombre }} - {{ cliente.dni }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
 
-                            <!-- Tipo -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Frecuencia*</label>
-                                <select name="tipo" id="tipo" class="form-select form-select-lg" required>
-                                    <option value="SEMANAL"
-                                        {% if prestamo.tipo == 'SEMANAL' %}selected{% endif %}>
-                                        Semanal
-                                    </option>
-                                    <option value="MENSUAL"
-                                        {% if prestamo.tipo == 'MENSUAL' %}selected{% endif %}>
-                                        Mensual
-                                    </option>
-                                </select>
-                            </div>
+              <!-- Tipo -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Frecuencia*</label>
+                <select
+                name="tipo"
+                id="tipo"
+                class="form-select form-select-lg"
+                required
+              >
+                <option value="SEMANAL"
+                  {% if prestamo.tipo == "SEMANAL" %}selected{% endif %}>
+                  Semanal
+                </option>
 
-                            <!-- Estado -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Estado*</label>
-                                <select name="estado" class="form-select form-select-lg">
-                                    {% for valor, texto in estados %}
-                                    <option value="{{ valor }}"
-                                        {% if prestamo.estado == valor %}selected{% endif %}>
-                                        {{ texto }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                <option value="MENSUAL"
+                  {% if prestamo.tipo == "MENSUAL" %}selected{% endif %}>
+                  Mensual
+                </option>
+              </select>
+              </div>
 
-                        </div>
-                    </div>
-                </div>
+              <!-- Estado -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Estado*</label>
+                <select name="estado" class="form-select form-select-lg">
+                        {% for valor, texto in estados %}
+                          <option value="{{ valor }}"
+                            {% if prestamo.estado == valor %}selected{% endif %}>
+                            
+                            {{ texto }}
 
-                <!-- ================= DATOS FINANCIEROS ================= -->
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-light fw-bold">
-                        Datos Financieros
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-4">
+                          </option>
+                        {% endfor %}
+                      </select>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                            <!-- Monto -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Monto ($)*</label>
-                                <input type="number"
-                                       id="monto"
-                                       name="monto"
-                                       class="form-control form-control-lg text-end"
-                                       step="0.01"
-                                       min="100"
-                                       value="{{ prestamo.monto }}"
-                                       required>
-                            </div>
+        <!-- ================= DATOS FINANCIEROS ================= -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header bg-light fw-bold">Datos Financieros</div>
+          <div class="card-body">
+            <div class="row g-4">
+              <!-- Monto -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Monto ($)*</label>
+                <input
+                  type="number"
+                  id="monto"
+                  name="monto"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  min="100"
+                  value="{{ prestamo.monto }}"
+                  required
+                />
+              </div>
 
-                            <!-- Tasa -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Tasa de Interés (%)*</label>
-                                <input type="number"
-                                       id="tasa_interes"
-                                       name="tasa_interes"
-                                       class="form-control form-control-lg text-end"
-                                       step="0.01"
-                                       min="0.1"
-                                       max="30"
-                                       value="{{ prestamo.tasa_interes }}"
-                                       required>
-                            </div>
+              <!-- Tasa -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Tasa de Interés (%)*</label>
+                <input
+                  type="number"
+                  id="tasa_interes"
+                  name="tasa_interes"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  min="0.1"
+                  max="30"
+                  value="{{ prestamo.tasa_interes }}"
+                  required
+                />
+              </div>
 
-                            <!-- Total pagos -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Total de Pagos*</label>
-                                <input type="number"
-                                       id="total_pagos"
-                                       name="total_pagos"
-                                       class="form-control form-control-lg text-end"
-                                       min="1"
-                                       value="{{ prestamo.total_pagos }}"
-                                       required>
-                            </div>
+              <!-- Total pagos -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Total de Pagos*</label>
+                <input
+                  type="number"
+                  id="total_pagos"
+                  name="total_pagos"
+                  class="form-control form-control-lg text-end"
+                  min="1"
+                  value="{{ prestamo.total_pagos }}"
+                  required
+                />
+              </div>
 
-                            <!-- IVA -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">% IVA sobre intereses</label>
-                                <input type="number"
-                                       id="iva_sobre_intereses"
-                                       name="iva_sobre_intereses"
-                                       class="form-control form-control-lg text-end"
-                                       step="0.01"
-                                       value="{{ prestamo.iva_sobre_intereses }}">
-                            </div>
+              <!-- IVA -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">% IVA sobre intereses</label>
+                <input
+                  type="number"
+                  id="iva_sobre_intereses"
+                  name="iva_sobre_intereses"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  value="{{ prestamo.iva_sobre_intereses }}"
+                />
+              </div>
 
-                            <!-- Garantía -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">% Garantía líquida</label>
-                                <input type="number"
-                                       id="garantia_liquida"
-                                       name="garantia_liquida"
-                                       class="form-control form-control-lg text-end"
-                                       step="0.01"
-                                       value="{{ prestamo.garantia_liquida }}">
-                            </div>
+              <!-- Garantía -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">% Garantía líquida</label>
+                <input
+                  type="number"
+                  id="garantia_liquida"
+                  name="garantia_liquida"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  value="{{ prestamo.garantia_liquida }}"
+                />
+              </div>
 
-                            <!-- Aportación -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Aportación Social ($)</label>
-                                <input type="number"
-                                       id="aportacion_social"
-                                       name="aportacion_social"
-                                       class="form-control form-control-lg text-end"
-                                       step="0.01"
-                                       value="{{ prestamo.aportacion_social }}">
-                            </div>
+              <!-- Aportación -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Aportación Social ($)</label>
+                <input
+                  type="number"
+                  id="aportacion_social"
+                  name="aportacion_social"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  value="{{ prestamo.aportacion_social }}"
+                />
+              </div>
 
-                            <!-- Fecha aprobación -->
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Fecha de aprobación</label>
-                                <input type="date"
-                                       name="fecha_aprobacion"
-                                       class="form-control form-control-lg"
-                                       value="{{ prestamo.fecha_aprobacion|date:'Y-m-d' }}">
-                            </div>
+              <!-- Fecha aprobación -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha de aprobación</label>
+                <input
+                  type="date"
+                  name="fecha_aprobacion"
+                  class="form-control form-control-lg"
+                  value="{{ prestamo.fecha_aprobacion|date:'Y-m-d' }}"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-                        </div>
-                    </div>
-                </div>
-                {% if prestamo.es_grupal %}
-                  <!-- Ahorro y Pago Final (sólo si es grupal) -->
-    <div class="col-md-6">
-        <div class="card h-100 border-success">
+         <div class="col-md-6">
+          <div class="card h-100 border-success">
             <div class="card-body">
-                <label for="ahorro" class="form-label fw-bold text-success">
-                    <i class="fas fa-piggy-bank me-1"></i>Ahorro (opcional)
-                </label>
-                <div class="input-group">
-                    <span class="input-group-text bg-success text-white">$</span>
-                    <input type="number"
-                        id="ahorro"
-                        name="ahorro"
-                        class="form-control form-control-lg text-end"
-                        step="0.01"
-                        min="0"
-                        placeholder="Ej: 500.00">
-                </div>
-                <small class="text-muted">
-                    Si se captura, se reflejará en el flujo de pagos
-                </small>
+              <label for="ahorro" class="form-label fw-bold text-success">
+                <i class="fas fa-piggy-bank me-1"></i>Ahorro (opcional)
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-success text-white">$</span>
+                <input
+                  type="number"
+                  id="ahorro"
+                  name="ahorro"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  min="0"
+                  value="{{ prestamo.ahorro }}"
+                />
+              </div>
+              <small class="text-muted">
+                Si se captura, se reflejará en el flujo de pagos
+              </small>
             </div>
+          </div>
         </div>
-    </div>
+        {% if prestamo.es_grupal %}
 
-    <div class="col-md-6">
-        <div class="card h-100 border-primary">
+        <div class="col-md-6">
+          <div class="card h-100 border-primary">
             <div class="card-body">
-                <label for="pago_final" class="form-label fw-bold text-primary">
-                    <i class="fas fa-cash-register me-1"></i>Pago final
-                </label>
-                <div class="input-group">
-                    <span class="input-group-text bg-primary text-white">$</span>
-                    <input type="number"
-                        id="pago_final"
-                        name="pago_final"
-                        class="form-control form-control-lg text-end"
-                        step="0.01"
-                        min="0"
-                        placeholder="Ej: 2,500.00">
-                </div>
+              <label for="pago_final" class="form-label fw-bold text-primary">
+                <i class="fas fa-cash-register me-1"></i>Pago final
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-primary text-white">$</span>
+                <input
+                  type="number"
+                  id="pago_final"
+                  name="pago_final"
+                  class="form-control form-control-lg text-end"
+                  step="0.01"
+                  min="0"
+                  value="{{ prestamo.pago_final|default_if_none:'' }}"
+                />
+              </div>
             </div>
+          </div>
         </div>
-    </div>
 
-<div class="card mb-4 shadow-sm">
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header bg-light fw-bold">
+            <i class="fas fa-users me-2"></i>Integrantes del Grupo
+          </div>
 
-    <div class="card-header bg-light fw-bold">
-        <i class="fas fa-users me-2"></i>Integrantes del Grupo
-    </div>
+          <div class="card-body">
+            <hr />
 
-    <div class="card-body">
-        <hr>
-
-        <!-- Selector + botón -->
-        <div class="row g-3 align-items-end mb-4">
-            <div class="col-md-8">
+            <!-- Selector + botón -->
+            <div class="row g-3 align-items-end mb-4">
+              <div class="col-md-8">
                 <label for="cliente_integrante" class="form-label fw-bold">
-                    Buscar cliente
+                  Buscar cliente
                 </label>
                 <div class="input-group input-group-lg">
-                    <span class="input-group-text">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <select id="cliente_integrante" class="form-select">
-                        <option value="">Seleccione un cliente</option>
-                        {% for cliente in clientes %}
-                        <option value="{{ cliente.id }}">
-                            {{ cliente.nombre }} - {{ cliente.dni }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <button type="button"
-                        class="btn btn-success btn-lg w-100"
-                        onclick="agregarIntegrante()">
-                    <i class="fas fa-plus me-2"></i>Agregar
-                </button>
-            </div>
-        </div>
-
-        <!-- Tabla -->
-        <table class="table table-bordered align-middle" id="tabla-integrantes">
-            <thead class="table-light text-center">
-                <tr>
-                    <th style="width: 60px;">#</th>
-                    <th>Nombre</th>
-                    <th style="width: 200px;">Monto Individual</th>
-                    <th style="width: 100px;">Acción</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                {% if detalles %}
-                    {% for detalle in detalles %}
-                    <tr>
-                        <td class="numero-fila text-center">
-                            {{ forloop.counter }}
-                        </td>
-
-                        <td>
-                            {{ detalle.integrante.cliente.nombre }}
-
-                            <!-- Para actualizar -->
-                            <input type="hidden"
-                                   name="detalle_ids[]"
-                                   value="{{ detalle.id }}">
-                        </td>
-
-                        <td>
-                            <input type="number"
-                                   step="0.01"
-                                   name="montos[]"
-                                   value="{{ detalle.monto }}"
-                                   class="form-control monto-input"
-                                   required>
-                        </td>
-
-                        <td class="text-center">
-                            <button type="button"
-                                    class="btn btn-danger btn-sm"
-                                    onclick="eliminarFila(this)">
-                                ❌
-                            </button>
-                        </td>
-                    </tr>
+                  <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                  </span>
+                  <select id="cliente_integrante" class="form-select">
+                    <option value="">Seleccione un cliente</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}">
+                      {{ cliente.nombre }} - {{ cliente.dni }}
+                    </option>
                     {% endfor %}
-                {% else %}
-                    <tr id="sin-integrantes">
-                        <td colspan="4"
-                            class="text-center text-muted">
-                            No hay integrantes agregados
-                        </td>
-                    </tr>
-                {% endif %}
-
-            </tbody>
-        </table>
-    </div>
-</div>
-
-  
-{% endif %}
-
-                <!-- BOTONES -->
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
-                        Cancelar
-                    </a>
-
-                    <button type="submit" class="btn btn-lg btn-warning">
-                        Guardar Cambios
-                    </button>
+                  </select>
                 </div>
+              </div>
 
-            </form>
+              <div class="col-md-4">
+                <button
+                  type="button"
+                  class="btn btn-success btn-lg w-100"
+                  onclick="agregarIntegrante()"
+                >
+                  <i class="fas fa-plus me-2"></i>Agregar
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabla -->
+            <table
+              class="table table-bordered align-middle"
+              id="tabla-integrantes"
+            >
+              <thead class="table-light text-center">
+                <tr>
+                  <th style="width: 60px">#</th>
+                  <th>Nombre</th>
+                  <th style="width: 200px">Monto Individual</th>
+                  <th style="width: 100px">Acción</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% if detalles %} {% for detalle in detalles %}
+                <tr>
+                  <td class="numero-fila text-center">{{ forloop.counter }}</td>
+
+                  <td>
+                    {{ detalle.integrante.cliente.nombre }}
+
+                    <!-- Para actualizar -->
+                    <input
+                      type="hidden"
+                      name="detalle_ids[]"
+                      value="{{ detalle.id }}"
+                    />
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="montos[]"
+                      value="{{ detalle.monto }}"
+                      class="form-control monto-input"
+                      required
+                    />
+                  </td>
+
+                  <td class="text-center">
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      onclick="eliminarFila(this)"
+                    >
+                      ❌
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %} {% else %}
+                <tr id="sin-integrantes">
+                  <td colspan="4" class="text-center text-muted">
+                    No hay integrantes agregados
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {% endif %}
+
+        <!-- BOTONES -->
+        <div class="d-flex justify-content-between mt-4">
+          <a
+            href="{% url 'principalPrestamos' %}"
+            class="btn btn-lg btn-outline-secondary"
+          >
+            Cancelar
+          </a>
+
+          <button type="submit" class="btn btn-lg btn-warning">
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 <script>
-let totalMonto = 0;
+  let totalMonto = 0;
 
-// ================================
-// AGREGAR INTEGRANTE NUEVO
-// ================================
-function agregarIntegrante() {
-
+  // ================================
+  // AGREGAR INTEGRANTE NUEVO
+  // ================================
+  function agregarIntegrante() {
     const select = document.getElementById("cliente_integrante");
     const clienteId = select.value;
     const clienteNombre = select.options[select.selectedIndex]?.text;
 
     if (!clienteId) {
-        alert("Selecciona un cliente");
-        return;
+      alert("Selecciona un cliente");
+      return;
     }
 
     // 🔎 Evitar duplicados (solo revisar nuevos)
-    const existentes = document.querySelectorAll('input[name="integrantes_ids[]"]');
+    const existentes = document.querySelectorAll(
+      'input[name="integrantes_ids[]"]',
+    );
     for (let input of existentes) {
-        if (input.value === clienteId) {
-            alert("Este cliente ya fue agregado");
-            return;
-        }
+      if (input.value === clienteId) {
+        alert("Este cliente ya fue agregado");
+        return;
+      }
     }
 
     const tabla = document.querySelector("#tabla-integrantes tbody");
@@ -443,87 +476,68 @@ function agregarIntegrante() {
         </tr>
     `;
 
-    tabla.insertAdjacentHTML('beforeend', fila);
+    tabla.insertAdjacentHTML("beforeend", fila);
 
     reenumerarFilas();
     recalcularTotales();
-}
+  }
 
-// ================================
-// ELIMINAR FILA
-// ================================
-function eliminarFila(btn) {
+  // ================================
+  // ELIMINAR FILA
+  // ================================
+  function eliminarFila(btn) {
     btn.closest("tr").remove();
     reenumerarFilas();
     recalcularTotales();
-}
+  }
 
-// ================================
-// REENUMERAR FILAS
-// ================================
-function reenumerarFilas() {
+  // ================================
+  // REENUMERAR FILAS
+  // ================================
+  function reenumerarFilas() {
     const filas = document.querySelectorAll("#tabla-integrantes tbody tr");
     filas.forEach((fila, index) => {
-        const celdaNumero = fila.querySelector(".numero-fila");
-        if (celdaNumero) {
-            celdaNumero.textContent = index + 1;
-        }
+      const celdaNumero = fila.querySelector(".numero-fila");
+      if (celdaNumero) {
+        celdaNumero.textContent = index + 1;
+      }
     });
-}
+  }
 
-// ================================
-// RECALCULAR TOTAL GENERAL
-// ================================
-function recalcularTotales() {
-
+  // ================================
+  // RECALCULAR TOTAL GENERAL
+  // ================================
+  function recalcularTotales() {
     const montos = document.querySelectorAll(".monto-input");
 
     totalMonto = 0;
 
-    montos.forEach(input => {
-        const monto = parseFloat(input.value) || 0;
-        totalMonto += monto;
+    montos.forEach((input) => {
+      const monto = parseFloat(input.value) || 0;
+      totalMonto += monto;
     });
+  }
 
-    actualizarAhorroYPagoFinal(totalMonto);
-}
+  // ================================
+  // ACTUALIZAR AHORRO Y PAGO FINAL
+  // ================================
 
-// ================================
-// ACTUALIZAR AHORRO Y PAGO FINAL
-// ================================
-function actualizarAhorroYPagoFinal(montoTotal) {
-
-    const ahorroInput = document.getElementById("ahorro");
-    const pagoFinalInput = document.getElementById("pago_final");
-
-    if (!ahorroInput || !pagoFinalInput) return;
-
-    const porcentajeAhorro = 0.05;
-    const porcentajePagoFinal = 0.10;
-
-    const ahorro = montoTotal * porcentajeAhorro;
-    const pagoFinal = montoTotal * porcentajePagoFinal;
-
-    ahorroInput.value = ahorro.toFixed(2);
-    pagoFinalInput.value = pagoFinal.toFixed(2);
-}
-
-// ================================
-// ESCUCHAR CAMBIOS EN MONTOS
-// ================================
-document.addEventListener("input", function(e) {
+  // ================================
+  // ESCUCHAR CAMBIOS EN MONTOS
+  // ================================
+  document.addEventListener("input", function (e) {
     if (e.target.classList.contains("monto-input")) {
-        recalcularTotales();
+      recalcularTotales();
     }
-});
+  });
 
-// ================================
-// AL CARGAR LA PÁGINA
-// ================================
-document.addEventListener("DOMContentLoaded", function() {
+  // ================================
+  // AL CARGAR LA PÁGINA
+  // ================================
+  document.addEventListener("DOMContentLoaded", function () {
     reenumerarFilas();
     recalcularTotales();
-});
+  });
 </script>
 
 {% endblock %}

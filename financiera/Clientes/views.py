@@ -8,12 +8,36 @@ import tempfile
 from django.template.loader import render_to_string
 #Pagina principal
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
+
 
 @login_required
 def inicio_clientes(request):
-     # Obtener todos los usuarios registrados
-    Clientes = Cliente.objects.all()
-    return render(request, 'clientes.html', {'Clientes': Clientes})
+
+    busqueda = request.GET.get('q', '')
+
+    clientes_lista = Cliente.objects.select_related('usuario').all()
+
+    if busqueda:
+        clientes_lista = clientes_lista.filter(
+            Q(nombre__icontains=busqueda) |
+            Q(telefono__icontains=busqueda) |
+            Q(domicilio__icontains=busqueda) |
+            Q(usuario__first_name__icontains=busqueda)
+        )
+
+    clientes_lista = clientes_lista.order_by('id')
+
+    paginator = Paginator(clientes_lista, 10)
+    page_number = request.GET.get('page')
+    clientes = paginator.get_page(page_number)
+
+    return render(request, 'clientes.html', {
+        'Clientes': clientes,
+        'busqueda': busqueda
+    })
+
 
 @login_required
 def registronuevo(request):

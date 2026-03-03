@@ -1,5 +1,5 @@
 {% extends 'base.html' %} {% block content %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -173,7 +173,7 @@
                   id="ahorro"
                   name="ahorro"
                   class="form-control"
-                  step="10"
+                  step="any"
                   placeholder="Ej: 500.00"
                 />
               </div>
@@ -321,7 +321,7 @@
         const ivaPorPeriodo = round(interesPorPeriodo * ivaPorc, 2);
         const totalPago = round(
           abono + interesPorPeriodo + ivaPorPeriodo + ahorro,
-          2
+          2,
         );
 
         let tablaHTML = "";
@@ -348,19 +348,18 @@
 
         const totalPrestamo = round(
           capital + interesPorPeriodo * numPagos + ivaPorPeriodo * numPagos,
-          2
+          2,
         );
         const costosExtra = round(garantiaLiquida + aportacion, 2);
         const totalAhorro = round(ahorro * numPagos, 2);
 
         document.getElementById("cuerpo-tabla").innerHTML = tablaHTML;
-        document.getElementById(
-          "total-prestamo"
-        ).textContent = `$${totalPrestamo}`;
+        document.getElementById("total-prestamo").textContent =
+          `$${totalPrestamo}`;
         document.getElementById("costos-extra").textContent = `$${costosExtra}`;
         document.getElementById("total-general").textContent = `$${round(
           totalPrestamo + costosExtra,
-          2
+          2,
         )}`;
       }
 
