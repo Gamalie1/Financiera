@@ -1,5 +1,5 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -131,10 +131,10 @@
             <th>FECHA</th>
             <th>SALDO CAPITAL</th>
             <th>ABONO DE CAPITAL</th>
-            <th>PAGO DE INTERÉS</th>
             {% if ahorroActivo %}
             <th>AHORRO</th>
             {% endif %}
+            <th>PAGO DE INTERÉS</th>
             <th>PAGO DE IVA DE INTERÉS</th>
             <th>PAGO</th>
           </tr>
@@ -147,7 +147,7 @@
             <td>${{ pago.saldo_capital }}</td>
             <td>${{ pago.abono_capital|floatformat:0 }}</td>
             {% if ahorroActivo %}
-            <td>${{ pago.ahorro }}</td>
+            <td>${{ pago.ahorro|floatformat:0 }}</td>
             {% endif %}
             <td>${{ pago.pago_interes|floatformat:0 }}</td>
             <td>${{ pago.pago_iva_interes|floatformat:0 }}</td>

@@ -31,15 +31,18 @@ from zoneinfo import ZoneInfo
 def principal(request):
     es_grupal = request.GET.get('es_grupal')
     buscar = request.GET.get('buscar')
+    estado = request.GET.get('estado')      # Nuevo filtro por estado
+    tipo = request.GET.get('tipo')          # Nuevo filtro por tipo
 
     # ==============================
-    # FILTRO POR USUARIO
+    # FILTRO POR USUARIO (base)
     # ==============================
     if request.user.is_staff:
         prestamos = Prestamo.objects.all()
     else:
         prestamos = Prestamo.objects.filter(
-            estado='APROBADO'
+            estado='APROBADO',
+            promotor=request.user
         )
 
     prestamos = prestamos.select_related('cliente', 'grupo', 'promotor')
@@ -49,6 +52,18 @@ def principal(request):
     # ==============================
     if es_grupal == 'true':
         prestamos = prestamos.filter(es_grupal=True)
+
+    # ==============================
+    # FILTRO POR ESTADO
+    # ==============================
+    if estado:
+        prestamos = prestamos.filter(estado=estado)
+
+    # ==============================
+    # FILTRO POR TIPO
+    # ==============================
+    if tipo:
+        prestamos = prestamos.filter(tipo=tipo)
 
     # ==============================
     # BUSCADOR
@@ -61,9 +76,19 @@ def principal(request):
             Q(promotor__username__icontains=buscar)
         )
 
+    # ==============================
+    # CÁLCULOS DE TOTALES (después de todos los filtros)
+    # ==============================
+    total_monto = sum(p.monto for p in prestamos if p.monto)
+    aprobados_count = prestamos.filter(estado='APROBADO').count()
+    pendientes_count = prestamos.filter(estado='PENDIENTE').count()
+
     context = {
         'prestamos': prestamos,
-        'tipo_actual': es_grupal,
+        'tipo_actual': es_grupal,        # None, 'true' o 'false'
+        'total_monto': total_monto,
+        'aprobados_count': aprobados_count,
+        'pendientes_count': pendientes_count,
     }
 
     return render(request, 'prestamos.html', context)

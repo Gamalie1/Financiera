@@ -1,362 +1,292 @@
 {% extends 'base.html' %}
-<title>{% block title %}Generar prestamo{% endblock %}</title>
+{% load static %}
+
+{% block title %}Solicitar Nuevo Préstamo | Panel{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">
-                    <i class="fas fa-plus-circle me-2"></i>Solicitar Nuevo Préstamo
-                </h2>
-            </div>
-        </div>
-
-        <div class="card-body">
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            {% endif %}
-
-            <form method="post" class="needs-validation" >
-                {% csrf_token %}
-                <!-- Select de Promotor -->
-                   <!-- Select de Promotor -->
-                <div class="border-bottom mb-4 pb-3">
-                    <h5 class="fw-bold text-secondary">
-                        <i class="fas fa-file-alt me-2"></i>Datos Administrativos
-                    </h5>
-                    <div class="row g-4 mt-1">
-                        <div class="col-md-4">
-                            <label for="promotor" class="form-label fw-bold">Promotor*</label>
-                            <div class="input-group input-group-lg">
-                                <span class="input-group-text">
-                                    <i class="fas fa-user"></i>
-                                </span>
-                                <select 
-                                    name="promotor" 
-                                    id="promotor" 
-                                    class="form-select form-select-lg py-3 bg-white"
-                                    required
-                                >
-                                    <option value="">Seleccione un  promotor</option>
-                                    {% for promotor in promotores %}
-                                    <option value="{{ promotor.id }}" {% if promotor.id == promotor_seleccionado %}selected{% endif %}>
-                                        {{ promotor.username }} <!-- Puedes ajustar el campo mostrado aquí -->
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="solicitud_credito" class="form-label fw-bold">Solicitud de crédito*</label>
-                             <div class="input-group input-group-lg has-validation">
-                                <span class="input-group-text">
-                                    <i class="fas fa-file-signature"></i>
-                                </span>
-
-                                <input 
-                                    type="text"
-                                    name="solicitud_credito"
-                                    id="solicitud_credito"
-                                    class="form-control py-3"
-                                    placeholder="Folio de la solicitud"
-                                    required
-                                >
-
-                                <div class="invalid-feedback">
-                                    El folio de la solicitud es obligatorio.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Fecha de solicitud</label>
-                            <div class="input-group input-group-lg">
-                                <span class="input-group-text">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </span>
-                                <!-- Campo de fecha -->
-                                <input type="date" class="form-control form-control-lg py-3" id="fecha_solicitud" name="fecha_solicitud" value="{{ prestamo.fecha_solicitud|date:'Y-m-d' }}">
-                            </div>
-                        </div>
-
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Tarjeta principal -->
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <!-- Header con gradiente -->
+                <div class="card-header bg-gradient-primary text-white py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <h2 class="mb-2 mb-md-0 fw-bold">
+                            <i class="fas fa-hand-holding-usd me-2"></i> Solicitar Nuevo Préstamo
+                        </h2>
+                        <span class="badge bg-light text-dark px-3 py-2 rounded-pill shadow-sm">
+                            <i class="fas fa-file-invoice me-1"></i> Formulario de solicitud
+                        </span>
                     </div>
-
-
-
-                    
-
-
                 </div>
-                <!-- CLIENTE -->
-                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-light fw-bold">
-                        <i class="fas fa-user-check me-2"></i>Información del Cliente
-                    </div>
-                        <div class="card-body">
-                            <div class="row g-4">
-                                <!-- Select de Cliente -->
-                                <div class="col-md-4">
-                                    <label for="cliente" class="form-label fw-bold">Cliente*</label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-user"></i>
-                                        </span>
-                                        <select 
-                                            name="cliente" 
-                                            id="cliente" 
-                                            class="form-select form-select-lg py-3 bg-white"
-                                            required
-                                        >
-                                            <option value="">Seleccione un cliente</option>
-                                            {% for cliente in clientes %}
-                                            <option value="{{ cliente.id }}" {% if cliente.id == cliente_seleccionado %}selected{% endif %}>
-                                                {{ cliente.nombre}} - {{ cliente.dni }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="tipo" class="form-label fw-bold">Frecuencia de Pagos*</label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-calendar-alt"></i>
-                                        </span>
-                                        <select 
-                                            name="tipo" 
-                                            id="tipo" 
-                                            class="form-select form-select-lg py-3 bg-white"
-                                            required
-                                        >
-                                            <option value="SEMANAL">Semanal</option>
-                                            <option value="MENSUAL">Mensual</option>
-                                        </select>
-                                    </div>
-                                </div>
 
-                                <div class="col-md-4">
-                                    <label for="es_grupal" class="form-label fw-bold">Tipo de Préstamo*</label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-users"></i>
-                                        </span>
-                                        <select 
-                                            name="es_grupal" 
-                                            id="es_grupal" 
-                                            class="form-select form-select-lg py-3 bg-white"
-                                            required
-                                        >
-                                            <option value="False">Individual</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>       
-                     </div>
-                </div>
-                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-light fw-bold">
-                        <i class="fas fa-dollar-sign me-2"></i>Datos Financieros
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <label for="monto" class="form-label fw-bold">Monto ($)*</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" id="monto" name="monto" 
-                                        class="form-control form-control-lg text-end"   
-                                        step="0.01" min="100" required
-                                        placeholder="Ej: 10000.00">
-                                </div>
-                                <small class="text-muted">Mínimo $100.00</small>
-                            </div>
-                                <div class="col-md-4">
-                                    <label for="tasa_interes" class="form-label fw-bold">Tasa de interes*</label>
-                                    <div class="input-group">
-                                        <input type="number" id="tasa_interes" name="tasa_interes" 
-                                            class="form-control form-control-lg text-end" 
-                                            step="0.01" min="0.1" max="30" required
-                                            placeholder="Ej: 5.0">
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                </div>
-                            <div class="col-md-4">
-                                <label for="total_pagos" class="form-label fw-bold">Total de Pagos*</label>
-                                <div class="input-group">
-                                    <input type="number" id="total_pagos" name="total_pagos" 
-                                        class="form-control form-control-lg text-end" 
-                                        min="1" required
-                                        placeholder="Ej: 12">
-                                    <span class="input-group-text" id="tipo-pagos-text">semanas</span>
-                                </div>
-                            </div>
+                <div class="card-body p-4 p-lg-5">
+                    <!-- Mensajes -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3 mb-4" role="alert">
+                            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
 
-                            <!-- IVA sobre intereses -->
-                            <div class="col-md-4">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <label for="iva_porcentaje" class="form-label fw-bold">% IVA sobre intereses</label>
-                                        <div class="input-group mb-3">
-                                            <input type="number" id="iva_sobre_intereses" name="iva_sobre_intereses" 
-                                        class="form-control form-control-lg text-end" 
-                                        step="0.01" min="0.1" max="30" required
-                                        placeholder="Ej: 5.0">
-                                    <span class="input-group-text">%</span>
-                                        </div>
-                                    </div>
-                                </div>
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- ================= SECCIÓN ADMINISTRATIVA ================= -->
+                        <div class="card mb-4 border-0 shadow-sm rounded-3">
+                            <div class="card-header bg-light rounded-top-3 py-3">
+                                <h5 class="mb-0 fw-bold text-secondary">
+                                    <i class="fas fa-building me-2"></i> Datos Administrativos
+                                </h5>
                             </div>
-                            <div class="col-md-4">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <label for="garantia_liquida" class="form-label fw-bold">% Garantía líquida</label>
-                                        <div class="input-group mb-3">
-                                            <input type="number" id="garantia_liquida" name="garantia_liquida" 
-                                            class="form-control form-control-lg text-end" 
-                                             max="30"
-                                            placeholder="Ej: 5.0">
-                                    <span class="input-group-text">%</span>
-                                        </div>
-                    
-                                    </div>
-                                </div>
-                            </div>
-                             <div class="col-md-4">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <label for="aportacion_social" class="form-label fw-bold">Aportación social</label>
+                            <div class="card-body">
+                                <div class="row g-4">
+                                    <div class="col-md-4">
+                                        <label for="promotor" class="form-label fw-semibold">Promotor <span class="text-danger">*</span></label>
                                         <div class="input-group">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" id="aportacion_social" name="aportacion_social" 
-                                                class="form-control form-control-lg text-end"
-                                                value="{{ prestamo.aportacion_social|stringformat:'.2f' }}"
-                                            
-                                                placeholder="Ej: 1000.00">
+                                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-tie"></i></span>
+                                            <select name="promotor" id="promotor" class="form-select border-start-0" required>
+                                                <option value="">Seleccione un promotor</option>
+                                                {% for promotor in promotores %}
+                                                <option value="{{ promotor.id }}" {% if promotor.id == promotor_seleccionado %}selected{% endif %}>
+                                                    {{ promotor.username }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="invalid-feedback">Seleccione un promotor.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="solicitud_credito" class="form-label fw-semibold">Solicitud de crédito <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-hashtag"></i></span>
+                                            <input type="text" name="solicitud_credito" id="solicitud_credito" class="form-control" placeholder="Ej: FOL-001" required>
+                                        </div>
+                                        <div class="invalid-feedback">El folio es obligatorio.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="fecha_solicitud" class="form-label fw-semibold">Fecha de solicitud</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-calendar-alt"></i></span>
+                                            <input type="date" name="fecha_solicitud" id="fecha_solicitud" class="form-control" value="{{ prestamo.fecha_solicitud|date:'Y-m-d' }}">
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                    </div>
-                 </div>
+                        </div>
 
+                        <!-- ================= SECCIÓN CLIENTE ================= -->
+                        <div class="card mb-4 border-0 shadow-sm rounded-3">
+                            <div class="card-header bg-light rounded-top-3 py-3">
+                                <h5 class="mb-0 fw-bold text-secondary">
+                                    <i class="fas fa-user-circle me-2"></i> Información del Cliente
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-4">
+                                    <div class="col-md-5">
+                                        <label for="cliente" class="form-label fw-semibold">Cliente <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                                            <select name="cliente" id="cliente" class="form-select" required>
+                                                <option value="">Seleccione un cliente</option>
+                                                {% for cliente in clientes %}
+                                                <option value="{{ cliente.id }}" {% if cliente.id == cliente_seleccionado %}selected{% endif %}>
+                                                    {{ cliente.nombre }} - {{ cliente.dni }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="invalid-feedback">Seleccione un cliente.</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="tipo" class="form-label fw-semibold">Frecuencia de pagos <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-calendar-week"></i></span>
+                                            <select name="tipo" id="tipo" class="form-select" required>
+                                                <option value="SEMANAL">Semanal</option>
+                                                <option value="MENSUAL">Mensual</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="es_grupal" class="form-label fw-semibold">Tipo de préstamo <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-users"></i></span>
+                                            <select name="es_grupal" id="es_grupal" class="form-select" required>
+                                                <option value="False">Individual</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
+                        <!-- ================= SECCIÓN FINANCIERA ================= -->
+                        <div class="card mb-4 border-0 shadow-sm rounded-3">
+                            <div class="card-header bg-light rounded-top-3 py-3">
+                                <h5 class="mb-0 fw-bold text-secondary">
+                                    <i class="fas fa-chart-line me-2"></i> Datos Financieros
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-4">
+                                    <div class="col-md-3">
+                                        <label for="monto" class="form-label fw-semibold">Monto <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">$</span>
+                                            <input type="number" id="monto" name="monto" class="form-control text-end" step="0.01" min="100" required placeholder="0.00">
+                                        </div>
+                                        <small class="text-muted">Mínimo $100.00</small>
+                                        <div class="invalid-feedback">Monto mínimo $100.</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="tasa_interes" class="form-label fw-semibold">Tasa de interés <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" id="tasa_interes" name="tasa_interes" class="form-control text-end" step="0.01" min="0.1" max="30" required placeholder="0.00">
+                                            <span class="input-group-text bg-light">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="total_pagos" class="form-label fw-semibold">Total de pagos <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" id="total_pagos" name="total_pagos" class="form-control text-end" min="1" required placeholder="1">
+                                            <span class="input-group-text bg-light" id="tipo-pagos-text">semanas</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="iva_sobre_intereses" class="form-label fw-semibold">IVA sobre intereses</label>
+                                        <div class="input-group">
+                                            <input type="number" id="iva_sobre_intereses" name="iva_sobre_intereses" class="form-control text-end" step="0.01" min="0" placeholder="0.00">
+                                            <span class="input-group-text bg-light">%</span>
+                                        </div>
+                                        <small class="text-muted">Opcional (ej. 16)</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="garantia_liquida" class="form-label fw-semibold">Garantía líquida</label>
+                                        <div class="input-group">
+                                            <input type="number" id="garantia_liquida" name="garantia_liquida" class="form-control text-end" step="0.01" min="0" placeholder="0.00">
+                                            <span class="input-group-text bg-light">%</span>
+                                        </div>
+                                        <small class="text-muted">Opcional</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="aportacion_social" class="form-label fw-semibold">Aportación social</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">$</span>
+                                            <input type="number" id="aportacion_social" name="aportacion_social" class="form-control text-end" step="0.01" min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ahorro" class="form-label fw-semibold text-success">Ahorro (opcional)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">$</span>
+                                            <input type="number" id="ahorro" name="ahorro" class="form-control text-end" step="0.01" min="0" placeholder="0.00">
+                                        </div>
+                                        <small class="text-muted">Se refleja en cada pago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Ahorro -->
-<div class="col-md-4">
-    <div class="card h-100 border-success">
-        <div class="card-body">
-            <label for="ahorro" class="form-label fw-bold text-success">
-                <i class="fas fa-piggy-bank me-1"></i>Ahorro (opcional)
-            </label>
-            <div class="input-group">
-                <span class="input-group-text bg-success text-white">$</span>
-                <input type="number"
-                       id="ahorro"
-                       name="ahorro"
-                       class="form-control form-control-lg text-end"
-                       step="0.01"
-                       min="0"
-                       placeholder="Ej: 500.00">
-            </div>
-            <small class="text-muted">
-                Si se captura, se reflejará en el flujo de pagos
-            </small>
-        </div>
-    </div>
-</div>
+                        <!-- Estado oculto -->
+                        <input type="hidden" name="estado" value="SOLICITADO">
 
-
-
-                <!-- Estado oculto -->
-                <input type="hidden" name="estado" value="SOLICITADO">
-
-                <!-- Sección 4: Botones -->
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'principalPrestamos' %}" class="btn btn-lg btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-lg btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
-                    </button>
+                        <!-- Botones -->
+                        <div class="d-flex flex-column flex-sm-row justify-content-between gap-3 mt-4">
+                            <a href="{% url 'principalPrestamos' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-arrow-left me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                                <i class="fas fa-paper-plane me-2"></i> Enviar Solicitud
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
 
-            
+            <!-- Tabla de detalle de pagos -->
+            <div class="card shadow-lg border-0 rounded-4 mt-5 overflow-hidden">
+                <div class="card-header bg-gradient-info text-white py-3" style="background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);">
+                    <h4 class="mb-0 fw-bold">
+                        <i class="fas fa-table-list me-2"></i> Tabla de Amortización
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle" id="tabla-amortizacion">
+                            <thead class="table-light">
+                                <tr class="text-center">
+                                    <th># Pago</th>
+                                    <th>Fecha</th>
+                                    <th class="text-end">Saldo Capital</th>
+                                    <th class="text-end">Abono Capital</th>
+                                    <th class="text-end d-none" id="th-ahorro">Ahorro</th>
+                                    <th class="text-end">Interés</th>
+                                    <th class="text-end">IVA Interés</th>
+                                    <th class="text-end">Total Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpo-tabla">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-calculator fa-2x mb-2 d-block"></i>
+                                        Complete los datos para ver la simulación
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-secondary fw-bold">
+                                <tr>
+                                    <td colspan="6" class="text-end td-colspan">Total Préstamo + Intereses</td>
+                                    <td class="text-end" id="total-prestamo">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="text-end td-colspan">Costos Adicionales (Ahorro)</td>
+                                    <td class="text-end" id="costos-extra">$0.00</td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <td colspan="6" class="text-end td-colspan fw-bold">Total General</td>
+                                    <td class="text-end fw-bold" id="total-general">$0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="card shadow">
-        <div class="card-header">
-          <h3 class="mb-0">Detalle de Pagos</h3>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-detalle table-hover mb-0">
-              <thead>
-                <tr>
-                  <th>Pago</th>
-                  <th>Fecha</th>
-                  <th class="text-end">Saldo Capital</th>
-                  <th class="text-end">Abono Capital</th>
-                  <!-- 👇 NUEVA COLUMNA -->
-                  <th class="text-end d-none" id="th-ahorro">Ahorro</th>
-                  <th class="text-end">Interés</th>
-                  <th class="text-end">IVA Interés</th>
-                  <th class="text-end">Total Pago</th>
-                </tr>
-              </thead>
-              <tbody id="cuerpo-tabla"></tbody>
-             <tfoot class="total-row">
-  <tr>
-    <td colspan="6" class="text-end td-colspan">
-      Total Préstamo + Intereses
-    </td>
-    <td class="text-end" id="total-prestamo">$0.00</td>
-  </tr>
-  <tr>
-    <td colspan="6" class="text-end td-colspan">
-      Costos Adicionales
-    </td>
-    <td class="text-end" id="costos-extra">$0.00</td>
-  </tr>
-  <tr>
-    <td colspan="6" class="text-end td-colspan">
-      Total General
-    </td>
-    <td class="text-end" id="total-general">$0.00</td>
-  </tr>
-</tfoot>
-            </table>
-          </div>
-        </div>
-      </div>
 </div>
-
-
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function() {
+    // Elementos
+    const montoInput = document.getElementById("monto");
+    const tasaInput = document.getElementById("tasa_interes");
+    const pagosInput = document.getElementById("total_pagos");
+    const ivaInput = document.getElementById("iva_sobre_intereses");
+    const ahorroInput = document.getElementById("ahorro");
+    const tipoPagoSelect = document.getElementById("tipo");
+    const fechaInput = document.getElementById("fecha_solicitud");
+    const cuerpoTabla = document.getElementById("cuerpo-tabla");
+    const totalPrestamoEl = document.getElementById("total-prestamo");
+    const costosExtraEl = document.getElementById("costos-extra");
+    const totalGeneralEl = document.getElementById("total-general");
+    const thAhorro = document.getElementById("th-ahorro");
 
-    /* =========================
-       UTILIDADES
-    ========================= */
-    const formatoMoneda = valor =>
-        valor.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+    // Formato moneda
+    const formatoMoneda = (valor) => {
+        return valor.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+    };
 
-    function formatearFecha(fecha) {
-        return fecha.toLocaleDateString("es-MX", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-    }
+    const formatearFecha = (fecha) => {
+        return fecha.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
+    };
 
-    function obtenerFechaPago(base, tipo, i) {
+    const obtenerFechaPago = (base, tipo, i) => {
         const fecha = new Date(base);
         if (tipo === "SEMANAL") {
             fecha.setDate(fecha.getDate() + (i * 7));
@@ -364,65 +294,39 @@ document.addEventListener("DOMContentLoaded", () => {
             fecha.setMonth(fecha.getMonth() + i);
         }
         return fecha;
-    }
+    };
 
-    /* =========================
-       INPUTS
-    ========================= */
-    const montoInput = document.getElementById("monto");
-    const tasaInput = document.getElementById("tasa_interes");
-    const pagosInput = document.getElementById("total_pagos");
-    const ivaInput = document.getElementById("iva_sobre_intereses");
-    const ahorroInput = document.getElementById("ahorro");
-    const tipoPagoInput = document.getElementById("tipo");
-    const fechaInput = document.getElementById("fecha_solicitud");
-
-    /* =========================
-       TABLA / TOTALES
-    ========================= */
-    const cuerpoTabla = document.getElementById("cuerpo-tabla");
-    const totalPrestamoEl = document.getElementById("total-prestamo");
-    const costosExtraEl = document.getElementById("costos-extra");
-    const totalGeneralEl = document.getElementById("total-general");
-    const ivaDisplay = document.getElementById("iva_sobre_display");
-
-    /* =========================
-       CÁLCULO PRINCIPAL
-    ========================= */
-    function calcular() {
-
+    // Función principal de cálculo
+    function calcularPagos() {
         const capital = parseFloat(montoInput.value) || 0;
         const tasa = (parseFloat(tasaInput.value) || 0) / 100;
         const numPagos = parseInt(pagosInput.value) || 0;
         const ivaPorc = (parseFloat(ivaInput.value) || 0) / 100;
         const ahorro = parseFloat(ahorroInput.value) || 0;
-        const tipoPago = tipoPagoInput.value;
+        const tipoPago = tipoPagoSelect.value;
         const fechaBase = fechaInput.value ? new Date(fechaInput.value) : null;
-        const thAhorro = document.getElementById("th-ahorro");
-        if (thAhorro) {
-    thAhorro.classList.remove("d-none");
-}
-        const colspanTotal = document.getElementById("colspan-total");
-        const tdColspans = document.querySelectorAll(".td-colspan");
 
-       const mostrarAhorro = ahorro > 0;
-/* ===== Mostrar / ocultar columna ahorro ===== */
-if (thAhorro) {
-    if (mostrarAhorro) {
-        thAhorro.classList.remove("d-none");
-        tdColspans.forEach(td => td.setAttribute("colspan", "7"));
-    } else {
-        thAhorro.classList.add("d-none");
-        tdColspans.forEach(td => td.setAttribute("colspan", "6"));
-    }
-}
+        const mostrarAhorro = ahorro > 0;
+
+        // Mostrar/ocultar columna ahorro
+        if (thAhorro) {
+            if (mostrarAhorro) {
+                thAhorro.classList.remove("d-none");
+                document.querySelectorAll(".td-colspan").forEach(td => td.setAttribute("colspan", "6"));
+            } else {
+                thAhorro.classList.add("d-none");
+                document.querySelectorAll(".td-colspan").forEach(td => td.setAttribute("colspan", "5"));
+            }
+        }
 
         if (!capital || !numPagos || !fechaBase) {
-            cuerpoTabla.innerHTML = "";
+            cuerpoTabla.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4"><i class="fas fa-exclamation-triangle me-2"></i>Complete todos los campos obligatorios</td></tr>`;
+            totalPrestamoEl.textContent = "$0.00";
+            costosExtraEl.textContent = "$0.00";
+            totalGeneralEl.textContent = "$0.00";
             return;
         }
 
-        /* ===== Cálculos base ===== */
         const abonoCapital = capital / numPagos;
         const interesPeriodo = capital * tasa;
         const ivaPeriodo = interesPeriodo * ivaPorc;
@@ -435,78 +339,121 @@ if (thAhorro) {
         cuerpoTabla.innerHTML = "";
 
         for (let i = 1; i <= numPagos; i++) {
-
             const fechaPago = obtenerFechaPago(fechaBase, tipoPago, i);
-
             totalIntereses += interesPeriodo;
             totalIVA += ivaPeriodo;
             totalAhorro += ahorro;
 
-            const totalPagoPeriodo =
-                abonoCapital + interesPeriodo + ivaPeriodo + ahorro;
+            const totalPagoPeriodo = abonoCapital + interesPeriodo + ivaPeriodo + ahorro;
 
             const fila = document.createElement("tr");
+            fila.classList.add("text-end");
             fila.innerHTML = `
-                <td>${i}</td>
-                <td>${formatearFecha(fechaPago)}</td>
+                <td class="text-center fw-bold">${i}</td>
+                <td class="text-center">${formatearFecha(fechaPago)}</td>
                 <td class="text-end">${formatoMoneda(saldo)}</td>
                 <td class="text-end">${formatoMoneda(abonoCapital)}</td>
-                ${mostrarAhorro ? `<td class="text-end">${formatoMoneda(ahorro)}</td>` : ``}
+                ${mostrarAhorro ? `<td class="text-end">${formatoMoneda(ahorro)}</td>` : ""}
                 <td class="text-end">${formatoMoneda(interesPeriodo)}</td>
                 <td class="text-end">${formatoMoneda(ivaPeriodo)}</td>
-                <td class="text-end fw-bold">${formatoMoneda(totalPagoPeriodo)}</td>
+                <td class="text-end fw-bold text-primary">${formatoMoneda(totalPagoPeriodo)}</td>
             `;
-
             cuerpoTabla.appendChild(fila);
             saldo -= abonoCapital;
         }
 
-        /* ===== Totales ===== */
         const totalPrestamo = capital + totalIntereses + totalIVA;
         const costosExtra = totalAhorro;
         const totalGeneral = totalPrestamo + costosExtra;
 
-        /* ===== Mostrar ===== */
-        ivaDisplay.textContent = formatoMoneda(totalIVA);
         totalPrestamoEl.textContent = formatoMoneda(totalPrestamo);
         costosExtraEl.textContent = formatoMoneda(costosExtra);
         totalGeneralEl.textContent = formatoMoneda(totalGeneral);
     }
 
-    /* =========================
-       EVENTOS
-    ========================= */
-    [
-        montoInput,
-        tasaInput,
-        pagosInput,
-        ivaInput,
-        ahorroInput,
-        tipoPagoInput,
-        fechaInput
-    ].forEach(el => el.addEventListener("input", calcular));
+    // Eventos
+    const inputs = [montoInput, tasaInput, pagosInput, ivaInput, ahorroInput, tipoPagoSelect, fechaInput];
+    inputs.forEach(input => {
+        if (input) input.addEventListener("input", calcularPagos);
+    });
 
-    calcular();
+    // Actualizar texto de unidad (semanas/meses)
+    if (tipoPagoSelect && document.getElementById("tipo-pagos-text")) {
+        tipoPagoSelect.addEventListener("change", function() {
+            const texto = this.value === "SEMANAL" ? "semanas" : "meses";
+            document.getElementById("tipo-pagos-text").textContent = texto;
+            calcularPagos();
+        });
+        tipoPagoSelect.dispatchEvent(new Event("change"));
+    }
+
+    // Ejecutar cálculo inicial
+    calcularPagos();
+
+    // Bootstrap validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
 });
 </script>
 
 <style>
-    .form-control:read-only {
-        background-color: #f8f9fa;
+    /* Gradientes y sombras */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    .table-hover tbody tr:hover {
-        background-color: rgba(13, 110, 253, 0.05);
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
     }
     .card {
-        transition: all 0.3s ease;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     .card:hover {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 1rem 2rem rgba(0,0,0,0.1) !important;
+    }
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+    }
+    .form-control, .form-select {
+        border: 1px solid #ced4da;
+        padding: 0.5rem 0.75rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem !important;
+        }
+        .btn-lg {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
     }
 </style>
-
-
-
-    
-
 {% endblock %}

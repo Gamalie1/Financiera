@@ -3,98 +3,101 @@
   <head>
     <meta charset="UTF-8" />
     <style>
-       {% if cambiar_a_oficio %}
-        @page {
-          size: 8.5in 13in;
-          margin: 20px;
-        }
-      {% else %}
-        @page {
-          size: letter;
-          margin: 20px;
-        }
-      {% endif %}
+  {% if cambiar_a_oficio %}
+    @page {
+      size: 8.5in 13in;
+      margin: 20px;
+    }
+  {% else %}
+    @page {
+      size: letter;
+      margin: 20px;
+    }
+  {% endif %}
 
-      body {
-        font-family: "Arial", sans-serif;
-        margin: 25px; /* reducido para que no salte */
-      }
+  body {
+    font-family: "Arial", sans-serif;
+    margin: 15px;  /* reducido para aprovechar más espacio */
+  }
 
-      .titulo {
-        text-align: center;
-        font-weight: bold;
-        font-size: 18pt;
-      }
+  .titulo {
+    text-align: center;
+    font-weight: bold;
+    font-size: 18pt;
+  }
 
-      .subtitulo {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
+  .subtitulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-      .contenido {
-        font-size: 10.5pt;
-        text-align: justify;
-      }
+  .contenido {
+    font-size: 10.5pt;
+    text-align: justify;
+  }
 
-      .subrayado {
-        text-decoration: underline;
-      }
+  .subrayado {
+    text-decoration: underline;
+  }
 
-      {% if cambiar_a_oficio %}
+  /* ---------- MODO OFICIO (3 columnas) ---------- */
+  {% if cambiar_a_oficio %}
+    .firmas {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px 10px;
+      margin-top: 10px;
+      break-inside: avoid;
+    }
 
-          .firmas {
-            display: block;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-          }
+    .firma-box {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      font-size: 10px;
+      padding: 6px;
+      border: none;
+      background: transparent;
+    }
 
-          .firma-box {
-            width: 31%;              /* 3 columnas */
-            font-size: 10px;         /* letra un poco más chica */
-            padding: 6px;
-            box-sizing: border-box;
-            page-break-inside: auto;
-            float: left;
-          }
-        {% else %}
+  /* ---------- MODO CARTA (2 columnas) ---------- */
+  {% else %}
+    .firmas {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px 12px;
+      margin-top: 10px;
+      break-inside: avoid;
+    }
 
-      .firmas {
-        margin-top: 10px;
-        font-size: 0;
-      }
+    .firma-box {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      font-size: 11px;
+      padding: 8px;
+    }
+  {% endif %}
 
-      .firma-box {
-        width: 48%;
-        display: inline-block;
-        vertical-align: top;
-        padding: 10px;
-        margin-bottom: 10px;
-        box-sizing: border-box;
-        font-size: 12px;
-        page-break-inside: auto;
-      }
-      {% endif %}
+  /* Estilos comunes para ambas versiones */
+  .firma-box .sub {
+    margin-top: 10px;
+    text-align: center;
+  }
 
-      .firma-box .sub {
-        margin-top: 15px; /* reducido */
-        text-align: center;
-      }
+  .sub {
+    text-align: center;
+    margin-top: 10px;
+  }
 
-      .sub {
-        text-align: center;
-        margin-top: 10px;
-      }
+  .bloque-firmas {
+    break-inside: auto;
+  }
 
-      .bloque-firmas {
-        page-break-inside: auto;
-      }
-
-      .sin-salto {
-        page-break-after: auto;
-      }
-    </style>
+  .sin-salto {
+    break-after: avoid;
+    margin-bottom: 5px;
+  }
+</style>
   </head>
   <body>
     <div class="titulo">P A G A R E</div>
@@ -161,7 +164,7 @@
 
           Nombre: {{ integrante.cliente.nombre }}<br />
           Domicilio: {{ integrante.cliente.domicilio }}<br />
-          Teléfono: {{ integrante.cliente.telefono }}<br />
+          Teléfono: {{ integrante.cliente.telefono|default_if_none:"" }}<br />
 
           <div class="sub">
             Acepto<br /><br />
@@ -183,7 +186,7 @@
         <strong>EL SUSCRIPTOR</strong><br />
         Nombre: {{ nombre_acreditado }}<br />
         Domicilio: {{ direccion }}<br />
-        Teléfono: {{ telefono1 }}<br />
+        Teléfono: {{ telefono1|default_if_none:"" }}<br />
 
         <div class="sub">
           Acepto<br /><br />
@@ -196,7 +199,7 @@
         <strong>EL AVAL</strong><br />
         Nombre: {{ nombre_aval }}<br />
         Domicilio: {{ direccion_aval }}<br />
-        Teléfono: {{ telefono2 }}<br />
+        Teléfono: {{ telefono2|default_if_none:"" }}<br />
 
         <div class="sub">
           Acepto<br /><br />
