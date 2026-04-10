@@ -1,88 +1,164 @@
-{% extends 'base.html' %} {% block title %}Registrar Abono{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% load static %}
 
-<link href="/static/css/signup.css" rel="stylesheet" />
+{% block title %}Registrar Abono | Panel{% endblock %}
 
-<div class="d-flex justify-content-center align-items-center vh-100">
-  <div
-    class="bg-white p-4 rounded-5 text-secondary shadow-lg"
-    style="width: 100%; max-width: 500px"
-  >
-    <div class="text-center fs-1 fw-bold mb-4">Registrar Abono</div>
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-12">
+            <!-- Tarjeta principal -->
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white py-4" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                    <div class="text-center">
+                        <i class="fas fa-hand-holding-usd fa-2x mb-2"></i>
+                        <h3 class="mb-0 fw-bold">Registrar Abono</h3>
+                        <p class="mb-0 mt-1 small opacity-75">Cuota #{{ pago.numero_pago }}</p>
+                    </div>
+                </div>
 
-    <div class="mb-3 text-center">
-      <p class="mb-1"><strong>Cuota #{{ pago.numero_pago }}</strong></p>
+                <div class="card-body p-4 p-lg-5">
+                    <!-- Resumen de la cuota -->
+                    <div class="bg-light p-3 rounded-3 mb-4">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <span class="text-muted small">Monto cuota</span>
+                                <h5 class="mb-0 fw-bold text-success">${{ pago.monto_pago|floatformat:2 }}</h5>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted small">Saldo restante</span>
+                                <h5 class="mb-0 fw-bold text-danger">${{ pago.saldo_restante|floatformat:2 }}</h5>
+                            </div>
+                        </div>
+                    </div>
 
-      <p class="mb-1">Monto cuota: ${{ pago.monto_pago|floatformat:2 }}</p>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
 
-      <p class="mb-1">
-        Saldo restante:
-        <span class="text-danger fw-bold">
-          ${{ pago.saldo_restante|floatformat:2 }}
-        </span>
-      </p>
+                        <!-- Monto recibido (abono a capital/interés) -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-money-bill-wave me-1 text-primary"></i> Monto a abonar *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">$</span>
+                                <input type="number" name="monto_pagado" class="form-control form-control-lg"
+                                       step="0.01" min="0.01" max="{{ pago.saldo_restante }}" required
+                                       placeholder="0.00" id="id_monto">
+                            </div>
+                            <small class="text-muted">Máximo permitido: ${{ pago.saldo_restante|floatformat:2 }}</small>
+                            <div class="invalid-feedback">Ingrese un monto válido.</div>
+                        </div>
+
+                        <!-- NUEVO CAMPO: Ahorro (independiente) -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-piggy-bank me-1 text-success"></i> Ahorro (opcional)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">$</span>
+                                <input type="number" name="ahorro" class="form-control form-control-lg"
+                                       step="0.01" min="0" value="0" placeholder="0.00">
+                            </div>
+                            <small class="text-muted">Este monto no afecta el saldo de la cuota, se registra como ahorro del cliente.</small>
+                        </div>
+
+                        <!-- Método de pago -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-credit-card me-1 text-info"></i> Método de pago *
+                            </label>
+                            <select name="metodo_pago" class="form-select form-select-lg" required>
+                                <option value="">Seleccione método</option>
+                                <option value="EFECTIVO">💵 Efectivo</option>
+                                <option value="TARJETA">💳 Tarjeta</option>
+                                <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                                <option value="CHEQUE">📄 Cheque</option>
+                            </select>
+                        </div>
+
+                        <!-- Comentario -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-comment-dots me-1 text-secondary"></i> Comentario (opcional)
+                            </label>
+                            <textarea name="comentarios" class="form-control" rows="2" placeholder="Notas adicionales..."></textarea>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-3 mt-4">
+                            <a href="{% url 'detalle_pago' pago.prestamo.id %}" class="btn btn-outline-secondary btn-lg flex-fill">
+                                <i class="fas fa-arrow-left me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
+                                <i class="fas fa-save me-1"></i> Guardar abono
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tarjeta de información adicional (opcional) -->
+            <div class="card mt-4 border-0 shadow-sm rounded-3">
+                <div class="card-body text-center text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    El <strong>ahorro</strong> se guarda por separado y no reduce el saldo de la cuota.
+                    Si el abono cubre toda la cuota, la cuota pasará a estado <strong>Pagado</strong>.
+                </div>
+            </div>
+        </div>
     </div>
-
-    <form method="post">
-      {% csrf_token %}
-
-      <!-- MONTO ABONO -->
-
-      <div class="mb-3">
-        <label class="form-label">Monto recibido</label>
-
-        <input
-          type="number"
-          name="monto_pagado"
-          class="form-control"
-          step="0.01"
-          min="0.01"
-          max="{{ pago.saldo_restante }}"
-          required
-          placeholder="Ingrese monto recibido"
-        />
-
-        <small class="text-muted">
-          Máximo permitido: ${{ pago.saldo_restante|floatformat:2 }}
-        </small>
-      </div>
-
-      <!-- METODO PAGO -->
-
-      <div class="mb-3">
-        <label class="form-label">Método de pago</label>
-
-        <select name="metodo_pago" class="form-control" required>
-          <option value="">Seleccione método</option>
-          <option value="EFECTIVO">Efectivo</option>
-          <option value="TARJETA">Tarjeta</option>
-          <option value="TRANSFERENCIA">Transferencia</option>
-          <option value="CHEQUE">Cheque</option>
-        </select>
-      </div>
-
-      <!-- COMENTARIO -->
-
-      <div class="mb-3">
-        <label class="form-label">Comentario (opcional)</label>
-
-        <textarea name="comentarios" class="form-control" rows="3"></textarea>
-      </div>
-
-      <!-- BOTONES -->
-
-      <div class="d-flex gap-2">
-        <a
-          href="{% url 'detalle_pago' pago.prestamo.id %}"
-          class="btn btn-secondary w-100"
-        >
-          Cancelar
-        </a>
-
-        <button type="submit" class="btn btn-primary w-100">
-          Registrar Abono
-        </button>
-      </div>
-    </form>
-  </div>
 </div>
+
+<!-- Estilos adicionales -->
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    .form-control-lg, .form-select-lg {
+        font-size: 1rem;
+        padding: 0.6rem 1rem;
+    }
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 1rem 2rem rgba(0,0,0,0.1);
+    }
+    input:focus, select:focus, textarea:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1.5rem !important;
+        }
+        .btn-lg {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<!-- Script para validación básica -->
+<script>
+    (function() {
+        'use strict';
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const monto = document.getElementById('id_monto');
+            const maxMonto = parseFloat(monto.getAttribute('max'));
+            if (monto.value && parseFloat(monto.value) > maxMonto) {
+                alert(`El monto no puede superar $${maxMonto.toFixed(2)}`);
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    })();
+</script>
 {% endblock %}

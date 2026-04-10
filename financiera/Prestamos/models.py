@@ -49,6 +49,30 @@ class Prestamo(models.Model):
     ahorro = models.DecimalField(max_digits=10,decimal_places=2,default=0,verbose_name="Ahorro por periodo")
     folio = models.CharField(max_length=50,verbose_name="Folio de solicitud",null=True)
     pago_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    
+    def verificar_y_actualizar_estado(self):
+        """
+        Si todas las cuotas de este préstamo están pagadas,
+        actualiza el estado a 'PAGADO'.
+        """
+        # Obtener todos los pagos relacionados
+        pagos = self.pagos.all()
+        if not pagos:
+            return  # Sin pagos, no se puede considerar pagado
+
+        # Verificar si todos los pagos tienen estado 'pagado'
+        if all(pago.estado_pago == 'pagado' for pago in pagos):
+            if self.estado != 'PAGADO':
+                self.estado = 'PAGADO'
+                self.save(update_fields=['estado'])
+        else:
+            # Opcional: si el préstamo estaba pagado y ahora ya no (por ejemplo,
+            # si se elimina un abono), puedes volver a un estado anterior.
+            # Decide si quieres esa lógica.
+            if self.estado == 'PAGADO':
+                # Podrías volver a 'APROBADO' o al estado que corresponda
+                self.estado = 'APROBADO'  # o 'SOLICITADO' según tu flujo
+                self.save(update_fields=['estado'])
 
 
 

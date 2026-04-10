@@ -1,122 +1,303 @@
-{% extends 'base.html' %} 
-<title>{% block title %}Grupo{% endblock %}</title> 
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if grupo %}Editar Grupo {{ grupo.nombre }}{% else %}Nuevo Grupo{% endif %} | Panel
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <div class="card shadow">
-    <div class="card-header bg-primary text-white">
-      <h4 class="mb-0">
-        <i class="fas fa-users me-2"></i>
-        {{ grupo|default_if_none:"Crear Grupo" }}
-      </h4>
-    </div>
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border: none;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #3a5ec7 0%, #1c3a8a 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 1rem 2rem rgba(0,0,0,0.1);
+    }
+    .input-group-text {
+        background-color: #f8f9fc;
+        border: 1px solid #d1d3e2;
+    }
+    .table-integrantes th, .table-integrantes td {
+        vertical-align: middle;
+    }
+    @media (max-width: 768px) {
+        .btn-lg {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        .input-group-lg .form-control, .input-group-lg .form-select {
+            font-size: 0.9rem;
+        }
+    }
+</style>
 
-    <div class="card-body">
-      <form method="post" class="needs-validation" novalidate>
-        {% csrf_token %}
-
-        <div class="row g-4">
-          <!-- Nombre del grupo -->
-          <div class="col-md-6">
-            <label for="id_nombre" class="form-label fw-bold">
-              Nombre del Grupo*
-            </label>
-            <div class="input-group input-group-lg has-validation">
-              <span class="input-group-text">
-                <i class="fas fa-users"></i>
-              </span>
-              <input
-                type="text"
-                class="form-control py-3"
-                id="id_nombre"
-                name="nombre"
-                value="{{ grupo.nombre|default:'' }}"
-                placeholder="Ej. Grupo Primavera"
-                required
-              />
-              <div class="invalid-feedback">
-                El nombre del grupo es obligatorio.
-              </div>
-            </div>
-          </div>
-
-          <!-- Responsable -->
-                    <div class="col-md-6">
-                        <label for="id_responsable" class="form-label fw-bold">
-                            Responsable del Grupo
-                        </label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text">
-                                <i class="fas fa-user"></i>
-                            </span>
-                            <select
-                                class="form-select py-3"
-                                id="id_responsable"
-                                name="responsable"
-                            >
-                                <option value="">Seleccione un responsable</option>
-                                {% for cliente in clientes %}
-                                    <option value="{{ cliente.id }}">
-                                        {{ cliente.nombre }} - {{ cliente.dni }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <!-- Tarjeta principal -->
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white py-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <h3 class="mb-2 mb-md-0 fw-bold">
+                            <i class="fas fa-users me-2"></i>
+                            {% if grupo %}Editar Grupo{% else %}Crear Nuevo Grupo{% endif %}
+                        </h3>
+                        <a href="{% url 'principalPrestamos' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Volver
+                        </a>
                     </div>
+                </div>
 
-          <!-- Descripción -->
-          <div class="col-md-12">
-            <label for="id_descripcion" class="form-label fw-bold">
-              Descripción
-            </label>
-            <div class="input-group input-group-lg">
-              <span class="input-group-text">
-                <i class="fas fa-align-left"></i>
-              </span>
-              <textarea
-                class="form-control py-3"
-                id="id_descripcion"
-                name="descripcion"
-                rows="4"
-                placeholder="Descripción del grupo (opcional)"
-              >
-    {{ grupo.descripcion|default:'' }}</textarea
-              >
-            </div>
-          </div>
-        </div>
+                <div class="card-body p-4 p-lg-5">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
 
-        
-                    <!-- Activo -->
-                    <div class="col-md-12">
-                        <div class="form-check form-switch mt-2">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                id="id_activo"
-                                name="activo"
-                                checked
-                            >
-                            <label class="form-check-label fw-bold" for="id_activo">
-                                Grupo activo
-                            </label>
+                        <!-- ========== DATOS PRINCIPALES ========== -->
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label for="id_nombre" class="form-label fw-semibold">Nombre del grupo <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-tag"></i></span>
+                                    <input type="text" name="nombre" id="id_nombre" class="form-control" 
+                                           value="{{ grupo.nombre|default:'' }}" placeholder="Ej: Grupo Primavera" required>
+                                </div>
+                                <div class="invalid-feedback">El nombre del grupo es obligatorio.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="id_responsable" class="form-label fw-semibold">Responsable del grupo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-user-tie"></i></span>
+                                    <select name="responsable" id="id_responsable" class="form-select">
+                                        <option value="">Seleccione un responsable</option>
+                                        {% for cliente in clientes %}
+                                            <option value="{{ cliente.id }}" {% if grupo.responsable.id == cliente.id %}selected{% endif %}>
+                                                {{ cliente.nombre }} - {{ cliente.dni }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <small class="text-muted">Opcional. Persona responsable del grupo.</small>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="id_descripcion" class="form-label fw-semibold">Descripción</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-align-left"></i></span>
+                                    <textarea name="descripcion" id="id_descripcion" class="form-control" rows="3" 
+                                              placeholder="Descripción del grupo (opcional)">{{ grupo.descripcion|default:'' }}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="activo" id="id_activo" 
+                                           {% if grupo.activo or not grupo %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="id_activo">
+                                        <i class="fas fa-toggle-on text-success me-1"></i> Grupo activo
+                                    </label>
+                                </div>
+                                <small class="text-muted">Si está inactivo, no aparecerá en los listados de préstamos.</small>
+                            </div>
                         </div>
-                    </div>
 
-        <!-- Botones -->
-        <div class="d-flex justify-content-between mt-4">
-          <a
-            href="{% url 'crear-prestamo' %}"
-            class="btn btn-outline-secondary btn-lg"
-          >
-            <i class="fas fa-arrow-left me-2"></i>Cancelar
-          </a>
-          <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save me-2"></i>Guardar Grupo
-          </button>
+                        <!-- ========== SECCIÓN DE INTEGRANTES (solo en edición) ========== -->
+                        {% if grupo and grupo.id %}
+                        <hr class="my-4">
+                        <div class="card border-0 shadow-sm mt-3">
+                            <div class="card-header bg-light fw-bold">
+                                <i class="fas fa-user-friends me-2"></i> Integrantes del grupo
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 align-items-end mb-4">
+                                    <div class="col-md-8">
+                                        <label for="cliente_integrante" class="form-label fw-semibold">Agregar integrante</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                                            <select id="cliente_integrante" class="form-select">
+                                                <option value="">Seleccione un cliente</option>
+                                                {% for cliente in clientes %}
+                                                    <option value="{{ cliente.id }}">{{ cliente.nombre }} - {{ cliente.dni }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-success w-100" onclick="agregarIntegrante()">
+                                            <i class="fas fa-plus me-2"></i> Agregar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle" id="tabla-integrantes">
+                                        <thead class="table-light">
+                                            <tr class="text-center">
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Documento</th>
+                                                <th>Representante</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for integrante in grupo.integrantes.all %}
+                                            <tr id="integrante-row-{{ integrante.id }}">
+                                                <td class="text-center">{{ forloop.counter }}</td>
+                                                <td>{{ integrante.cliente.nombre }}</td>
+                                                <td>{{ integrante.cliente.dni }}</td>
+                                                <td class="text-center">
+                                                    {% if integrante.es_representante %}
+                                                        <span class="badge bg-primary">Representante</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">No</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarIntegrante({{ integrante.id }})">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr id="sin-integrantes">
+                                                <td colspan="5" class="text-center text-muted py-4">
+                                                    <i class="fas fa-users-slash fa-2x mb-2 d-block"></i>
+                                                    No hay integrantes en este grupo
+                                                </td>
+                                             </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- ========== BOTONES ========== -->
+                        <div class="d-flex flex-column flex-sm-row justify-content-between gap-3 mt-5">
+                            <a href="{% url 'principalPrestamos' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                                <i class="fas fa-save me-2"></i> 
+                                {% if grupo %}Actualizar Grupo{% else %}Crear Grupo{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-      </form>
     </div>
-  </div>
 </div>
 
+<script>
+    {% if grupo and grupo.id %}
+    // Funciones para manejo de integrantes (solo en edición)
+    function agregarIntegrante() {
+        const select = document.getElementById('cliente_integrante');
+        const clienteId = select.value;
+        const clienteNombre = select.options[select.selectedIndex]?.text;
+
+        if (!clienteId) {
+            Swal.fire('Atención', 'Seleccione un cliente primero', 'warning');
+            return;
+        }
+
+        // Verificar si ya existe
+        let exists = false;
+        document.querySelectorAll('#tabla-integrantes tbody tr').forEach(row => {
+            if (row.id && row.id.includes(clienteId)) exists = true;
+        });
+        if (exists) {
+            Swal.fire('Error', 'Este cliente ya está en el grupo', 'error');
+            return;
+        }
+
+        // Enviar petición AJAX para agregar
+        fetch('{% url "agregar_integrante_grupo" grupo.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ cliente_id: clienteId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // recargar para ver el nuevo integrante
+            } else {
+                Swal.fire('Error', data.error || 'No se pudo agregar', 'error');
+            }
+        })
+        .catch(error => Swal.fire('Error', 'Error de conexión', 'error'));
+    }
+
+    function eliminarIntegrante(integranteId) {
+        Swal.fire({
+            title: '¿Eliminar integrante?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('{% url "eliminar_integrante_grupo" grupo.id %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ integrante_id: integranteId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo eliminar', 'error');
+                    }
+                })
+                .catch(error => Swal.fire('Error', 'Error de conexión', 'error'));
+            }
+        });
+    }
+    {% endif %}
+
+    // Validación de Bootstrap
+    (function() {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
 {% endblock %}

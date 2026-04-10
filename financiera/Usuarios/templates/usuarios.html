@@ -1,98 +1,202 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% load static %}
 
-<title>{% block title %}Usuarios{% endblock %}</title>
+{% block title %}Usuarios | Panel{% endblock %}
 
-<!-- Custom styles for this template-->
-<link href="/static/css/usuarios.css" rel="stylesheet" />
-<div class="container">
-  <div class="row">
-    <div class="col-md-offset-1 col-md-10">
-      <div class="panel">
-        <div class="panel-heading">
-          <div class="row">
-            <div class="col col-sm-3 col-xs-12">
-              <h4 class="title">Lista <span>de usuarios</span></h4>
+{% block content %}
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid;
+        border-radius: 0.75rem;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+    }
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1rem;
+        color: white;
+        text-transform: uppercase;
+    }
+    .btn-icon-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .table-usuarios th, .table-usuarios td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.65rem;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        border-radius: 30px !important;
+        margin: 0 2px;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #4e73df !important;
+        border-color: #4e73df !important;
+        color: white !important;
+    }
+    @media (max-width: 768px) {
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+        .btn-icon-circle {
+            width: 28px;
+            height: 28px;
+        }
+        .table-usuarios th, .table-usuarios td {
+            font-size: 0.8rem;
+            padding: 0.5rem;
+        }
+    }
+</style>
+
+    <!-- Tarjeta principal de la tabla -->
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-gradient-primary text-white py-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <h3 class="mb-2 mb-md-0 fw-bold">
+                    <i class="fas fa-users me-2"></i> Gestión de Usuarios
+                </h3>
+                <a href="{% url 'signup' %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-plus-circle me-1"></i> Nuevo usuario
+                </a>
             </div>
-            <div class="col-sm-9 col-xs-12 text-right">
-              <div class="btn_group">
-                <a
-                  href="{% url 'signup' %}"
-                  class="btn btn-sm btn-primary pull-left"
-                  ><i class="fa fa-plus-circle"></i> Nuevo usuario</a
-                >
-              </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-usuarios" id="usuariosTable" width="100%">
+                    <thead class="table-light">
+                        <tr class="text-center">
+                            <th style="width: 50px">#</th>
+                            <th>Usuario</th>
+                            <th>Nombre completo</th>
+                            <th>Correo</th>
+                          
+                            <th>Último acceso</th>
+                            <th style="width: 100px">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td class="text-center">{{ forloop.counter }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-circle">
+                                        {{ usuario.first_name|slice:":1"|default:usuario.username|slice:":1" }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ usuario.username }}</strong>
+                                        <small class="d-block text-muted">ID: {{ usuario.id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if usuario.first_name or usuario.last_name %}
+                                    {{ usuario.first_name }} {{ usuario.last_name }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if usuario.email %}
+                                    <i class="fas fa-envelope text-muted me-1"></i> {{ usuario.email }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            
+                        
+                            <td>
+                                <small class="text-muted">{{ usuario.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</small>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'editarUsuarios' usuario.id %}" class="btn btn-outline-warning btn-icon-circle" data-toggle="tooltip" title="Editar usuario">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="eliminarRegistro({{ usuario.id }})" class="btn btn-outline-danger btn-icon-circle" data-toggle="tooltip" title="Eliminar usuario">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="fas fa-users-slash fa-3x mb-3 d-block"></i>
+                                No hay usuarios registrados
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-          </div>
         </div>
-        <div class="panel-body table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nombre de usuario</th>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Direccion</th>
-                <th>Accion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for usuario in usuarios %}
-              <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ usuario.username }}</td>
-                <td>{{ usuario.first_name }}</td>
-                <td>{{ usuario.last_name }}</td>
-                <td>{{ usuario.email }}</td>
-                <td>
-                  <ul class="action-list">
-                    <li>
-                      <a
-                        href="{% url 'editarUsuarios' usuario.id %}"
-                        data-tip="edit"
-                      >
-                        <i class="fa fa-edit"></i>
-                      </a>
-                      Editar
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        data-tip="delete"
-                        onclick="eliminarRegistro({{usuario.id}})"
-                        ><i class="fa fa-trash"></i
-                      ></a>
-                      Eliminar
-                    </li>
-                  </ul>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div class="card-footer bg-light text-end py-3">
+            <small class="text-muted">Mostrando {{ usuarios|length }} usuarios</small>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 
-<!-- Eliminar usuarios-->
 <script>
-  function eliminarRegistro(id) {
-    Swal.fire({
-      title: "¿Estás seguro?",
-      text: "¡No podrás deshacer esta acción!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-    }).then(function (result) {
-      if (result.isConfirmed) {
-        window.location.href = "/Usuarios/eliminaUsuarios/" + id + "/";
-      }
+    // Inicializar DataTables
+    $(document).ready(function() {
+        if ($('#usuariosTable tbody tr').length > 1) {
+            $('#usuariosTable').DataTable({
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+                },
+                pageLength: 10,
+                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]],
+                responsive: true,
+                dom: '<"top"lf>rt<"bottom"ip><"clear">',
+                columnDefs: [
+                    { orderable: false, targets: [7] }  // desactivar orden en columna acciones
+                ]
+            });
+        }
+        $('[data-toggle="tooltip"]').tooltip();
     });
-  }
+
+    function eliminarRegistro(id) {
+        Swal.fire({
+            title: "¿Eliminar usuario?",
+            text: "¡Esta acción no se puede deshacer!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#e74a3b",
+            cancelButtonColor: "#858796",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "/Usuarios/eliminaUsuarios/" + id + "/";
+            }
+        });
+    }
 </script>
 {% endblock %}

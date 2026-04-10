@@ -105,16 +105,14 @@ class Abono(models.Model):
         blank=True,
         null=True
     )
+    ahorro = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True  )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Abono ${self.monto} - Pago #{self.pago.numero_pago}"    
  
-@property
-def total_abonado(self):
-    return self.abonos.aggregate(
-        total=Sum('monto')
-    )['total'] or 0
 
-
+    @property
+    def total_abonado(self):
+        return self.abonos.aggregate(total=Sum('monto'))['total'] or 0

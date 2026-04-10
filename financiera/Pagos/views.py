@@ -23,49 +23,75 @@ from django.http import HttpResponse
 from weasyprint import HTML
 from datetime import datetime 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count
 
 
 
 @login_required
 def pagosPrincipal(request):
-
     buscar = request.GET.get('buscar')
     es_grupal = request.GET.get('es_grupal')
+    estado = request.GET.get('estado')
+    con_atrasos = request.GET.get('con_atrasos')
 
-    # ==============================
-    # FILTRO POR USUARIO
-    # ==============================
+    # Base: préstamos según rol
     if request.user.is_staff:
         prestamos = Prestamo.objects.all()
     else:
-        prestamos = Prestamo.objects.filter(
-            promotor=request.user
-        )
+        prestamos = Prestamo.objects.filter(promotor=request.user)
 
-    prestamos = prestamos.select_related('cliente')
+    # ========== NUEVO: Excluir préstamos ya pagados ==========
+    prestamos = prestamos.exclude(estado='PAGADO')  # También podrías excluir 'LIQUIDADO' si existe
 
-    # ==============================
-    # FILTRO GRUPAL
-    # ==============================
+    prestamos = prestamos.select_related('cliente', 'grupo')
+
+    # Filtro grupal
     if es_grupal == 'true':
         prestamos = prestamos.filter(es_grupal=True)
 
-    # ==============================
-    # BUSCADOR
-    # ==============================
+    # Filtro por estado del préstamo (solo los que aún están activos, ej. APROBADO, SOLICITADO)
+    if estado:
+        prestamos = prestamos.filter(estado=estado)
+
+    # Búsqueda
     if buscar:
         prestamos = prestamos.filter(
             Q(cliente__nombre__icontains=buscar) |
-            Q(folio__icontains=buscar)
+            Q(folio__icontains=buscar) |
+            Q(grupo__nombre__icontains=buscar)
         )
+
+    # Anotar número de cuotas atrasadas por préstamo
+    hoy = timezone.now().date()
+    prestamos = prestamos.annotate(
+        cuotas_atrasadas=Count(
+            'pagos',
+            filter=Q(pagos__estado_pago__in=['pendiente', 'parcial'],
+                     pagos__fecha_programada__lt=hoy)
+        )
+    )
+
+    # Filtro por préstamos con/sin cuotas atrasadas
+    if con_atrasos == 'si':
+        prestamos = prestamos.filter(cuotas_atrasadas__gt=0)
+    elif con_atrasos == 'no':
+        prestamos = prestamos.filter(cuotas_atrasadas=0)
+
+    # Estadísticas (solo sobre los préstamos no pagados, que son los que se muestran)
+    aprobados_count = prestamos.filter(estado='APROBADO').count()
+    solicitados_count = prestamos.filter(estado='SOLICITADO').count()
+    total_atrasadas = prestamos.aggregate(total=Sum('cuotas_atrasadas'))['total'] or 0
 
     context = {
         'prestamos': prestamos,
-        'tipo_actual': es_grupal
+        'tipo_actual': es_grupal,
+        'aprobados_count': aprobados_count,
+        'solicitados_count': solicitados_count,
+        'total_atrasadas': total_atrasadas,
     }
-
     return render(request, 'pagos.html', context)
+
+
 @login_required
 def tiket_generico(request):
     return render(request, 'tiket_generico.html')
@@ -74,60 +100,56 @@ def tiket_generico(request):
 
 @login_required
 def create_pago(request, id):
-
     pago = get_object_or_404(Pago, id=id)
 
     if request.method == 'POST':
+        monto_abono = Decimal(request.POST.get('monto_pagado', 0))
+        ahorro = request.POST.get('ahorro', '0')
+        # Si el campo viene vacío o None, lo convertimos a 0
+        ahorro = Decimal(ahorro) if ahorro and ahorro.strip() else Decimal('0')
+        metodo_pago = request.POST.get('metodo_pago')
+        comentario = request.POST.get('comentarios', '').strip()
 
-        monto_abono = Decimal(request.POST.get('monto_pagado'))
-
+        # Validaciones
         if monto_abono <= 0:
             messages.error(request, "El monto debe ser mayor a 0")
             return redirect('create_pago', id=id)
-          # 2️⃣ Validar que no exceda el saldo restante
-        total_abonado = pago.abonos.aggregate(
-            total=Sum('monto')
-        )['total'] or Decimal('0')
 
+        total_abonado = pago.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
         saldo_restante = pago.monto_pago - total_abonado
 
         if monto_abono > saldo_restante:
-            messages.error(request, f"No puedes abonar más de {saldo_restante}")
-            return redirect('createPago', id=id)
+            messages.error(request, f"No puedes abonar más de ${saldo_restante:.2f}")
+            return redirect('create_pago', id=id)
 
-        # Guardar ABONO
-        Abono.objects.create(
+        # Crear el Abono con todos los campos
+        abono = Abono.objects.create(
             pago=pago,
             monto=monto_abono,
-            metodo_pago=request.POST.get('metodo_pago'),
-            cobrador=request.user
+            ahorro=ahorro,
+            metodo_pago=metodo_pago,
+            cobrador=request.user,
+            comentario=comentario if comentario else None
         )
 
-        # ---- RECALCULAR TOTALES ----
-
-        total_abonado = pago.abonos.aggregate(
-            total=Sum('monto')
-        )['total'] or Decimal('0')
-
+        # Recalcular totales y estado del pago
+        total_abonado = pago.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
         saldo_restante = pago.monto_pago - total_abonado
-
-        # ---- ESTADO ----
 
         if saldo_restante <= 0:
             pago.estado_pago = 'pagado'
-            pago.pago_parcial = False
             saldo_restante = 0
         else:
             pago.estado_pago = 'parcial'
-            pago.pago_parcial = True
 
         pago.saldo_restante = saldo_restante
         pago.save()
-
+        pago.prestamo.verificar_y_actualizar_estado()
         messages.success(request, "Abono registrado correctamente")
         return redirect('detalle_pago', prestamo_id=pago.prestamo.id)
 
     return render(request, 'create_pago.html', {'pago': pago})
+
 
 @login_required
 def editar_pago(request, id): 
@@ -224,20 +246,42 @@ def eliminar_pago(request, pk):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-
+@login_required
 def detalle_pago(request, prestamo_id):
-
     prestamo = get_object_or_404(Prestamo, id=prestamo_id)
-
-    pagos = Pago.objects.filter(
-        prestamo=prestamo
-    ).order_by('numero_pago')
-
+    pagos = Pago.objects.filter(prestamo=prestamo).order_by('numero_pago')
+    
+    # Total pagado sumando todos los abonos del préstamo
+    total_pagado = Abono.objects.filter(pago__prestamo=prestamo).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    
+    # Saldo pendiente
+    saldo_pendiente = prestamo.monto - total_pagado
+    
+    # Cuotas pagadas
+    cuotas_pagadas = pagos.filter(estado_pago='pagado').count()
+    
+    # Cuotas atrasadas
+    hoy = timezone.now().date()
+    cuotas_atrasadas = pagos.filter(
+        estado_pago__in=['pendiente', 'parcial'],
+        fecha_programada__lt=hoy
+    ).count()
+    
+    # Totales para el pie de tabla
+    total_abonado_general = total_pagado
+    total_saldo_general = pagos.aggregate(total=Sum('saldo_restante'))['total'] or Decimal('0')
+    total_ahorro = Abono.objects.filter(pago__prestamo=prestamo).aggregate(total=Sum('ahorro'))['total'] or Decimal('0')
     context = {
         'prestamo': prestamo,
-        'pagos': pagos
+        'pagos': pagos,
+        'total_pagado': total_pagado,
+        'saldo_pendiente': saldo_pendiente,
+        'cuotas_pagadas': cuotas_pagadas,
+        'cuotas_atrasadas': cuotas_atrasadas,
+        'total_abonado_general': total_abonado_general,
+        'total_saldo_general': total_saldo_general,
+        'total_ahorro': total_ahorro,
     }
-
     return render(request, 'detalle_pago.html', context)
 
 
@@ -252,7 +296,6 @@ def fecha_a_letras(fecha):
 
 def generar_ticket(request, id):
 
-    
     pago = get_object_or_404(Pago, id=id)
 
     # ✅ Obtener todos los abonos del pago

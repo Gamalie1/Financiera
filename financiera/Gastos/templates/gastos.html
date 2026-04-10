@@ -1,107 +1,212 @@
 {% extends 'base.html' %}
-<title>{% block title %}Gastos{% endblock %}</title>
+{% load static %}
+
+{% block title %}Gastos | Panel{% endblock %}
+
 {% block content %}
-<link href="/static/css/usuarios.css" rel="stylesheet" />
-<div class="container">
-  <div class="row">
-    <div class="col-md-offset-1 col-md-10">
-      <div class="panel">
-        <div class="panel-heading">
-          <div class="row">
-            <div class="col col-sm-3 col-xs-12">
-              <h4 class="title">Listado <span>de gastos</span></h4>
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid;
+        border-radius: 0.75rem;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+    }
+    .btn-icon-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .table-gastos th, .table-gastos td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        border-radius: 30px !important;
+        margin: 0 2px;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #4e73df !important;
+        border-color: #4e73df !important;
+        color: white !important;
+    }
+    /* Mejoras responsivas */
+    @media (max-width: 768px) {
+        .btn-icon-circle {
+            width: 28px;
+            height: 28px;
+        }
+        .table-gastos th, .table-gastos td {
+            font-size: 0.75rem;
+            padding: 0.4rem;
+        }
+        .stat-card .h5 {
+            font-size: 1rem;
+        }
+        /* Ocultar columnas menos importantes en móvil */
+        .table-gastos th:nth-child(1), /* ID */
+        .table-gastos td:nth-child(1) {
+            display: none;
+        }
+        .table-gastos th:nth-child(5), /* Concepto */
+        .table-gastos td:nth-child(5) {
+            display: none;
+        }
+        /* Ajustar botones en móvil */
+        .btn-group-sm .btn-icon-circle {
+            width: 26px;
+            height: 26px;
+        }
+    }
+    /* Para pantallas muy pequeñas (≤480px) */
+    @media (max-width: 480px) {
+        .table-gastos th, .table-gastos td {
+            font-size: 0.7rem;
+            padding: 0.3rem;
+        }
+        .card-header .btn-light {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+        }
+        .dataTables_length, .dataTables_filter {
+            float: none !important;
+            text-align: left !important;
+            margin-bottom: 0.5rem;
+        }
+        .dataTables_filter input {
+            width: 100% !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white py-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <h3 class="mb-2 mb-md-0 fw-bold">
+                            <i class="fas fa-receipt me-2"></i> Listado de Gastos
+                        </h3>
+                        <a href="{% url 'createGasto' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus-circle me-1"></i> Nuevo gasto
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 table-gastos" id="gastosTable" width="100%">
+                            <thead class="table-light">
+                                <tr class="text-center">
+                                    <th style="width: 60px">ID</th>
+                                    <th>Promotor</th>
+                                    <th>Monto</th>
+                                    <th>Fecha</th>
+                                    <th>Concepto</th>
+                                    {% if request.user.is_staff %}
+                                    <th style="width: 100px">Acciones</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gasto in gastos %}
+                                <tr>
+                                    <td class="text-center">{{ gasto.id }}</td>
+                                    <td><i class="fas fa-user-circle text-primary me-2"></i> {{ gasto.usuario.username }}</td>
+                                    <td class="text-end">${{ gasto.monto|floatformat:2 }}</td>
+                                    <td class="text-center">{{ gasto.fecha_registro|date:"d/m/Y" }}</td>
+                                    <td class="text-truncate" style="max-width: 200px;">{{ gasto.concepto|default:"-" }}</td>
+                                    {% if request.user.is_staff %}
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'editarGasto' gastos_id=gasto.id %}" class="btn btn-outline-warning btn-icon-circle" data-toggle="tooltip" title="Editar gasto">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button onclick="eliminarRegistro({{ gasto.id }})" class="btn btn-outline-danger btn-icon-circle" data-toggle="tooltip" title="Eliminar gasto">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{% if request.user.is_staff %}6{% else %}5{% endif %}" class="text-center text-muted py-5">
+                                        <i class="fas fa-receipt fa-3x mb-3 d-block"></i>
+                                        No hay gastos registrados
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-end py-3">
+                    <small class="text-muted">Mostrando {{ gastos|length }} gastos</small>
+                </div>
             </div>
-            <div class="col-sm-9 col-xs-12 text-right">
-              <div class="btn_group">
-                <a
-                  href="{% url 'createGasto' %}"
-                  class="btn btn-sm btn-primary pull-left"
-                >
-                  <i class="fa fa-plus-circle"></i> Nuevo gasto
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
-        <div class="panel-body table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Promotor</th>
-                <th>Monto</th>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                {% if request.user.is_staff %}
-                <th>Acciones</th>
-                {% endif %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for gastos in gastos %}
-              <tr>
-                <td>{{ gastos.id }}</td>
-                <td>{{ gastos.usuario.username }}</td>
-                <td>${{ gastos.monto|floatformat:2 }}</td>
-                <td>{{ gastos.fecha_registro|date:"d/m/Y" }}</td>
-                <td>{{ gastos.concepto }}</td>
-                {% if request.user.is_staff %}
-                <td>
-                  <ul class="action-list">
-                    <li>
-                      <a
-                        href="{% url 'editarGasto' gastos_id=gastos.id %}"
-                        class="btn btn-sm btn-warning"
-                        data-tip="edit"
-                      >
-                        <i class="fa fa-edit"></i> Editar
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        class="btn btn-sm btn-danger"
-                        data-tip="delete"
-                        onclick="eliminarRegistro({{gastos.id}})"
-                      >
-                        <i class="fa fa-trash"></i> Eliminar
-                      </a>
-                    </li>
-                  </ul>
-                </td>
-                {% endif %}
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="6" class="text-center">
-                  No hay pagos registrados
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
 
 <script>
-  function eliminarRegistro(id) {
-    Swal.fire({
-      title: "¿Estás seguro?",
-      text: "¡No podrás deshacer esta acción!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-    }).then(function (result) {
-      if (result.isConfirmed) {
-        window.location.href = "/Gastos/eliminarGasto/" + id + "/";
-      }
+    $(document).ready(function() {
+        if ($('#gastosTable tbody tr').length > 1) {
+            $('#gastosTable').DataTable({
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+                },
+                pageLength: 10,
+                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]],
+                responsive: {
+                    details: {
+                        display: $.fn.dataTable.Responsive.display.modal,
+                        renderer: $.fn.dataTable.Responsive.renderer.tableAll()
+                    }
+                },
+                dom: '<"top"lf>rt<"bottom"ip><"clear">',
+                columnDefs: [
+                    { orderable: false, targets: [{% if request.user.is_staff %}5{% else %}4{% endif %}] },
+                    // En móvil, ocultar ID (columna 0) y Concepto (columna 4) automáticamente con responsive
+                    { responsivePriority: 1, targets: 1 },  // Promotor (prioridad alta)
+                    { responsivePriority: 2, targets: 2 },  // Monto
+                    { responsivePriority: 3, targets: 3 },  // Fecha
+                    { responsivePriority: 4, targets: 0 },  // ID (baja prioridad)
+                    { responsivePriority: 5, targets: 4 }   // Concepto (muy baja)
+                ]
+            });
+        }
+        $('[data-toggle="tooltip"]').tooltip();
     });
-  }
+
+    function eliminarRegistro(id) {
+        Swal.fire({
+            title: "¿Eliminar gasto?",
+            text: "¡Esta acción no se puede deshacer!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#e74a3b",
+            cancelButtonColor: "#858796",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "/Gastos/eliminarGasto/" + id + "/";
+            }
+        });
+    }
 </script>
 {% endblock %}

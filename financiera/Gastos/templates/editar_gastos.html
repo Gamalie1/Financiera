@@ -1,44 +1,184 @@
 {% extends 'base.html' %}
-<title>{% block title %}Editar Gasto{% endblock %}</title>
+{% load static %}
+
+{% block title %}Editar Gasto | Panel{% endblock %}
+
 {% block content %}
-<link href="/static/css/signup.css" rel="stylesheet">
-<div class="d-flex justify-content-center align-items-center vh-100">
-    <div class="bg-white p-4 rounded-5 text-secondary shadow-lg" style="width: 100%; max-width: 500px;">
-  
-        <div class="text-center fs-1 fw-bold mb-4">Editar Gasto</div>
-  
-        <!-- Mostrar errores si existen -->
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
-  
-        <!-- Formulario de gasto -->
-        <form method="POST" class="card-body">
-            {% csrf_token %}
-                       
-           <!-- Campo Monto -->
-<div class="mb-3">
-    <label for="monto" class="form-label">Monto:</label>
-    {{ form.monto }}  <!-- Django renderiza el campo con el widget configurado -->
-</div>
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 1rem 2rem rgba(0,0,0,0.1);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border: none;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #3a5ec7 0%, #1c3a8a 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    .btn-secondary {
+        background: #858796;
+        border: none;
+    }
+    .btn-secondary:hover {
+        background: #6c6e7a;
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+    }
+    .input-group-text {
+        background-color: #f8f9fc;
+        border: 1px solid #d1d3e2;
+    }
+    .form-control:focus, .form-select:focus, textarea:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    /* Para mantener la apariencia del campo monto renderizado por Django */
+    .form-control-custom {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #6e707e;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #d1d3e2;
+        border-radius: 0.35rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control-custom:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem !important;
+        }
+    }
+</style>
 
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-12">
+            <!-- Tarjeta principal -->
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white py-4">
+                    <div class="text-center">
+                        <i class="fas fa-edit fa-2x mb-2"></i>
+                        <h3 class="mb-0 fw-bold">Editar Gasto</h3>
+                        <p class="mb-0 mt-1 small opacity-75">Modifique los datos del gasto</p>
+                    </div>
+                </div>
 
-            <!-- Campo Concepto -->
-            <div class="mb-3">
-                <label for="concepto" class="form-label">Concepto:</label>
-                <textarea name="concepto" id="concepto" class="form-control" placeholder="Descripción del gasto" required>{{ gastos.concepto }}</textarea>
+                <div class="card-body p-4 p-lg-5">
+                    <!-- Mensajes de error -->
+                    {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Campo Monto (usando el campo del formulario de Django) -->
+                        <div class="mb-4">
+                            <label for="id_monto" class="form-label fw-semibold">Monto <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">$</span>
+                                {{ form.monto }}
+                            </div>
+                            <div class="invalid-feedback">El monto es obligatorio y debe ser mayor a 0.</div>
+                        </div>
+
+                        <!-- Campo Fecha de Registro (si existe en el formulario) -->
+                        {% if form.fecha_registro %}
+                        <div class="mb-4">
+                            <label for="id_fecha_registro" class="form-label fw-semibold">Fecha de registro</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-calendar-alt"></i></span>
+                                {{ form.fecha_registro }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Campo Concepto -->
+                        <div class="mb-4">
+                            <label for="concepto" class="form-label fw-semibold">Concepto <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-align-left"></i></span>
+                                <textarea name="concepto" id="concepto" class="form-control" rows="3" 
+                                          placeholder="Descripción detallada del gasto" required>{{ gastos.concepto|default:'' }}</textarea>
+                            </div>
+                            <div class="invalid-feedback">El concepto es obligatorio.</div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+                            <a href="{% url 'Gastos' %}" class="btn btn-secondary btn-lg flex-fill">
+                                <i class="fas fa-times me-2"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
+                                <i class="fas fa-save me-2"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            
-            <!-- Botones de acción -->
-            <div class="d-flex gap-2">
-                <a href="{% url 'Gastos' %}" class="btn btn-secondary text-white w-100 mt-3 fw-semibold shadow-sm">
-                    Cancelar
-                </a>
-                <button type="submit" class="btn btn-primary text-white w-100 mt-3 fw-semibold shadow-sm">
-                    Guardar Cambios
-                </button>
+
+            <!-- Tarjeta de información adicional -->
+            <div class="card mt-4 border-0 shadow-sm rounded-3">
+                <div class="card-body text-center text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Actualice el monto o concepto del gasto según sea necesario.
+                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
+
+<!-- Script para agregar clases CSS a los campos del formulario de Django -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Agregar clase 'form-control' al campo de monto para que tenga el mismo estilo
+        const montoField = document.querySelector("#id_monto");
+        if (montoField) {
+            montoField.classList.add("form-control");
+            montoField.classList.add("form-control-lg");
+        }
+        // Si existe el campo fecha_registro
+        const fechaField = document.querySelector("#id_fecha_registro");
+        if (fechaField) {
+            fechaField.classList.add("form-control");
+            fechaField.classList.add("form-control-lg");
+        }
+    });
+
+    // Validación de Bootstrap
+    (function() {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
 {% endblock %}

@@ -1,96 +1,214 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
-<title>
-  {% block title %}
-    Informacion operacional
-  {% endblock %}
-</title>
+{% load static %}
+
+{% block title %}Información Operacional | Panel{% endblock %}
 
 {% block content %}
-  <h1 class="h3 mb-4 text-gray-800">Principal</h1>
-
-  <!-- Begin Page Content -->
-  <div class="container-fluid">
-    {% if mensaje %}
-      <div class="alert alert-info" role="alert">{{ mensaje }}</div>
-    {% else %}
-      {% for cobrador, total in totales_cobradores.items %}
-        <!-- Nueva fila para cada cobrador -->
-        <div class="row mb-4">
-          <!-- Tarjeta de Cobrador -->
-          <div class="col-xl-4 col-md-4 mb-4">
-            <a href="{% url 'detalles_cobrador' cobrador %}?tipo=pagos" class="text-decoration-none">
-              <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cobrador: {{ cobrador }}</div>
-                      <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total|floatformat:2 }}</div>
-                    </div>
-                    <div class="col-auto">
-                      <i class="fas fa-user fa-2x text-gray-300"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <!-- Tarjeta de Gastos -->
-          <div class="col-xl-4 col-md-4 mb-4">
-            <a href="{% url 'detalles_cobrador' cobrador %}?tipo=gastos" class="text-decoration-none">
-              <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Gastos</div>
-                      <!-- Total de gastos -->
-                      <div class="h5 mb-0 font-weight-bold text-gray-800">${{ totales_gastos|get_item:cobrador|default:0|stringformat:'.2f' }}</div>
-                    </div>
-                    <div class="col-auto">
-                      <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <!-- Tarjeta de Prestamos Diarios -->
-          <div class="col-xl-4 col-md-4 mb-4">
-            <a href="{% url 'detalles_cobrador' cobrador %}?tipo=prestamos" class="text-decoration-none">
-              <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                  <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Préstamos Pendientes de Hoy</div>
-                      <!-- Número de préstamos pendientes hoy -->
-                      <div class="h5 mb-0 font-weight-bold text-gray-800">{{ prestamos_diarios|get_item:cobrador|default:'0' }}</div>
-                    </div>
-                    <div class="col-auto">
-                      <i class="fas fa-money-check-alt fa-2x text-gray-300"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div> <!-- Cierre de la fila para el cobrador -->
-      {% endfor %}
-    {% endif %}
-  </div>
-
-  <script>
-    // Función para mostrar la tabla correspondiente al botón seleccionado
-    function mostrarTabla(tipo) {
-      // Ocultar todas las tablas
-      document.getElementById('tabla_hoy').style.display = 'none'
-      document.getElementById('tabla_semana').style.display = 'none'
-      document.getElementById('tabla_mes').style.display = 'none'
-      document.getElementById('tabla_total').style.display = 'none'
-    
-      // Mostrar la tabla seleccionada
-      document.getElementById('tabla_' + tipo).style.display = 'block'
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
     }
-  </script>
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+    }
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+    }
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid;
+        border-radius: 0.75rem;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+    }
+    .transition-hover {
+        transition: all 0.2s ease-in-out;
+    }
+    .transition-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+    }
+    .rounded-circle {
+        border-radius: 50% !important;
+    }
+    .bg-gradient {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    .bg-success.bg-gradient {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+    }
+    .bg-info.bg-gradient {
+        background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+    }
+    @media (max-width: 768px) {
+        .stat-card .h5 {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-chart-line fa-fw text-primary"></i> Información Operacional
+    </h1>
+</div>
+
+{% if user.is_staff %}
+<!-- ========== TARJETAS DE RESUMEN GLOBAL ========== -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card stat-card border-left-primary shadow-sm h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total recaudado</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_recaudado|floatformat:2|default:"0.00" }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card stat-card border-left-success shadow-sm h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total gastos</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_gastos|floatformat:2|default:"0.00" }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-receipt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card stat-card border-left-info shadow-sm h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Préstamos pendientes hoy</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_prestamos_hoy|default:"0" }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card stat-card border-left-warning shadow-sm h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Morosidad</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ morosidad|floatformat:1 }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ========== TARJETAS POR COBRADOR ========== -->
+{% if mensaje %}
+    <div class="alert alert-info alert-dismissible fade show rounded-3" role="alert">
+        <i class="fas fa-info-circle me-2"></i> {{ mensaje }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% else %}
+    {% for cobrador, total in totales_cobradores.items %}
+    <div class="row mb-4">
+        <!-- Tarjeta Recaudación -->
+        <div class="col-xl-4 col-md-4 mb-3">
+            <a href="{% url 'detalles_cobrador' cobrador %}?tipo=pagos" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-left-primary transition-hover">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    <i class="fas fa-user me-1"></i> {{ cobrador }}
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total|floatformat:2 }}</div>
+                                <small class="text-muted">Recaudación total</small>
+                            </div>
+                            <div class="col-auto">
+                                <div class="bg-primary bg-gradient p-3 rounded-circle shadow-sm">
+                                    <i class="fas fa-dollar-sign fa-2x text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Tarjeta Gastos -->
+        <div class="col-xl-4 col-md-4 mb-3">
+            <a href="{% url 'detalles_cobrador' cobrador %}?tipo=gastos" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-left-success transition-hover">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    <i class="fas fa-receipt me-1"></i> Gastos
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    ${{ totales_gastos|get_item:cobrador|default:0|floatformat:2 }}
+                                </div>
+                                <small class="text-muted">Registrados</small>
+                            </div>
+                            <div class="col-auto">
+                                <div class="bg-success bg-gradient p-3 rounded-circle shadow-sm">
+                                    <i class="fas fa-chart-line fa-2x text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Tarjeta Préstamos diarios -->
+        <div class="col-xl-4 col-md-4 mb-3">
+            <a href="{% url 'detalles_cobrador' cobrador %}?tipo=prestamos" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-left-info transition-hover">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    <i class="fas fa-calendar-day me-1"></i> Préstamos pendientes hoy
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ prestamos_diarios|get_item:cobrador|default:'0' }}
+                                </div>
+                                <small class="text-muted">Requieren cobro</small>
+                            </div>
+                            <div class="col-auto">
+                                <div class="bg-info bg-gradient p-3 rounded-circle shadow-sm">
+                                    <i class="fas fa-money-bill-wave fa-2x text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
 {% endblock %}

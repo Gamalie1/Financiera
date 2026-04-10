@@ -48,69 +48,90 @@ def signin(request):
 
 def principal(request):
     hoy = timezone.now().date()
+    inicio_semana = hoy - timedelta(days=hoy.weekday())  # lunes de esta semana
+    inicio_mes = hoy.replace(day=1)
 
+    # Determinar usuarios según rol
     if request.user.is_staff:
         users = User.objects.all()
     else:
         users = User.objects.filter(id=request.user.id)
 
-    # Crear diccionarios para almacenar los totales
+    # Diccionarios para cobradores
     totales_cobradores = {}
     totales_gastos = {}
-    pagos_retrasados = {}
-    prestamos_diarios = {}  # Diccionario para almacenar la información de los pagos pendientes
+    prestamos_diarios = {}
 
-    # Iterar sobre los usuarios y obtener el total de lo que han recaudado, los gastos y pagos retrasados
+    # Listados de pagos para las tablas (sin filtrar por cobrador, o filtrando según necesidad)
+    # Aquí asumimos que quieres mostrar todos los pagos (o solo los del usuario si no es staff)
+    if request.user.is_staff:
+        pagos_hoy = Pago.objects.filter(fecha_programada=hoy)
+        pagos_semana = Pago.objects.filter(fecha_programada__gte=inicio_semana, fecha_programada__lte=hoy)
+        pagos_mes = Pago.objects.filter(fecha_programada__gte=inicio_mes, fecha_programada__lte=hoy)
+        pagos_total = Pago.objects.all()
+    else:
+        pagos_hoy = Pago.objects.filter(cobrador_asignado=request.user, fecha_programada=hoy)
+        pagos_semana = Pago.objects.filter(cobrador_asignado=request.user, fecha_programada__gte=inicio_semana, fecha_programada__lte=hoy)
+        pagos_mes = Pago.objects.filter(cobrador_asignado=request.user, fecha_programada__gte=inicio_mes, fecha_programada__lte=hoy)
+        pagos_total = Pago.objects.filter(cobrador_asignado=request.user)
+
+    # Totales para los pies de tabla
+    total_hoy = pagos_hoy.aggregate(total=Sum('monto_pago'))['total'] or Decimal('0')
+    total_semana = pagos_semana.aggregate(total=Sum('monto_pago'))['total'] or Decimal('0')
+    total_mes = pagos_mes.aggregate(total=Sum('monto_pago'))['total'] or Decimal('0')
+    total_general = pagos_total.aggregate(total=Sum('monto_pago'))['total'] or Decimal('0')
+
+    # Estadísticas globales para tarjetas superiores
+    total_recaudado = Abono.objects.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    total_gastos_global = Gasto.objects.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    total_prestamos_hoy = pagos_hoy.filter(estado_pago__in=['pendiente', 'parcial']).count()
+    
+    # Morosidad: porcentaje de pagos atrasados sobre el total de pagos pendientes
+    pagos_atrasados = Pago.objects.filter(estado_pago__in=['pendiente', 'parcial'], fecha_programada__lt=hoy).count()
+    total_pagos_pendientes = Pago.objects.filter(estado_pago__in=['pendiente', 'parcial']).count()
+    morosidad = (pagos_atrasados / total_pagos_pendientes * 100) if total_pagos_pendientes > 0 else 0
+
+    # Calcular datos por cada usuario (cobrador)
     for user in users:
-        # Total de pagos de hoy
-        pagos_hoy = Abono.objects.filter(
-                cobrador=user,
-                fecha__date=hoy
-                    )
-
-        total_pagado = pagos_hoy.aggregate(Sum('monto'))['monto__sum'] or 0.00
+        # Pagos de hoy para este cobrador
+        abonos_hoy = Abono.objects.filter(cobrador=user, fecha__date=hoy)
+        total_pagado = abonos_hoy.aggregate(Sum('monto'))['monto__sum'] or Decimal('0')
         
-        # Total de gastos de hoy (filtrado por el usuario)
         gastos_hoy = Gasto.objects.filter(usuario=user, fecha_registro=hoy)
-        total_gasto = gastos_hoy.aggregate(Sum('monto'))['monto__sum'] or 0.00
+        total_gasto = gastos_hoy.aggregate(Sum('monto'))['monto__sum'] or Decimal('0')
         
-        # Pagos PENDIENTES asignados al usuario para HOY (tomando del propio Pago)
-        pagos_pendientes = Pago.objects.filter(
-            cobrador_asignado=user,         # <<--- en Pago
+        # Préstamos pendientes hoy
+        pagos_pendientes_hoy = Pago.objects.filter(
+            cobrador_asignado=user,
             estado_pago='pendiente',
             fecha_programada=hoy
         )
-
-        total_pagos_retrasados = pagos_pendientes.aggregate(
-            Sum('monto_pago')
-        )['monto_pago__sum'] or 0.00
-
-        # Conteo de PRÉSTAMOS distintos con pagos pendientes hoy (sin ir a Prestamo)
-        prestamos_pendientes_hoy_count = pagos_pendientes.values('prestamo').distinct().count()
-
-        # Guardar en los diccionarios
-        pagos_retrasados[user.username] = total_pagos_retrasados
-        prestamos_diarios[user.username] = prestamos_pendientes_hoy_count
+        prestamos_pendientes_hoy_count = pagos_pendientes_hoy.values('prestamo').distinct().count()
         
-        
-        # Guardar los totales en los diccionarios
-        total_neto = Decimal(total_pagado) -  Decimal(total_gasto)
-        totales_cobradores[user.username] = total_neto
+        totales_cobradores[user.username] = total_pagado - total_gasto
         totales_gastos[user.username] = total_gasto
-        pagos_retrasados[user.username] = total_pagos_retrasados
-        
-        # Número de préstamos con pagos pendientes de hoy
         prestamos_diarios[user.username] = prestamos_pendientes_hoy_count
 
-    # Asegurarnos de que estamos pasando un valor por defecto
     context = {
         'totales_cobradores': totales_cobradores,
         'totales_gastos': totales_gastos,
-        'pagos_retrasados': pagos_retrasados,
-        'prestamos_diarios': prestamos_diarios,  # Añadimos los préstamos con pagos pendientes de hoy al contexto
-        'default_value': 0.00  # Esto será el valor por defecto si no existe un valor
+        'prestamos_diarios': prestamos_diarios,
+        # Variables para las tablas
+        'pagos_hoy': pagos_hoy,
+        'pagos_semana': pagos_semana,
+        'pagos_mes': pagos_mes,
+        'pagos_total': pagos_total,
+        'total_hoy': total_hoy,
+        'total_semana': total_semana,
+        'total_mes': total_mes,
+        'total_general': total_general,
+        # Tarjetas globales
+        'total_recaudado': total_recaudado,
+        'total_gastos': total_gastos_global,
+        'total_prestamos_hoy': total_prestamos_hoy,
+        'morosidad': morosidad,
+        'default_value': Decimal('0.00'),
     }
-
     return render(request, 'principal.html', context)
 
 def detalles_cobrador(request, cobrador):

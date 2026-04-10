@@ -10,6 +10,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta  
 from Prestamos.models import Prestamo
+from Pagos.models import Pago, Abono
 from Grupos.models import Grupo, IntegranteGrupo
 from Grupos.models import DetallePrestamoGrupal
 from django.template.loader import render_to_string
@@ -25,7 +26,7 @@ from django.contrib.auth.models import User  # Importar el modelo User de Django
 from django.http import HttpResponseForbidden
 from django.db.models import Q
 from zoneinfo import ZoneInfo
-
+from django.db.models import OuterRef, Subquery, DecimalField, Sum
 
 @login_required
 def principal(request):
@@ -358,121 +359,104 @@ def fecha_a_letras(fecha):
 @login_required
 def detalle_prestamo(request, pk):
     prestamo = get_object_or_404(Prestamo, pk=pk)
-    # Recibiendo los valores del préstamo y asegurando que todo sea de tipo Decimal
-    monto = Decimal(prestamo.monto)  # Convertir el monto a Decimal
-    tasa_interes = Decimal(prestamo.tasa_interes) / Decimal('100')  # Convertir a decimal de porcentaje
+    
+    # Obtener todos los pagos del préstamo (ordenados)
+    pagos = Pago.objects.filter(prestamo=prestamo).order_by('numero_pago')
+
+        # Inicializar variables
+    detalles_grupales = None
+    total_monto_grupal = Decimal('0')
+    
+    # Anotar cada pago con el total abonado (suma de montos de abonos)
+    abono_subquery = Abono.objects.filter(pago=OuterRef('pk')).values('pago').annotate(total=Sum('monto')).values('total')
+    ahorro_subquery = Abono.objects.filter(pago=OuterRef('pk')).values('pago').annotate(total=Sum('ahorro')).values('total')
+    
+    pagos = pagos.annotate(
+        total_abonado=Subquery(abono_subquery, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        total_ahorro=Subquery(ahorro_subquery, output_field=DecimalField(max_digits=12, decimal_places=2))
+    )
+    
+    # Si algún pago no tiene abonos, asignar 0
+    for pago in pagos:
+        if pago.total_abonado is None:
+            pago.total_abonado = Decimal('0')
+        if pago.total_ahorro is None:
+            pago.total_ahorro = Decimal('0')
+    
+    # Calcular estadísticas generales
+    total_pagado = sum(pago.total_abonado for pago in pagos)
+    saldo_pendiente = prestamo.monto - total_pagado
+    cuotas_pagadas = pagos.filter(estado_pago='pagado').count()
+    
+    hoy = timezone.now().date()
+    cuotas_atrasadas = pagos.filter(
+        estado_pago__in=['pendiente', 'parcial'],
+        fecha_programada__lt=hoy
+    ).count()
+    
+    total_ahorro_general = sum(pago.total_ahorro for pago in pagos)
+    total_abonado_general = total_pagado
+    total_saldo_general = sum(pago.saldo_restante for pago in pagos)
+    
+    # Para mantener compatibilidad con el template (si aún usas algunas variables de tu vista anterior)
+    # Calculamos también los valores que usabas antes (por si acaso)
+    monto = Decimal(prestamo.monto)
+    tasa_interes = Decimal(prestamo.tasa_interes) / Decimal('100')
     iva_porcentaje = Decimal(prestamo.iva_sobre_intereses) / Decimal('100')
     total_pagos = prestamo.total_pagos
-    tipo_pago = prestamo.tipo  # 'SEMANAL' o 'MENSUAL'
-    garantia_liquida = Decimal(prestamo.garantia_liquida)  # Garantía líquida también como Decimal
-
-    # Calcular componentes fijos de cada pago
-    abono_capital_base = Decimal(monto / total_pagos)  # Abono a capital por pago
-    interes_por_periodo = Decimal(monto * tasa_interes)  # Interés fijo por cada pago
-    iva_por_periodo = Decimal(interes_por_periodo * iva_porcentaje)  # IVA sobre el interés
-    cuota_base = Decimal(abono_capital_base + interes_por_periodo + iva_por_periodo)  # Cuota total por pago
-
-    # Generar fechas de pagos
+    tipo_pago = prestamo.tipo
+    garantia_liquida = Decimal(prestamo.garantia_liquida) if prestamo.garantia_liquida else Decimal('0')
+    
+    # Si necesitas calcular fechas de pagos (por si no están generadas)
+    # Esta parte es opcional, solo si tu lógica anterior las usaba para algo
     fechas_pagos = []
     if prestamo.fecha_aprobacion:
         fecha_base = prestamo.fecha_aprobacion.date()
-        dia_prestamo = fecha_base.weekday()  # Día de la semana de la fecha de aprobación
-
+        dia_prestamo = fecha_base.weekday()
         if tipo_pago == 'SEMANAL':
             fecha_pago = fecha_base + relativedelta(weeks=1)
         else:
             fecha_pago = fecha_base + timedelta(days=30)
-        
         for _ in range(total_pagos):
-            # Ajustar siempre al mismo día de la semana que el préstamo
-                diferencia = dia_prestamo - fecha_pago.weekday()
-                fecha_ajustada = fecha_pago + timedelta(days=diferencia)
-
-                fechas_pagos.append(fecha_ajustada)
-
-                # Siguiente fecha
-                if tipo_pago == 'SEMANAL':
-                    fecha_pago += relativedelta(weeks=1)
-                else:
-                    fecha_pago += timedelta(days=30)
-
-    # Calcular detalle de pagos
-    detalle_pagos = []
-    saldo_restante = monto
-    total_intereses = Decimal('0')
-    total_iva = Decimal('0')
-    multa_total = Decimal('0')
-
-    for i, fecha_programada in enumerate(fechas_pagos):
-        # Lógica para los pagos realizados y multas (si es necesario)
-        pagos_ordenados = list(prestamo.pagos.all().order_by('fecha_programada'))
-        pago_realizado = pagos_ordenados[i] if i < len(pagos_ordenados) else None
-
-        # Ajustar último pago para evitar decimales
-        if i == total_pagos - 1:
-            abono_capital = saldo_restante
-            interes = interes_por_periodo
-            iva = iva_por_periodo
-            cuota = abono_capital + interes + iva
+            diferencia = dia_prestamo - fecha_pago.weekday()
+            fecha_ajustada = fecha_pago + timedelta(days=diferencia)
+            fechas_pagos.append(fecha_ajustada)
+            if tipo_pago == 'SEMANAL':
+                fecha_pago += relativedelta(weeks=1)
+            else:
+                fecha_pago += timedelta(days=30)
+        # Si es grupal, obtener los detalles de los integrantes
+        detalles_grupales = None
+        if prestamo.es_grupal:
+            detalles_grupales = DetallePrestamoGrupal.objects.filter(
+                prestamo=prestamo
+            ).select_related('integrante__cliente')
+            total_monto_grupal = detalles_grupales.aggregate(total=Sum('monto'))['total'] or Decimal('0')
         else:
-            abono_capital = abono_capital_base
-            interes = interes_por_periodo
-            iva = iva_por_periodo
-            cuota = cuota_base
-
-        # Calcular multas y actualizar saldos
-        multa = Decimal('0')
-        dias_atraso = 0
-        if pago_realizado:
-            if pago_realizado.fecha_programada > fecha_programada:
-                dias_atraso = (pago_realizado.fecha_programada - fecha_programada).days
-                multa = Decimal(dias_atraso) * Decimal('15')
-        else:
-            if timezone.now().date() > fecha_programada:
-                dias_atraso = (timezone.now().date() - fecha_programada).days
-                multa = Decimal(dias_atraso) * Decimal('15')
-
-        multa_total += multa
-        saldo_restante -= abono_capital
-        total_intereses += interes
-        total_iva += iva
-
-        # Añadir el detalle de cada pago con fecha en letras
-        detalle_pagos.append({
-            'numero': i + 1,
-            'fecha_programada': fecha_programada,
-            'fecha_programada_letras': fecha_a_letras(fecha_programada),  # Convertir la fecha a letras
-            'abono_capital': float(abono_capital.quantize(Decimal('0.01'))),
-            'interes': float(interes.quantize(Decimal('0.01'))),
-            'iva': float(iva.quantize(Decimal('0.01'))),
-            'total': float(cuota.quantize(Decimal('0.01'))),
-            'estado_pago': pago_realizado.estado_pago if pago_realizado else False,
-            'pago': pago_realizado,
-            'dias_atraso': dias_atraso,
-            'multa': float(multa)
-        })
-
-    # Calcular los totales
-    multa_total = float(multa_total.quantize(Decimal('0.01')))
-    saldo_pendiente = float(saldo_restante.quantize(Decimal('0.01')))
-    total_intereses = float(total_intereses.quantize(Decimal('0.01')))
-    total_iva = float(total_iva.quantize(Decimal('0.01')))
-    total_a_pagar = monto + Decimal(total_intereses) + Decimal(total_iva)
-
-    # Contexto para la plantilla
+            detalles_grupales = None
+            total_monto_grupal = Decimal('0')
+    # Preparar contexto para el template mejorado
     context = {
         'prestamo': prestamo,
-        'garantia_monto': garantia_liquida,
-        'detalle_pagos': detalle_pagos,
-        'multa_total': multa_total,
-        'total_pagado': float(prestamo.total_pagado),
+        'pagos': pagos,  # importante: ahora la tabla usa esta variable
+        'total_pagado': total_pagado,
         'saldo_pendiente': saldo_pendiente,
-        'total_intereses': total_intereses,
-        'total_iva': total_iva,
-        'total_a_pagar': float(total_a_pagar.quantize(Decimal('0.01'))),
-        'fecha_solicitud': prestamo.fecha_solicitud.strftime('%d/%m/%Y %H:%M'),
+        'cuotas_pagadas': cuotas_pagadas,
+        'cuotas_atrasadas': cuotas_atrasadas,
+        'total_ahorro_general': total_ahorro_general,
+        'total_abonado_general': total_abonado_general,
+        'total_saldo_general': total_saldo_general,
+        # Variables adicionales que tu template anterior podría necesitar (opcional)
+        'garantia_monto': garantia_liquida,
+        'multa_total': Decimal('0'),  # si no la calculas, puedes poner 0
+        'total_intereses': Decimal('0'),
+        'total_iva': Decimal('0'),
+        'total_a_pagar': prestamo.monto,
+        'fecha_solicitud': prestamo.fecha_solicitud.strftime('%d/%m/%Y %H:%M') if prestamo.fecha_solicitud else '',
+        'detalles_grupales': detalles_grupales,
+        'total_monto_grupal': total_monto_grupal,
     }
-
+    
     return render(request, 'detalle_prestamo.html', context)
 
     def actualizar_estado_pagos(self):

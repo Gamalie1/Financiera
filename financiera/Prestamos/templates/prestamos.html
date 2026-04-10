@@ -243,14 +243,15 @@
                         <td class="text-right">{{ prestamo.tasa_interes|floatformat:2 }}%</td>
                         <td>{{ prestamo.tipo }}</td>
                         <td class="text-center">{{ prestamo.total_pagos }}</td>
-                        <td class="text-center">
-                            <span class="badge badge-pill 
-                                {% if prestamo.estado == 'APROBADO' %}badge-success
-                                {% elif prestamo.estado == 'RECHAZADO' %}badge-danger
-                                {% else %}badge-warning{% endif %}">
-                                {{ prestamo.get_estado_display }}
-                            </span>
-                        </td>
+                       <td class="text-center">
+    <span class="badge badge-pill 
+        {% if prestamo.estado == 'APROBADO' %}badge-success
+        {% elif prestamo.estado == 'PAGADO' %}badge-danger
+        {% elif prestamo.estado == 'RECHAZADO' %}badge-danger
+        {% else %}badge-warning{% endif %}">
+        {{ prestamo.get_estado_display }}
+    </span>
+</td>
                         {% if user.is_staff %}
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
