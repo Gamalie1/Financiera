@@ -63,6 +63,10 @@ class Pago(models.Model):
             return (hoy - self.fecha_programada).days
 
         return 0
+    @property
+    def total_abonado(self):
+        return self.abonos.aggregate(total=Sum('monto'))['total'] or 0
+
     
     
 class Abono(models.Model):
@@ -113,6 +117,4 @@ class Abono(models.Model):
         return f"Abono ${self.monto} - Pago #{self.pago.numero_pago}"    
  
 
-    @property
-    def total_abonado(self):
-        return self.abonos.aggregate(total=Sum('monto'))['total'] or 0
+    

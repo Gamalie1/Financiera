@@ -90,8 +90,25 @@
             <label for="telefono_aval2">Teléfono aval 2</label>
             <input type="text" class="form-control" id="telefono_aval2" name="telefono_aval2"  value="{{ form.telefono_aval2.value }}">
             </div>
+            <!-- Campo Comunidad (select) -->
+<div class="form-group mb-3">
+    <label for="id_comunidad">Comunidad</label>
+    {{ form.comunidad }}
+    <small class="form-text text-muted">Selecciona una comunidad existente.</small>
+</div>
 
-           <!-- Municipio -->
+<!-- Enlace para mostrar/ocultar el campo de nueva comunidad -->
+<div class="form-group mb-3">
+    <a href="#" id="btn-nueva-comunidad">+ Registrar nueva comunidad</a>
+</div>
+
+<!-- Campo oculto para nueva comunidad -->
+<div id="nueva-comunidad-container" style="display: none;" class="form-group mb-3">
+    <label for="id_nueva_comunidad">Nombre de la nueva comunidad</label>
+    {{ form.nueva_comunidad }}
+    <small class="form-text text-muted">Escribe el nombre y al guardar se creará automáticamente.</small>
+</div>
+ <!-- Municipio -->
         <div class="form-group mb-3">
             <label for="municipio">Municipio</label>
             <input type="text" class="form-control" id="municipio" name="municipio"  required value="{{ form.municipio.value }}">
@@ -115,4 +132,11 @@
         </div>
     </form>
 </div>
+<script>
+    document.getElementById('btn-nueva-comunidad').addEventListener('click', function(e) {
+        e.preventDefault();
+        var container = document.getElementById('nueva-comunidad-container');
+        container.style.display = container.style.display === 'none' ? 'block' : 'none';
+    });
+</script>
 {% endblock %}

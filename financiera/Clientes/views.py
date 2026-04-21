@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Cliente
+from .models import Cliente, Comunidad
 from .forms import ClienteForm
 from django.contrib import messages
 from weasyprint import HTML
@@ -41,53 +41,58 @@ def inicio_clientes(request):
 
 @login_required
 def registronuevo(request):
-    # Variables adicionales para el contexto
-    context = {
-        'dynamic_title': 'Registro nuevo',
-    }
-
     if request.method == "POST":
-        Cliente_Form = ClienteForm(request.POST)
-        if Cliente_Form.is_valid():
-            instancia = Cliente_Form.save(commit=False)  # No guarda todavía
-            instancia.user = request.user  # Asigna el usuario autenticado
-            instancia.save()  # Guarda con el usuario asignado
+        form = ClienteForm(request.POST)
+        if form.is_valid():
+            nueva_comunidad = form.cleaned_data.get('nueva_comunidad')
+            comunidad_obj = None
+            if nueva_comunidad:
+                comunidad_obj, _ = Comunidad.objects.get_or_create(nombre=nueva_comunidad.strip())
+            
+            cliente = form.save(commit=False)
+            cliente.usuario = request.user
+            if comunidad_obj:
+                cliente.comunidad = comunidad_obj
+            cliente.save()
             messages.success(request, "Guardado exitosamente")
             return redirect('principalClientes')
     else:
-        Cliente_Form = ClienteForm()
-
-    # Añadir el formulario al contexto
-    context['form'] = Cliente_Form  # Es más común usar 'form' como clave para el formulario
-
-    # Renderizar la plantilla pasando todo el contexto
-    return render(request, 'clienteNuevo.html', context)
-
+        form = ClienteForm()
+    return render(request, 'clienteNuevo.html', {'form': form})
 
 @login_required
 def editarcliente(request, cliente_id):
-    # Obtener el cliente
     cliente = get_object_or_404(Cliente, id=cliente_id)
 
     if request.method == "POST":
-        # Si el formulario se envía, crear una instancia de ClienteForm con los datos del cliente
         form = ClienteForm(request.POST, instance=cliente)
         if form.is_valid():
-            form.save()  # Guarda los cambios en el cliente
+            # Obtener el nombre de la nueva comunidad (si se envió)
+            nueva_comunidad_nombre = form.cleaned_data.get('nueva_comunidad')
+            if nueva_comunidad_nombre:
+                # Crear o recuperar la comunidad
+                comunidad_obj, _ = Comunidad.objects.get_or_create(nombre=nueva_comunidad_nombre.strip())
+                # Asignar la comunidad al cliente (sin guardar aún)
+                cliente.comunidad = comunidad_obj
+            else:
+                # Si no se ingresó nueva comunidad, se respeta lo que venga en el select
+                # El campo 'comunidad' ya se asigna automáticamente por el formulario
+                pass
+
+            # Guardar el cliente (el formulario ya tiene los demás datos)
+            form.save()
             messages.success(request, "Cliente actualizado exitosamente")
-            return redirect('principalClientes')  # Redirige a la vista de clientes
+            return redirect('principalClientes')
+        else:
+            messages.error(request, "Error en el formulario. Revisa los datos.")
     else:
-        # Si no se envía el formulario, crear una instancia vacía con los datos actuales del cliente
         form = ClienteForm(instance=cliente)
 
-    # Contexto para la plantilla
     context = {
         'dynamic_title': 'Editar Cliente',
-        'cliente': cliente,  # Pasamos el cliente actual para mostrar sus datos
-        'form': form,  # Pasamos el formulario
+        'form': form,
+        'cliente': cliente,
     }
-
-    # Renderizar la plantilla
     return render(request, 'clienteEditar.html', context)
 @login_required
 def eliminarcliente(request, id):

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Poner al corriente - Préstamo #{{ prestamo.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-gradient-primary text-white py-3" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                    <h3 class="mb-0 fw-bold text-center">
+                        <i class="fas fa-hand-holding-usd me-2"></i> Poner al corriente - Cuotas en atraso
+                    </h3>
+                </div>
+                <div class="card-body p-4 p-lg-5">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Cliente:</strong> {{ prestamo.cliente.nombre }}<br>
+                        <strong>Total adeudado (solo cuotas vencidas):</strong> 
+                        <span class="fw-bold text-danger">${{ total_adeudado|floatformat:2 }}</span>
+                    </div>
+
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th># Cuota</th>
+                                    <th>Fecha programada</th>
+                                    <th>Días atraso</th>
+                                    <th class="text-end">Saldo pendiente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pago in cuotas_atraso %}
+                                <tr>
+                                    <td>{{ pago.numero_pago }}/{{ prestamo.total_pagos }}</td>
+                                    <td>{{ pago.fecha_programada|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% with dias_atraso=forloop.counter|add:0 %}
+                                            {# Calcular días de atraso dinámicamente si no tienes un campo #}
+                                            {{ pago.fecha_programada|timeuntil:today|default:"0" }}
+                                        {% endwith %}
+                                        <span class="badge bg-danger">{{ pago.dias_atraso }} días</span>
+                                    </td>
+                                    <td class="text-end">${{ pago.saldo_restante|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th class="text-end">${{ total_adeudado|floatformat:2 }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Método de pago *</label>
+                            <select name="metodo_pago" class="form-select" required>
+                                <option value="">Seleccione</option>
+                                <option value="EFECTIVO">Efectivo</option>
+                                <option value="TARJETA">Tarjeta</option>
+                                <option value="TRANSFERENCIA">Transferencia</option>
+                                <option value="CHEQUE">Cheque</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Ahorro (opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ahorro" class="form-control" step="0.01" min="0" value="0">
+                            </div>
+                            <small class="text-muted">Se asignará a la cuota vencida más antigua.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Comentario (opcional)</label>
+                            <textarea name="comentarios" class="form-control" rows="2"></textarea>
+                        </div>
+
+                       <input type="hidden" name="monto_total" value="{{ total_adeudado|default:'0' }}">
+                        <div class="d-flex gap-3 mt-4">
+                            <a href="{% url 'detalle_prestamo' prestamo.id %}" class="btn btn-outline-secondary flex-fill">Cancelar</a>
+                            <button type="submit" class="btn btn-success flex-fill">
+                                <i class="fas fa-check-circle me-1"></i> Pagar cuotas vencidas (${% widthratio total_adeudado 1 0 %})
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+</style>
+{% endblock %}

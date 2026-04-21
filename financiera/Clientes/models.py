@@ -1,6 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User  # Importar el modelo User de Django
 
+class Comunidad(models.Model):
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la comunidad")
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Comunidad"
+        verbose_name_plural = "Comunidades"
+
 class Cliente(models.Model):
     id = models.AutoField(primary_key=True)
     # Relación con el usuario que registra el cliente
@@ -49,6 +59,15 @@ class Cliente(models.Model):
     domicilio_aval2 = models.TextField(verbose_name="Domicilio Aval", null=True, blank=True)
 
     telefono_aval2 = models.TextField(verbose_name="Telefono aval", null=True, blank=True)
+
+    # Nueva relación con Comunidad
+    comunidad = models.ForeignKey(
+        Comunidad,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Comunidad"
+    )
 
     def __str__(self):
         return self.nombre

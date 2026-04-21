@@ -372,7 +372,7 @@ def detalle_prestamo(request, pk):
     ahorro_subquery = Abono.objects.filter(pago=OuterRef('pk')).values('pago').annotate(total=Sum('ahorro')).values('total')
     
     pagos = pagos.annotate(
-        total_abonado=Subquery(abono_subquery, output_field=DecimalField(max_digits=12, decimal_places=2)),
+        total_abonado_anotado=Subquery(abono_subquery, output_field=DecimalField(max_digits=12, decimal_places=2)),
         total_ahorro=Subquery(ahorro_subquery, output_field=DecimalField(max_digits=12, decimal_places=2))
     )
     

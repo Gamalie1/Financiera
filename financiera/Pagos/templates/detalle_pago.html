@@ -111,13 +111,19 @@
                         </div>
                     </div>
 
+
                     <!-- ========== TABLA DE CUOTAS ========== -->
                     <div class="card shadow-sm border-0 rounded-3">
-                        <div class="card-header bg-light py-3">
-                            <h5 class="mb-0 fw-bold text-secondary">
-                                <i class="fas fa-table-list me-2"></i> Detalle de pagos ({{ prestamo.get_tipo_display }})
-                            </h5>
-                        </div>
+                        <div class="card-header bg-light py-3 d-flex flex-wrap justify-content-between align-items-center">
+    <h5 class="mb-0 fw-bold text-secondary">
+        <i class="fas fa-table-list me-2"></i> Detalle de pagos ({{ prestamo.get_tipo_display }})
+    </h5>
+    {% if cuotas_atrasadas > 0 or cuotas_pendientes > 0 %}
+    <a href="{% url 'poner_al_corriente' prestamo.id %}" class="btn btn-warning btn-sm mt-2 mt-sm-0">
+        <i class="fas fa-broom me-1"></i> Poner al corriente
+    </a>
+    {% endif %}
+</div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0" id="cuotasTable">
@@ -126,6 +132,9 @@
                                             <th># Cuota</th>
                                             <th>Fecha programada</th>
                                             <th>Días atraso</th>
+                                            {% if prestamo.ahorro and prestamo.ahorro > 0 %}
+                                            <th class="text-end">Ahorro</th>
+                                            {% endif %}
                                             <th class="text-end">Cuota</th>
                                             <th class="text-end">Abonado</th>
                                             <th class="text-end">Saldo</th>
@@ -149,6 +158,9 @@
                                                     <span class="badge bg-secondary">-</span>
                                                 {% endif %}
                                             </td>
+                                            {% if prestamo.ahorro and prestamo.ahorro > 0 %}
+                                            <td class="text-end">${{ prestamo.ahorro|floatformat:2 }}</td>
+                                            {% endif %}
                                             <td class="text-end">${{ pago.monto_pago|floatformat:2 }}</td>
                                             <td class="text-end">${{ pago.total_abonado|floatformat:2 }}</td>
                                             <td class="text-end">${{ pago.saldo_restante|floatformat:2 }}</td>

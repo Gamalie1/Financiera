@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Pago, Prestamo, Abono
+from Clientes.models import Comunidad
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -21,7 +22,7 @@ import base64
 import platform
 from django.http import HttpResponse
 from weasyprint import HTML
-from datetime import datetime 
+from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 
@@ -644,3 +645,139 @@ def imprimir_ticket(request):
         resp['Content-Disposition'] = f'inline; filename="ticket_pago_{numero_ticket}.pdf"'
         
         return resp
+    
+def lista_pagos(request):
+    # Ordenar por fecha_programada (más reciente primero)
+    pagos = Pago.objects.select_related('prestamo__cliente__comunidad').all().order_by('-fecha_programada')
+
+    # Obtener parámetros del GET
+    comunidad_id = request.GET.get('comunidad')
+    fecha_tipo = request.GET.get('fecha_tipo')
+    fecha_dia = request.GET.get('fecha_dia')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    semana_inicio = request.GET.get('semana_inicio')
+    mes_anio = request.GET.get('mes_anio')
+
+    # Filtrar por comunidad
+    if comunidad_id:
+        pagos = pagos.filter(prestamo__cliente__comunidad_id=comunidad_id)
+
+    # Filtrar por fecha_programada
+    if fecha_tipo == 'dia' and fecha_dia:
+        pagos = pagos.filter(fecha_programada=fecha_dia)
+    elif fecha_tipo == 'semana' and semana_inicio:
+        start = datetime.strptime(semana_inicio, '%Y-%m-%d').date()
+        end = start + timedelta(days=6)
+        pagos = pagos.filter(fecha_programada__range=[start, end])
+    elif fecha_tipo == 'mes' and mes_anio:
+        year, month = map(int, mes_anio.split('-'))
+        start = datetime(year, month, 1).date()
+        if month == 12:
+            end = datetime(year+1, 1, 1).date() - timedelta(days=1)
+        else:
+            end = datetime(year, month+1, 1).date() - timedelta(days=1)
+        pagos = pagos.filter(fecha_programada__range=[start, end])
+    elif fecha_tipo == 'rango' and fecha_desde and fecha_hasta:
+        pagos = pagos.filter(fecha_programada__range=[fecha_desde, fecha_hasta])
+
+    total_recaudado = pagos.aggregate(total=Sum('monto_pago'))['total'] or 0
+    comunidades = Comunidad.objects.all().order_by('nombre')
+
+    # Generar semanas (últimas 8) basadas en fecha_programada (opcional, pero se usa para el select)
+    hoy = datetime.now().date()
+    semanas = []
+    for i in range(8):
+        start = hoy - timedelta(days=hoy.weekday() + 7*i)
+        end = start + timedelta(days=6)
+        semanas.append({
+            'inicio': start.strftime('%Y-%m-%d'),
+            'fin': end.strftime('%Y-%m-%d'),
+            'label': f"{start.strftime('%d/%m')} - {end.strftime('%d/%m')}"
+        })
+
+    context = {
+        'pagos': pagos,
+        'total_recaudado': total_recaudado,
+        'comunidades': comunidades,
+        'semanas': semanas,
+        'filtros': request.GET,
+    }
+    return render(request, 'lista_pagos.html', context)
+
+
+@login_required
+def poner_al_corriente(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    hoy = timezone.now().date()
+    
+    # Obtener solo cuotas vencidas (fecha programada < hoy y estado pendiente o parcial)
+    cuotas_atraso = prestamo.pagos.filter(
+        fecha_programada__lt=hoy,
+        estado_pago__in=['pendiente', 'parcial']
+    ).order_by('fecha_programada')
+    
+    total_adeudado = cuotas_atraso.aggregate(total=Sum('saldo_restante'))['total'] or Decimal('0')
+    
+    if request.method == 'POST':
+        # Validar método de pago
+        metodo_pago = request.POST.get('metodo_pago')
+        if not metodo_pago:
+            messages.error(request, "Debes seleccionar un método de pago.")
+            return redirect('poner_al_corriente', prestamo_id=prestamo.id)
+        
+        # Obtener monto total a pagar (del formulario oculto) con validación segura
+        monto_total_str = request.POST.get('monto_total', '').strip()
+        if not monto_total_str:
+            messages.error(request, "No se pudo determinar el monto total a pagar.")
+            return redirect('poner_al_corriente', prestamo_id=prestamo.id)
+        
+        try:
+            monto_recibido = Decimal(monto_total_str)
+        except InvalidOperation:
+            messages.error(request, "El monto total no es válido. Por favor, intente de nuevo.")
+            return redirect('poner_al_corriente', prestamo_id=prestamo.id)
+        
+        # Validar que el monto recibido sea al menos el total adeudado
+        if monto_recibido < total_adeudado:
+            messages.error(request, f"Debes pagar al menos ${total_adeudado:.2f} para cubrir todas las cuotas vencidas.")
+            return redirect('poner_al_corriente', prestamo_id=prestamo.id)
+        
+        # Obtener ahorro y comentario
+        ahorro_str = request.POST.get('ahorro', '0').strip()
+        ahorro = Decimal(ahorro_str) if ahorro_str else Decimal('0')
+        comentario = request.POST.get('comentarios', '').strip()
+        
+        # Crear abonos para cada cuota vencida (usar transacción atómica)
+        from django.db import transaction
+        with transaction.atomic():
+            for pago in cuotas_atraso:
+                # El monto a abonar es el saldo restante de la cuota
+                monto_abono = pago.saldo_restante
+                # Asignar ahorro solo a la primera cuota (la más antigua)
+                ahorro_parcial = ahorro if pago == cuotas_atraso.first() else Decimal('0')
+                Abono.objects.create(
+                    pago=pago,
+                    monto=monto_abono,
+                    ahorro=ahorro_parcial,
+                    metodo_pago=metodo_pago,
+                    cobrador=request.user,
+                    comentario=f"[Poner al corriente - vencidas] {comentario}" if comentario else "Poner al corriente (cuotas vencidas)"
+                )
+                # Actualizar el pago
+                pago.saldo_restante = Decimal('0')
+                pago.estado_pago = 'pagado'
+                pago.save()
+            # Actualizar estado del préstamo
+            prestamo.verificar_y_actualizar_estado()
+        
+        messages.success(request, f"Se han pagado {len(cuotas_atraso)} cuotas vencidas. Total pagado: ${total_adeudado:.2f}")
+        return redirect('detalle_pago',  prestamo_id=pago.prestamo.id)
+    
+    context = {
+        'prestamo': prestamo,
+        'total_adeudado': total_adeudado,
+        'cuotas_atraso': cuotas_atraso,
+        'today': hoy,   # ← AÑADE ESTA LÍNEA
+    }
+    return render(request, 'poner_al_corriente.html', context)

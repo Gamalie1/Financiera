@@ -152,6 +152,24 @@
         name="telefono_aval2"
       />
     </div>
+    <!-- Campo Comunidad (select) -->
+<div class="form-group mb-3">
+  <label for="id_comunidad">Comunidad</label>
+  {{ form.comunidad }}
+  <small class="form-text text-muted">Selecciona una comunidad existente.</small>
+</div>
+
+<!-- Enlace para mostrar/ocultar el campo de nueva comunidad -->
+<div class="form-group mb-3">
+  <a href="#" id="btn-nueva-comunidad">+ Registrar nueva comunidad</a>
+</div>
+
+<!-- Campo oculto para nueva comunidad -->
+<div id="nueva-comunidad-container" style="display: none;" class="form-group mb-3">
+  <label for="id_nueva_comunidad">Nombre de la nueva comunidad</label>
+  {{ form.nueva_comunidad }}
+  <small class="form-text text-muted">Escribe el nombre y al guardar se creará automáticamente.</small>
+</div>
 
     <!-- Municipio -->
     <div class="form-group mb-3">
@@ -187,6 +205,19 @@
   </form>
 </div>
 <script>
+
+    document.getElementById('btn-nueva-comunidad').addEventListener('click', function(e) {
+    e.preventDefault();
+    var container = document.getElementById('nueva-comunidad-container');
+    if (container.style.display === 'none') {
+      container.style.display = 'block';
+      // Opcional: deshabilitar el select para evitar confusiones
+      // document.getElementById('id_comunidad').disabled = true;
+    } else {
+      container.style.display = 'none';
+      // document.getElementById('id_comunidad').disabled = false;
+    }
+  });
   function soloNumeros(inputId) {
     document.getElementById(inputId).addEventListener("input", function () {
       this.value = this.value.replace(/[^0-9]/g, "");
