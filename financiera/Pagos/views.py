@@ -4,7 +4,7 @@ from Clientes.models import Comunidad
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from decimal import Decimal  
+from decimal import Decimal , InvalidOperation
 from django.db import transaction
 from dateutil.relativedelta import relativedelta  
 from django.utils import timezone
@@ -97,61 +97,119 @@ def pagosPrincipal(request):
 def tiket_generico(request):
     return render(request, 'tiket_generico.html')
 
-
+def parse_decimal(value, default=Decimal('0')):
+    """Convierte un valor a Decimal, devolviendo default si falla."""
+    if not value or str(value).strip() == '':
+        return default
+    try:
+        # Reemplazar coma por punto por si el usuario escribe "1,234.56"
+        cleaned = str(value).replace(',', '')
+        return Decimal(cleaned)
+    except (InvalidOperation, ValueError, TypeError):
+        return default
 
 @login_required
 def create_pago(request, id):
     pago = get_object_or_404(Pago, id=id)
+    prestamo = pago.prestamo
+    cliente = prestamo.cliente
+
+    total_abonado = pago.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    saldo_actual = pago.monto_pago - total_abonado
 
     if request.method == 'POST':
-        monto_abono = Decimal(request.POST.get('monto_pagado', 0))
-        ahorro = request.POST.get('ahorro', '0')
-        # Si el campo viene vacío o None, lo convertimos a 0
-        ahorro = Decimal(ahorro) if ahorro and ahorro.strip() else Decimal('0')
-        metodo_pago = request.POST.get('metodo_pago')
-        comentario = request.POST.get('comentarios', '').strip()
+        es_pago_rapido = request.POST.get('pago_rapido') == '1'
+        usar_ahorro = request.POST.get('usar_ahorro') == '1'
+        # Conversión segura
+        monto_ahorro_usar = parse_decimal(request.POST.get('monto_ahorro_usar', 0))
+
+        if es_pago_rapido:
+            monto_abono = saldo_actual
+            metodo_pago = 'EFECTIVO'
+            ahorro_depositado = Decimal('0')
+            comentario = ''
+            monto_ahorro_usar = Decimal('0')
+            usar_ahorro = False
+        else:
+            monto_abono = parse_decimal(request.POST.get('monto_pagado', 0))
+            ahorro_depositado = parse_decimal(request.POST.get('ahorro', 0))
+            metodo_pago = request.POST.get('metodo_pago')
+            comentario = request.POST.get('comentarios', '').strip()
 
         # Validaciones
-        if monto_abono <= 0:
-            messages.error(request, "El monto debe ser mayor a 0")
-            return redirect('create_pago', id=id)
+        total_pagado = monto_abono + monto_ahorro_usar
+        if total_pagado <= 0:
+            messages.error(request, "Debe especificar un monto (en efectivo o usando ahorro).")
+            return redirect(request.path)  # Cambiado para evitar NoReverseMatch
 
-        total_abonado = pago.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
-        saldo_restante = pago.monto_pago - total_abonado
+        if total_pagado > saldo_actual:
+            messages.error(request, f"El total a pagar (${total_pagado}) supera el saldo de la cuota (${saldo_actual}).")
+            return redirect(request.path)
 
-        if monto_abono > saldo_restante:
-            messages.error(request, f"No puedes abonar más de ${saldo_restante:.2f}")
-            return redirect('create_pago', id=id)
+        if not es_pago_rapido and not metodo_pago and monto_abono > 0:
+            messages.error(request, "Debe seleccionar un método de pago para el abono en efectivo.")
+            return redirect(request.path)
 
-        # Crear el Abono con todos los campos
-        abono = Abono.objects.create(
-            pago=pago,
-            monto=monto_abono,
-            ahorro=ahorro,
-            metodo_pago=metodo_pago,
-            cobrador=request.user,
-            comentario=comentario if comentario else None
-        )
+        if usar_ahorro and monto_ahorro_usar > 0:
+            if monto_ahorro_usar > cliente.saldo_ahorro:
+                messages.error(request, f"No tiene suficiente ahorro. Saldo disponible: ${cliente.saldo_ahorro:.2f}.")
+                return redirect(request.path)
 
-        # Recalcular totales y estado del pago
-        total_abonado = pago.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
-        saldo_restante = pago.monto_pago - total_abonado
+        with transaction.atomic():
+            # 1) Abono en efectivo/tarjeta
+            if monto_abono > 0:
+                Abono.objects.create(
+                    pago=pago,
+                    monto=monto_abono,
+                    ahorro=ahorro_depositado,
+                    metodo_pago=metodo_pago,
+                    cobrador=request.user,
+                    comentario=comentario if comentario else None
+                )
+            # Depósito de ahorro (independiente del abono)
+            if ahorro_depositado > 0:
+                cliente.saldo_ahorro += ahorro_depositado
+                cliente.save()
+                # Si solo depositó ahorro y no hizo abono, crear un registro
+                if monto_abono == 0:
+                    Abono.objects.create(
+                        pago=pago,
+                        monto=0,
+                        ahorro=ahorro_depositado,
+                        metodo_pago=metodo_pago or 'EFECTIVO',
+                        cobrador=request.user,
+                        comentario="Depósito de ahorro"
+                    )
+            # 2) Uso de ahorro para pagar (abono aparte)
+            if usar_ahorro and monto_ahorro_usar > 0:
+                Abono.objects.create(
+                    pago=pago,
+                    monto=monto_ahorro_usar,
+                    ahorro=Decimal('0'),
+                    metodo_pago='AHORRO',
+                    cobrador=request.user,
+                    comentario=f"Pago con ahorro. Saldo anterior: ${cliente.saldo_ahorro:.2f}"
+                )
+                cliente.saldo_ahorro -= monto_ahorro_usar
+                cliente.save()
 
-        if saldo_restante <= 0:
-            pago.estado_pago = 'pagado'
-            saldo_restante = 0
-        else:
-            pago.estado_pago = 'parcial'
-
-        pago.saldo_restante = saldo_restante
+        # Recalcular estado del pago
+        nuevo_total_abonado = pago.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+        nuevo_saldo = pago.monto_pago - nuevo_total_abonado
+        pago.saldo_restante = max(nuevo_saldo, 0)
+        pago.estado_pago = 'pagado' if pago.saldo_restante == 0 else 'parcial'
         pago.save()
-        pago.prestamo.verificar_y_actualizar_estado()
+        prestamo.verificar_y_actualizar_estado()
+
         messages.success(request, "Abono registrado correctamente")
-        return redirect('detalle_pago', prestamo_id=pago.prestamo.id)
+        return redirect('detalle_pago', prestamo_id=prestamo.id)
 
-    return render(request, 'create_pago.html', {'pago': pago})
-
-
+    # GET
+    saldo_ahorro_cliente = cliente.saldo_ahorro if cliente.saldo_ahorro is not None else Decimal('0')
+    return render(request, 'create_pago.html', {
+        'pago': pago,
+        'saldo_ahorro_cliente': saldo_ahorro_cliente,
+    })
 @login_required
 def editar_pago(request, id): 
     pago = get_object_or_404(Pago, id=id)
@@ -271,7 +329,10 @@ def detalle_pago(request, prestamo_id):
     # Totales para el pie de tabla
     total_abonado_general = total_pagado
     total_saldo_general = pagos.aggregate(total=Sum('saldo_restante'))['total'] or Decimal('0')
-    total_ahorro = Abono.objects.filter(pago__prestamo=prestamo).aggregate(total=Sum('ahorro'))['total'] or Decimal('0')
+    # ✅ Obtener el ahorro acumulado directamente del cliente
+    cliente = prestamo.cliente
+    saldo_ahorro = cliente.saldo_ahorro if cliente and cliente.saldo_ahorro is not None else Decimal('0')
+
     context = {
         'prestamo': prestamo,
         'pagos': pagos,
@@ -281,7 +342,7 @@ def detalle_pago(request, prestamo_id):
         'cuotas_atrasadas': cuotas_atrasadas,
         'total_abonado_general': total_abonado_general,
         'total_saldo_general': total_saldo_general,
-        'total_ahorro': total_ahorro,
+        'total_ahorro': saldo_ahorro,      # <-- aquí el campo saldo_ahorro
     }
     return render(request, 'detalle_pago.html', context)
 

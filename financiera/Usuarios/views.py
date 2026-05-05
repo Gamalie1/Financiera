@@ -13,6 +13,7 @@ from Prestamos.models import Prestamo
 from datetime import timedelta
 from django.http import Http404
 from decimal import Decimal
+from Clientes.models import Comunidad
 
 
 #Index
@@ -50,6 +51,7 @@ def principal(request):
     hoy = timezone.now().date()
     inicio_semana = hoy - timedelta(days=hoy.weekday())  # lunes de esta semana
     inicio_mes = hoy.replace(day=1)
+    total_comunidades = Comunidad.objects.count()
 
     # Determinar usuarios según rol
     if request.user.is_staff:
@@ -131,6 +133,7 @@ def principal(request):
         'total_prestamos_hoy': total_prestamos_hoy,
         'morosidad': morosidad,
         'default_value': Decimal('0.00'),
+         'total_comunidades': total_comunidades,
     }
     return render(request, 'principal.html', context)
 

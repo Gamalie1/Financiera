@@ -138,6 +138,28 @@
   </div>
 </div>
 {% endif %}
+<!-- ========== TARJETA DE COMUNIDADES (siempre visible, mismo tamaño que las de cobrador) ========== -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-4 mb-3" onclick="window.location.href='{% url 'lista_pagos' %}'" style="cursor: pointer;">
+        <div class="card stat-card border-left-primary shadow-sm h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total comunidades
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ total_comunidades|default:"0" }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ========== TARJETAS POR COBRADOR ========== -->
 {% if mensaje %}
@@ -243,5 +265,6 @@
       </div>
     </a>
   </div>
+  
 </div>
 {% endfor %} {% endif %} {% endblock %}

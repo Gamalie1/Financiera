@@ -76,6 +76,7 @@ class Abono(models.Model):
         ('TARJETA', 'Tarjeta'),
         ('TRANSFERENCIA', 'Transferencia'),
         ('CHEQUE', 'Cheque'),
+        ('AHORRO', 'Ahorro'),
     ]
 
     pago = models.ForeignKey(

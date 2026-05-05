@@ -59,6 +59,7 @@ class Cliente(models.Model):
     domicilio_aval2 = models.TextField(verbose_name="Domicilio Aval", null=True, blank=True)
 
     telefono_aval2 = models.TextField(verbose_name="Telefono aval", null=True, blank=True)
+    saldo_ahorro = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     # Nueva relación con Comunidad
     comunidad = models.ForeignKey(

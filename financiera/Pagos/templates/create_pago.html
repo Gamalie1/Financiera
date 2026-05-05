@@ -27,12 +27,12 @@
                             </div>
                             <div class="col-6">
                                 <span class="text-muted small">Saldo restante</span>
-                                <h5 class="mb-0 fw-bold text-danger">${{ pago.saldo_restante|floatformat:2 }}</h5>
+                                <h5 class="mb-0 fw-bold text-danger" id="saldoRestante">${{ pago.saldo_restante|floatformat:2 }}</h5>
                             </div>
                         </div>
                     </div>
 
-                    <form method="post" novalidate>
+                    <form method="post" id="formAbono" novalidate>
                         {% csrf_token %}
 
                         <!-- Monto recibido (abono a capital/interés) -->
@@ -44,11 +44,33 @@
                                 <span class="input-group-text bg-light">$</span>
                                 <input type="number" name="monto_pagado" class="form-control form-control-lg"
                                        step="0.01" min="0.01" max="{{ pago.saldo_restante }}" required
-                                       placeholder="0.00" id="id_monto">
+                                       placeholder="0.00" id="id_monto" value="">
                             </div>
                             <small class="text-muted">Máximo permitido: ${{ pago.saldo_restante|floatformat:2 }}</small>
                             <div class="invalid-feedback">Ingrese un monto válido.</div>
                         </div>
+                        
+                        {% if saldo_ahorro_cliente > 0 %}
+                        <!-- Usar ahorro disponible -->
+                        <div class="mb-4" id="ahorroContainer">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="checkUsarAhorro" name="usar_ahorro" value="1">
+                                <label class="form-check-label fw-semibold" for="checkUsarAhorro">
+                                    <i class="fas fa-piggy-bank me-1 text-warning"></i> Usar ahorro disponible para pagar
+                                </label>
+                            </div>
+                            <div id="ahorroInputGroup" style="display: none;">
+                                <label class="form-label">Monto a usar del ahorro</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">$</span>
+                                    <input type="number" name="monto_ahorro_usar" id="id_monto_ahorro_usar" class="form-control"
+                                           step="0.01" min="0" max="{{ saldo_ahorro_cliente }}" value="0">
+                                </div>
+                                <small class="text-muted">Ahorro disponible: ${{ saldo_ahorro_cliente|floatformat:2 }}. El total pagado será (abono + ahorro usado).</small>
+                            </div>
+                        </div>
+                        {% endif %}
+
 
                         <!-- NUEVO CAMPO: Ahorro (independiente) -->
                         <div class="mb-4">
@@ -85,8 +107,11 @@
                             <textarea name="comentarios" class="form-control" rows="2" placeholder="Notas adicionales..."></textarea>
                         </div>
 
+                        <!-- Campo oculto para detectar pago rápido -->
+                        <input type="hidden" name="pago_rapido" id="pagoRapido" value="0">
+
                         <!-- Botones -->
-                        <div class="d-flex gap-3 mt-4">
+                        <div class="d-flex gap-3 mt-4 flex-wrap">
                             <a href="{% url 'detalle_pago' pago.prestamo.id %}" class="btn btn-outline-secondary btn-lg flex-fill">
                                 <i class="fas fa-arrow-left me-1"></i> Cancelar
                             </a>
@@ -94,11 +119,20 @@
                                 <i class="fas fa-save me-1"></i> Guardar abono
                             </button>
                         </div>
+
+                        <!-- Botón de pago rápido, solo si hay saldo pendiente -->
+                        {% if pago.saldo_restante > 0 %}
+                        <div class="mt-3 text-center">
+                            <button type="button" class="btn btn-success btn-lg w-100" id="btnPagoRapido">
+    <i class="fas fa-bolt me-2"></i> Pago rápido (completo)
+</button>
+                        </div>
+                        {% endif %}
                     </form>
                 </div>
             </div>
 
-            <!-- Tarjeta de información adicional (opcional) -->
+            <!-- Tarjeta de información adicional -->
             <div class="card mt-4 border-0 shadow-sm rounded-3">
                 <div class="card-body text-center text-muted small">
                     <i class="fas fa-info-circle me-1"></i>
@@ -110,7 +144,42 @@
     </div>
 </div>
 
-<!-- Estilos adicionales -->
+<!-- Modal de confirmación para pago rápido (compatible Bootstrap 4/5) -->
+<div class="modal fade" id="modalPagoRapido" tabindex="-1" aria-labelledby="modalPagoRapidoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="modalPagoRapidoLabel">
+                    <i class="fas fa-bolt me-2"></i> Confirmar pago rápido
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="fs-5">¿Estás seguro de que deseas pagar <strong>el saldo completo</strong> de esta cuota?</p>
+                <div class="alert alert-light text-center fs-4 fw-bold" style="background-color: #f8f9fc;">
+                    ${{ pago.saldo_restante|floatformat:2 }}
+                </div>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Método de pago: <strong>Efectivo</strong></li>
+                    <li><i class="fas fa-piggy-bank me-2 text-secondary"></i> Ahorro: <strong>$0.00</strong></li>
+                    <li><i class="fas fa-comment me-2 text-secondary"></i> Sin comentarios</li>
+                </ul>
+                <p class="text-muted small">Esta acción registrará un abono por el total adeudado. No podrás deshacerla.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmarPagoRapido">
+                    <i class="fas fa-check-circle me-1"></i> Sí, pagar total
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Estilos adicionales (igual que antes) -->
 <style>
     .bg-gradient-primary {
         background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
@@ -140,25 +209,110 @@
     }
 </style>
 
-<!-- Script para validación básica -->
+<!-- Scripts de validación y pago rápido -->
 <script>
-    (function() {
-        'use strict';
-        const form = document.querySelector('form');
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('formAbono');
+        const montoInput = document.getElementById('id_monto');
+        const maxMonto = parseFloat(montoInput.getAttribute('max'));
+        const checkAhorro = document.getElementById('checkUsarAhorro');
+        const ahorroDiv = document.getElementById('ahorroInputGroup');
+        const montoAhorroInput = document.getElementById('id_monto_ahorro_usar');
+        const saldoRestante = parseFloat('{{ pago.saldo_restante|default:"0" }}');
+        const ahorroDisponible = parseFloat('{{ saldo_ahorro_cliente|default:"0" }}');
+
+        // Mostrar/ocultar campo de monto ahorro según checkbox
+        if (checkAhorro) {
+            checkAhorro.addEventListener('change', function() {
+                ahorroDiv.style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    montoAhorroInput.value = 0;
+                }
+            });
+        }
+
+        // Validación al enviar el formulario
         form.addEventListener('submit', function(event) {
-            const monto = document.getElementById('id_monto');
-            const maxMonto = parseFloat(monto.getAttribute('max'));
-            if (monto.value && parseFloat(monto.value) > maxMonto) {
-                alert(`El monto no puede superar $${maxMonto.toFixed(2)}`);
-                event.preventDefault();
-                event.stopPropagation();
+            const esPagoRapido = document.getElementById('pagoRapido').value === '1';
+            let montoAbono = parseFloat(montoInput.value) || 0;
+            let montoAhorro = parseFloat(montoAhorroInput.value) || 0;
+            const usarAhorro = checkAhorro && checkAhorro.checked;
+
+            if (!esPagoRapido) {
+                // Validar abono normal
+                if (montoAbono <= 0 && !(usarAhorro && montoAhorro > 0)) {
+                    alert("Debes ingresar un monto a abonar mayor a 0, o usar ahorro.");
+                    event.preventDefault();
+                    return false;
+                }
+                if (montoAbono > maxMonto) {
+                    alert(`El monto en efectivo no puede superar $${maxMonto.toFixed(2)}`);
+                    event.preventDefault();
+                    return false;
+                }
+                // Validar ahorro
+                if (usarAhorro && montoAhorro > 0) {
+                    if (montoAhorro > ahorroDisponible) {
+                        alert(`El ahorro a usar no puede superar $${ahorroDisponible.toFixed(2)}.`);
+                        event.preventDefault();
+                        return false;
+                    }
+                    if (montoAbono + montoAhorro > saldoRestante) {
+                        alert(`La suma del abono ($${montoAbono}) y ahorro usado ($${montoAhorro}) supera el saldo de la cuota ($${saldoRestante}).`);
+                        event.preventDefault();
+                        return false;
+                    }
+                }
             }
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+
+            // Si llegamos aquí, todo bien
             form.classList.add('was-validated');
         });
-    })();
+
+        // Confirmación de pago rápido
+        const confirmarBtn = document.getElementById('confirmarPagoRapido');
+        if (confirmarBtn) {
+            confirmarBtn.addEventListener('click', function() {
+                document.getElementById('pagoRapido').value = '1';
+                montoInput.value = '';
+                document.querySelector('select[name="metodo_pago"]').value = 'EFECTIVO';
+                document.querySelector('input[name="ahorro"]').value = '0';
+                document.querySelector('textarea[name="comentarios"]').value = '';
+                // Forzar cierre del modal (si se abrió con Bootstrap)
+                $('#modalPagoRapido').modal('hide');
+                form.submit();
+            });
+        }
+
+        // Deshabilitar botón rápido si saldo es 0
+        const btnRapido = document.getElementById('btnPagoRapido');
+        if (saldoRestante <= 0 && btnRapido) {
+            btnRapido.disabled = true;
+            btnRapido.classList.add('btn-secondary');
+            btnRapido.classList.remove('btn-success');
+            btnRapido.innerHTML = '<i class="fas fa-check-circle me-2"></i> Cuota ya pagada';
+        }
+
+        // Abrir modal manualmente (compatible BS4/5)
+        const btnAbrirModal = document.getElementById('btnPagoRapido');
+        if (btnAbrirModal && saldoRestante > 0) {
+            btnAbrirModal.addEventListener('click', function(e) {
+                e.preventDefault();
+                var modal = document.getElementById('modalPagoRapido');
+                if (modal) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        new bootstrap.Modal(modal).show();
+                    } else if (typeof $ !== 'undefined' && $.fn.modal) {
+                        $(modal).modal('show');
+                    } else {
+                        modal.style.display = 'block';
+                        modal.classList.add('show');
+                        document.body.classList.add('modal-open');
+                    }
+                }
+            });
+        }
+    });
 </script>
+
 {% endblock %}
