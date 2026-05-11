@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reporte Diario de Pagos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Reporte de caja - {{ fecha|date:"l d/m/Y" }}</h2>
+
+  <!-- Filtros mejorados - Experiencia intuitiva -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <form method="GET" class="row g-4 align-items-end">
+            <!-- Campo de fecha -->
+            <div class="col-md-4">
+                <label class="form-label fw-semibold mb-2">
+                    <i class="fas fa-calendar-alt text-primary me-1"></i> 
+                    Día a consultar
+                </label>
+                <div class="input-group">
+                    <input type="date" name="fecha" 
+                           value="{{ fecha|date:'Y-m-d' }}" 
+                           class="form-control form-control-lg"
+                           id="id_fecha"
+                           aria-label="Fecha de consulta">
+                    <button type="button" class="btn btn-outline-secondary btn-lg" 
+                            id="btnHoy" 
+                            title="Seleccionar el día de hoy">
+                        <i class="fas fa-calendar-day me-1"></i> Hoy
+                    </button>
+                </div>
+                <small class="form-text text-muted mt-1">
+                    Selecciona un día para ver los pagos realizados y los pendientes de esa fecha.
+                </small>
+            </div>
+
+            <!-- Campo de comunidad -->
+            <div class="col-md-4">
+                <label class="form-label fw-semibold mb-2">
+                    <i class="fas fa-building text-primary me-1"></i> 
+                    Comunidad
+                </label>
+                <select name="comunidad" class="form-select form-select-lg">
+                    <option value="">🏘️ Todas las comunidades</option>
+                    {% for com in comunidades %}
+                        <option value="{{ com.id }}" 
+                                {% if comunidad_seleccionada == com.id|stringformat:"s" %}selected{% endif %}>
+                            {{ com.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small class="form-text text-muted mt-1">
+                    Filtra por comunidad para ver solo sus pagos.
+                </small>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="col-md-4">
+                <div class="d-flex gap-2 justify-content-md-end">
+                    <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm">
+                        <i class="fas fa-filter me-2"></i> Aplicar filtros
+                    </button>
+                    <a href="{% url 'reporte_diario' %}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="fas fa-eraser me-2"></i> Limpiar
+                    </a>
+                </div>
+                <!-- Indicador de filtros activos (opcional) -->
+                {% if request.GET.fecha or request.GET.comunidad %}
+                    <div class="text-end mt-2">
+                        <span class="badge bg-info text-dark">
+                            <i class="fas fa-check-circle"></i> Filtros activos
+                        </span>
+                    </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+    <!-- Tabla 1: Abonos reales del día -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <i class="fas fa-hand-holding-usd"></i> Abonos realizados el {{ fecha|date:"d/m/Y" }}
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Préstamo #</th>
+                            <th>Cuota #</th>
+                            <th>Monto abonado</th>
+                            <th>Método</th>
+                            <th>Cobrador</th>
+                            <th>Comentario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for abono in abonos_dia %}
+                        <tr>
+                            <td>{{ abono.pago.prestamo.cliente.nombre }}</td>
+                            <td>{{ abono.pago.prestamo.id }}</td>
+                            <td>{{ abono.pago.numero_pago }}</td>
+                            <td class="text-success fw-bold">${{ abono.monto|floatformat:2 }}</td>
+                            <td>{{ abono.get_metodo_pago_display }}</td>
+                            <td>{{ abono.cobrador.get_full_name|default:abono.cobrador.username }}</td>
+                            <td>{{ abono.comentario|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center">No hay abonos registrados en esta fecha.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="3" class="text-end">Total abonado en el día:</th>
+                            <th class="text-success">${{ total_abonado|floatformat:2 }}</th>
+                            <th colspan="3"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla 2: Cuotas programadas para el día y aún pendientes -->
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <i class="fas fa-calendar-times"></i> Cuotas programadas para el {{ fecha|date:"d/m/Y" }} y aún no pagadas
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Préstamo #</th>
+                            <th>Cuota #</th>
+                            <th>Monto total cuota</th>
+                            <th>Saldo pendiente</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <!-- Dentro del <tbody> de la tabla de cuotas pendientes -->
+                    {% for pago in pagos_programados %}
+                    <tr>
+                        <td>{{ pago.prestamo.cliente.nombre }}</td>
+                        <td>{{ pago.prestamo.id }}</td>
+                        <td>{{ pago.numero_pago }}</td>
+                        <td>${{ pago.monto_pago|floatformat:2 }}</td>
+                        <td class="text-danger">${{ pago.saldo_restante|floatformat:2 }}</td>
+                        <td>
+                            <!-- Botón para pagar SOLO esta cuota -->
+                            <form method="POST" action="{% url 'pagar_cuota_individual' pago.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="metodo_pago" value="EFECTIVO">
+                                <!-- Botón PAGAR ESTA CUOTA -->
+                            <button type="button" class="btn btn-success btn-sm" 
+                                    onclick="pagarCuota({{ pago.id }}, {{ pago.saldo_restante|floatformat:2 }}, {{ pago.numero_pago }})">
+                                <i class="fas fa-dollar-sign"></i> Pagar esta cuota
+                            </button>
+                                                        </form>
+                                                        
+                                                        <!-- Botón para liquidar TODO el préstamo (ya existente) -->
+                                                        <form method="POST" action="{% url 'liquidar_prestamo' pago.prestamo.id %}" style="display:inline;">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="metodo_pago" value="EFECTIVO">
+                                                            <!-- Botón LIQUIDAR PRÉSTAMO (necesitamos el saldo pendiente TOTAL del préstamo) -->
+                            <button type="button" class="btn btn-danger btn-sm" 
+                                    onclick="liquidarPrestamo({{ pago.prestamo.id }}, {{ pago.prestamo.saldo_pendiente|floatformat:2 }})">
+                                <i class="fas fa-hand-holding-usd"></i> Liquidar préstamo
+                            </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="4" class="text-end">Total pendiente de cuotas de hoy:</th>
+                            <th class="text-danger">${{ total_pendiente|floatformat:2 }}</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para pagar una cuota individual
+function pagarCuota(pagoId, monto, numeroCuota) {
+    Swal.fire({
+        title: '¿Pagar esta cuota?',
+        html: `</strong><br>Monto a pagar: <strong>$${monto.toFixed(2)}</strong>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',   // verde
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, pagar cuota',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Creamos un formulario dinámico y lo enviamos
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/pagos/pagar-cuota/${pagoId}/`;  // Ajusta la URL a tu patrón real
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';  // Obtén el token del template
+            form.appendChild(csrfInput);
+            
+            // Si quieres enviar el método de pago (opcional)
+            const metodoInput = document.createElement('input');
+            metodoInput.type = 'hidden';
+            metodoInput.name = 'metodo_pago';
+            metodoInput.value = 'EFECTIVO';
+            form.appendChild(metodoInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+// Función para liquidar completamente un préstamo
+function liquidarPrestamo(prestamoId, saldoPendiente) {
+    Swal.fire({
+        title: '¿Liquidar préstamo completo?',
+        html: `Se pagarán <strong>TODAS las cuotas pendientes</strong>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',   // rojo
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, liquidar préstamo',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/pagos/liquidar-prestamo/${prestamoId}/`;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';
+            form.appendChild(csrfInput);
+            
+            const metodoInput = document.createElement('input');
+            metodoInput.type = 'hidden';
+            metodoInput.name = 'metodo_pago';
+            metodoInput.value = 'EFECTIVO';
+            form.appendChild(metodoInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+// Botón "Hoy": establece la fecha actual y envía el formulario
+    document.getElementById('btnHoy')?.addEventListener('click', () => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('id_fecha').value = today;
+        document.getElementById('id_fecha').form.submit();
+    });
+
+</script>
+{% endblock %}

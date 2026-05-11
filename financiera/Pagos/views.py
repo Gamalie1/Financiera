@@ -707,65 +707,6 @@ def imprimir_ticket(request):
         
         return resp
     
-def lista_pagos(request):
-    # Ordenar por fecha_programada (más reciente primero)
-    pagos = Pago.objects.select_related('prestamo__cliente__comunidad').all().order_by('-fecha_programada')
-
-    # Obtener parámetros del GET
-    comunidad_id = request.GET.get('comunidad')
-    fecha_tipo = request.GET.get('fecha_tipo')
-    fecha_dia = request.GET.get('fecha_dia')
-    fecha_desde = request.GET.get('fecha_desde')
-    fecha_hasta = request.GET.get('fecha_hasta')
-    semana_inicio = request.GET.get('semana_inicio')
-    mes_anio = request.GET.get('mes_anio')
-
-    # Filtrar por comunidad
-    if comunidad_id:
-        pagos = pagos.filter(prestamo__cliente__comunidad_id=comunidad_id)
-
-    # Filtrar por fecha_programada
-    if fecha_tipo == 'dia' and fecha_dia:
-        pagos = pagos.filter(fecha_programada=fecha_dia)
-    elif fecha_tipo == 'semana' and semana_inicio:
-        start = datetime.strptime(semana_inicio, '%Y-%m-%d').date()
-        end = start + timedelta(days=6)
-        pagos = pagos.filter(fecha_programada__range=[start, end])
-    elif fecha_tipo == 'mes' and mes_anio:
-        year, month = map(int, mes_anio.split('-'))
-        start = datetime(year, month, 1).date()
-        if month == 12:
-            end = datetime(year+1, 1, 1).date() - timedelta(days=1)
-        else:
-            end = datetime(year, month+1, 1).date() - timedelta(days=1)
-        pagos = pagos.filter(fecha_programada__range=[start, end])
-    elif fecha_tipo == 'rango' and fecha_desde and fecha_hasta:
-        pagos = pagos.filter(fecha_programada__range=[fecha_desde, fecha_hasta])
-
-    total_recaudado = pagos.aggregate(total=Sum('monto_pago'))['total'] or 0
-    comunidades = Comunidad.objects.all().order_by('nombre')
-
-    # Generar semanas (últimas 8) basadas en fecha_programada (opcional, pero se usa para el select)
-    hoy = datetime.now().date()
-    semanas = []
-    for i in range(8):
-        start = hoy - timedelta(days=hoy.weekday() + 7*i)
-        end = start + timedelta(days=6)
-        semanas.append({
-            'inicio': start.strftime('%Y-%m-%d'),
-            'fin': end.strftime('%Y-%m-%d'),
-            'label': f"{start.strftime('%d/%m')} - {end.strftime('%d/%m')}"
-        })
-
-    context = {
-        'pagos': pagos,
-        'total_recaudado': total_recaudado,
-        'comunidades': comunidades,
-        'semanas': semanas,
-        'filtros': request.GET,
-    }
-    return render(request, 'lista_pagos.html', context)
-
 
 @login_required
 def poner_al_corriente(request, prestamo_id):
@@ -842,3 +783,134 @@ def poner_al_corriente(request, prestamo_id):
         'today': hoy,   # ← AÑADE ESTA LÍNEA
     }
     return render(request, 'poner_al_corriente.html', context)
+
+@login_required
+def reporte_diario(request):
+    # Obtener fecha del GET o usar hoy
+    fecha_str = request.GET.get('fecha')
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date() if fecha_str else timezone.now().date()
+    except ValueError:
+        fecha = timezone.now().date()
+
+    comunidad_id = request.GET.get('comunidad')
+
+    # 1. Abonos realizados exactamente en esa fecha (sin importar la hora)
+    abonos_dia = Abono.objects.filter(fecha__date=fecha).select_related(
+        'pago__prestamo__cliente', 'cobrador'
+    )
+
+    # 2. Pagos (cuotas) programados para esa fecha que NO estén completamente pagados
+    pagos_programados = Pago.objects.filter(
+        fecha_programada=fecha,
+        estado_pago__in=['pendiente', 'parcial']
+    ).select_related('prestamo__cliente')
+
+    # Filtro por comunidad (si se seleccionó)
+    if comunidad_id:
+        abonos_dia = abonos_dia.filter(pago__prestamo__cliente__comunidad_id=comunidad_id)
+        pagos_programados = pagos_programados.filter(prestamo__cliente__comunidad_id=comunidad_id)
+
+    total_abonado = abonos_dia.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    total_pendiente = pagos_programados.aggregate(total=Sum('saldo_restante'))['total'] or Decimal('0')
+
+    # Lista de comunidades para el filtro
+    comunidades = Comunidad.objects.all().order_by('nombre')
+
+    context = {
+        'fecha': fecha,
+        'abonos_dia': abonos_dia,
+        'pagos_programados': pagos_programados,
+        'total_abonado': total_abonado,
+        'total_pendiente': total_pendiente,
+        'comunidades': comunidades,
+        'comunidad_seleccionada': comunidad_id,
+    }
+    return render(request, 'reporte_diario.html', context)
+
+
+@login_required
+def liquidar_prestamo(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    
+    if request.method == 'POST':
+        # Buscar todas las cuotas pendientes o parciales de este préstamo
+        cuotas_pendientes = prestamo.pagos.filter(estado_pago__in=['pendiente', 'parcial'])
+        
+        if not cuotas_pendientes:
+            messages.warning(request, 'Este préstamo no tiene cuotas pendientes.')
+            return redirect(request.META.get('HTTP_REFERER', 'reporte_diario'))
+
+        # Determinar método de pago (puedes dejar un valor fijo o permitir selección en un modal)
+        metodo_pago = request.POST.get('metodo_pago', 'EFECTIVO')
+        comentario = f"Liquidación total del préstamo el {timezone.now().date()}"
+        
+        from django.db import transaction
+        with transaction.atomic():
+            for pago in cuotas_pendientes:
+                saldo = pago.saldo_restante
+                if saldo > 0:
+                    Abono.objects.create(
+                        pago=pago,
+                        monto=saldo,
+                        fecha=timezone.now(),
+                        metodo_pago=metodo_pago,
+                        cobrador=request.user,
+                        comentario=comentario
+                    )
+            # Mensaje de éxito
+            messages.success(
+                request, 
+                f'Préstamo #{prestamo.id} liquidado. Se registraron abonos por ${prestamo.saldo_pendiente} con fecha {timezone.now().date()}.'
+            )
+        return redirect(request.META.get('HTTP_REFERER', 'reporte_diario'))
+    
+    return redirect('reporte_diario')
+
+@login_required
+def pagar_cuota_individual(request, pago_id):
+    """
+    Registra un abono por el saldo restante de una cuota específica.
+    No afecta otras cuotas del mismo préstamo.
+    """
+    pago = get_object_or_404(Pago, id=pago_id)
+    
+    # Verificar que la cuota no esté ya pagada
+    if pago.estado_pago == 'pagado':
+        messages.warning(request, f'La cuota #{pago.numero_pago} ya está pagada.')
+        return redirect(request.META.get('HTTP_REFERER', 'reporte_diario'))
+    
+    # Obtener el saldo restante (cuánto falta para completar esta cuota)
+    saldo_pendiente_cuota = pago.saldo_restante
+    
+    if saldo_pendiente_cuota <= 0:
+        messages.warning(request, f'La cuota #{pago.numero_pago} no tiene saldo pendiente.')
+        return redirect(request.META.get('HTTP_REFERER', 'reporte_diario'))
+    
+    if request.method == 'POST':
+        # Puedes permitir elegir método de pago o usar uno por defecto
+        metodo_pago = request.POST.get('metodo_pago', 'EFECTIVO')
+        comentario = f"Pago de cuota #{pago.numero_pago} el {timezone.now().date()}"
+        
+        from django.db import transaction
+        with transaction.atomic():
+            # Crear el abono por el monto exacto del saldo restante de esta cuota
+            Abono.objects.create(
+                pago=pago,
+                monto=saldo_pendiente_cuota,
+                fecha=timezone.now(),
+                metodo_pago=metodo_pago,
+                cobrador=request.user,
+                comentario=comentario
+            )
+            # La señal actualizará automáticamente el estado del Pago (a 'pagado' si saldo_restante = 0)
+            # Y también actualizará el estado general del préstamo (verificar_y_actualizar_estado)
+        
+        messages.success(
+            request,
+            f'Cuota #{pago.numero_pago} del préstamo #{pago.prestamo.id} pagada con éxito. Monto: ${saldo_pendiente_cuota}'
+        )
+        return redirect(request.META.get('HTTP_REFERER', 'reporte_diario'))
+    
+    # Si no es POST, redirigir (por seguridad)
+    return redirect('reporte_diario')

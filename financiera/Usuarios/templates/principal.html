@@ -60,7 +60,7 @@
 {% if user.is_staff %}
 <!-- ========== TARJETAS DE RESUMEN GLOBAL ========== -->
 <div class="row mb-4">
-<div class="col-xl-3 col-md-6 mb-3" onclick="window.location.href='{% url 'lista_pagos' %}'" style="cursor: pointer;">
+<div class="col-xl-3 col-md-6 mb-3" onclick="window.location.href='{% url 'reporte_diario' %}'" style="cursor: pointer;">
     <div class="card stat-card border-left-primary shadow-sm h-100">
         <div class="card-body">
             <div class="row no-gutters align-items-center">
@@ -140,7 +140,7 @@
 {% endif %}
 <!-- ========== TARJETA DE COMUNIDADES (siempre visible, mismo tamaño que las de cobrador) ========== -->
 <div class="row mb-4">
-    <div class="col-xl-4 col-md-4 mb-3" onclick="window.location.href='{% url 'lista_pagos' %}'" style="cursor: pointer;">
+    <div class="col-xl-4 col-md-4 mb-3" onclick="window.location.href='{% url 'reporte_diario' %}'" style="cursor: pointer;">
         <div class="card stat-card border-left-primary shadow-sm h-100">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
