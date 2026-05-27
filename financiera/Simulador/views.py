@@ -35,6 +35,7 @@ def generar_pdf(request):
     base_fecha = datetime.strptime(fecha, "%Y-%m-%d")
     diaPrestamo = base_fecha.weekday()
     ahorroActivo = request.POST.get('switchAhorro') == 'on'
+    ahorro_adicional_activo = request.POST.get('switchAhorroAdicional') == 'on'
     ahorro = float(request.POST.get('ahorro', 0)) if ahorroActivo else 0
 
     # Realizar los cálculos
@@ -128,6 +129,7 @@ def generar_pdf(request):
     'total_general': round(totalPrestamo + costosExtra, 0),
     'ahorroActivo': ahorroActivo,
     'ahorro': round(ahorro, 0),
+    'ahorro_adicional_activo': ahorro_adicional_activo,   # <--- NUEVO
     }).content
 
     # Generar el PDF con WeasyPrint y pasando el base_url

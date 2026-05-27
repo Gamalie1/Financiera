@@ -161,12 +161,16 @@
                                 <i class="fas fa-dollar-sign"></i> Pagar esta cuota
                             </button>
                                                         </form>
+                                                        <!-- NUEVO BOTÓN ABONAR -->
+                            <a href="{% url 'createPago' id=pago.id %}" class="btn btn-info btn-sm" style="display:inline-block; margin:0 2px;">
+                                <i class="fas fa-money-bill-wave"></i> Abonar
+                            </a>
                                                         
-                                                        <!-- Botón para liquidar TODO el préstamo (ya existente) -->
-                                                        <form method="POST" action="{% url 'liquidar_prestamo' pago.prestamo.id %}" style="display:inline;">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="metodo_pago" value="EFECTIVO">
-                                                            <!-- Botón LIQUIDAR PRÉSTAMO (necesitamos el saldo pendiente TOTAL del préstamo) -->
+                                <!-- Botón para liquidar TODO el préstamo (ya existente) -->
+                            <form method="POST" action="{% url 'liquidar_prestamo' pago.prestamo.id %}" style="display:inline;">
+                                {% csrf_token %}
+                            <input type="hidden" name="metodo_pago" value="EFECTIVO">
+                            <!-- Botón LIQUIDAR PRÉSTAMO (necesitamos el saldo pendiente TOTAL del préstamo) -->
                             <button type="button" class="btn btn-danger btn-sm" 
                                     onclick="liquidarPrestamo({{ pago.prestamo.id }}, {{ pago.prestamo.saldo_pendiente|floatformat:2 }})">
                                 <i class="fas fa-hand-holding-usd"></i> Liquidar préstamo
@@ -206,7 +210,7 @@ function pagarCuota(pagoId, monto, numeroCuota) {
             // Creamos un formulario dinámico y lo enviamos
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/pagos/pagar-cuota/${pagoId}/`;  // Ajusta la URL a tu patrón real
+            form.action = `/Pagos/pagar-cuota/${pagoId}/`;  // Ajusta la URL a tu patrón real
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrfmiddlewaretoken';
@@ -241,7 +245,7 @@ function liquidarPrestamo(prestamoId, saldoPendiente) {
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/pagos/liquidar-prestamo/${prestamoId}/`;
+            form.action = `/Pagos/liquidar-prestamo/${prestamoId}/`;
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrfmiddlewaretoken';
