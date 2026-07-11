@@ -1,0 +1,35 @@
+{% load static %}
+<div id="dc-tabla-{{ periodo }}" class="dc-tabla-periodo dc-card" style="display: {% if activo %}block{% else %}none{% endif %};">
+  <h2>{{ titulo }}</h2>
+  <div class="dc-table-wrap">
+    <table class="dc-table">
+      <thead>
+        <tr>
+          <th>Promotor</th>
+          <th class="num">Monto</th>
+          <th>Fecha</th>
+          <th>Concepto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for gasto in filas %}
+        <tr>
+          <td>{{ gasto.usuario__username }}</td>
+          <td class="num dc-cell-danger">${{ gasto.monto|floatformat:2 }}</td>
+          <td>{{ gasto.fecha_registro|date:"d/m/Y" }}</td>
+          <td>{{ gasto.concepto|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="dc-empty"><i class="fas fa-receipt"></i> No hay gastos registrados en este período.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="1">Total del período</th>
+          <th class="num dc-cell-danger">${{ total|floatformat:2 }}</th>
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>

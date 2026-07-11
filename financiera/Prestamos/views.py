@@ -27,13 +27,15 @@ from django.http import HttpResponseForbidden
 from django.db.models import Q
 from zoneinfo import ZoneInfo
 from django.db.models import OuterRef, Subquery, DecimalField, Sum
+from django.core.paginator import Paginator
 
 @login_required
 def principal(request):
     es_grupal = request.GET.get('es_grupal')
     buscar = request.GET.get('buscar')
-    estado = request.GET.get('estado')      # Nuevo filtro por estado
-    tipo = request.GET.get('tipo')          # Nuevo filtro por tipo
+    estado = request.GET.get('estado')
+    tipo = request.GET.get('tipo')
+    page_number = request.GET.get('page', 1)
 
     # ==============================
     # FILTRO POR USUARIO (base)
@@ -41,34 +43,21 @@ def principal(request):
     if request.user.is_staff:
         prestamos = Prestamo.objects.all()
     else:
-        prestamos = Prestamo.objects.filter(
-            estado='APROBADO',
-            promotor=request.user
-        )
+        # Antes solo veía sus préstamos ya APROBADOs; ahora ve todas sus propias
+        # solicitudes para poder dar seguimiento a su estado.
+        prestamos = Prestamo.objects.filter(promotor=request.user)
 
     prestamos = prestamos.select_related('cliente', 'grupo', 'promotor')
 
-    # ==============================
-    # FILTRO GRUPAL
-    # ==============================
     if es_grupal == 'true':
         prestamos = prestamos.filter(es_grupal=True)
 
-    # ==============================
-    # FILTRO POR ESTADO
-    # ==============================
     if estado:
         prestamos = prestamos.filter(estado=estado)
 
-    # ==============================
-    # FILTRO POR TIPO
-    # ==============================
     if tipo:
         prestamos = prestamos.filter(tipo=tipo)
 
-    # ==============================
-    # BUSCADOR
-    # ==============================
     if buscar:
         prestamos = prestamos.filter(
             Q(cliente__nombre__icontains=buscar) |
@@ -77,22 +66,33 @@ def principal(request):
             Q(promotor__username__icontains=buscar)
         )
 
+    prestamos = prestamos.order_by('-fecha_solicitud')
+
     # ==============================
-    # CÁLCULOS DE TOTALES (después de todos los filtros)
+    # TOTALES (sobre el conjunto filtrado completo, antes de paginar)
     # ==============================
-    total_monto = sum(p.monto for p in prestamos if p.monto)
+    total_monto = prestamos.aggregate(total=Sum('monto'))['total'] or Decimal('0')
     aprobados_count = prestamos.filter(estado='APROBADO').count()
-    pendientes_count = prestamos.filter(estado='PENDIENTE').count()
+    # 'PENDIENTE' no es un estado real del modelo; el estado inicial es 'SOLICITADO'.
+    pendientes_count = prestamos.filter(estado='SOLICITADO').count()
+    total_count = prestamos.count()
+
+    paginator = Paginator(prestamos, 15)
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'prestamos': prestamos,
-        'tipo_actual': es_grupal,        # None, 'true' o 'false'
+        'prestamos': page_obj,
+        'page_obj': page_obj,
+        'tipo_actual': es_grupal,
         'total_monto': total_monto,
         'aprobados_count': aprobados_count,
         'pendientes_count': pendientes_count,
+        'total_count': total_count,
     }
-
     return render(request, 'prestamos.html', context)
+
+
+
 @login_required
 def create_prestamo(request):
     clientes = Cliente.objects.all()

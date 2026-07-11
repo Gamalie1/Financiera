@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+  {% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Solicitar Nuevo Préstamo | Panel{% endblock %}
@@ -92,7 +92,7 @@
                                         <label for="cliente" class="form-label fw-semibold">Cliente <span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
-                                            <select name="cliente" id="cliente" class="form-select" required>
+                                            <select name="cliente" id="cliente" class="form-select select2-clientes" required>
                                                 <option value="">Seleccione un cliente</option>
                                                 {% for cliente in clientes %}
                                                 <option value="{{ cliente.id }}" {% if cliente.id == cliente_seleccionado %}selected{% endif %}>
@@ -262,8 +262,16 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Elementos
+   $(document).ready(function() {
+    // 1. Inicializar Select2
+    $('#cliente').select2({
+        placeholder: 'Buscar cliente por nombre o DNI',
+        allowClear: true,
+        width: '100%'
+        // theme: 'bootstrap-5'  // si usas el tema
+    });
+
+    // 2. Lógica de la tabla de amortización (tu código existente)
     const montoInput = document.getElementById("monto");
     const tasaInput = document.getElementById("tasa_interes");
     const pagosInput = document.getElementById("total_pagos");
@@ -296,7 +304,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return fecha;
     };
 
-    // Función principal de cálculo
     function calcularPagos() {
         const capital = parseFloat(montoInput.value) || 0;
         const tasa = (parseFloat(tasaInput.value) || 0) / 100;
@@ -308,7 +315,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const mostrarAhorro = ahorro > 0;
 
-        // Mostrar/ocultar columna ahorro
         if (thAhorro) {
             if (mostrarAhorro) {
                 thAhorro.classList.remove("d-none");
@@ -456,4 +462,47 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 </style>
+<script>
+    // Esperamos a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM cargado');
+
+        // Verificar jQuery
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery NO está cargado');
+            return;
+        } else {
+            console.log('jQuery versión:', jQuery.fn.jquery);
+        }
+
+        // Verificar Select2
+        if (typeof jQuery.fn.select2 === 'undefined') {
+            console.error('Select2 NO está cargado');
+            return;
+        } else {
+            console.log('Select2 está disponible');
+        }
+
+        // Buscar el elemento
+        var $cliente = jQuery('#cliente');
+        if ($cliente.length === 0) {
+            console.error('No se encontró el elemento #cliente');
+            return;
+        } else {
+            console.log('Elemento #cliente encontrado');
+        }
+
+        // Inicializar Select2
+        try {
+            $cliente.select2({
+                placeholder: 'Buscar cliente por nombre o DNI',
+                allowClear: true,
+                width: '100%'
+            });
+            console.log('Select2 inicializado correctamente');
+        } catch (e) {
+            console.error('Error al inicializar Select2:', e);
+        }
+    });
+</script>
 {% endblock %}

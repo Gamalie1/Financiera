@@ -1,508 +1,143 @@
-{% extends 'base.html' %} {% block content %}
-<h3>Detalles del cobrador: {{ user.username }}</h3>
+{% extends 'base.html' %}
+{% load static %}
 
-<!-- Botones de selección (Hoy, Semana, Mes, Total) -->
-<div class="btn-group mb-4" role="group" aria-label="Botones de selección">
-  <button type="button" class="btn btn-primary" onclick="mostrarTabla('hoy')">
-    Hoy
-  </button>
-  <button
-    type="button"
-    class="btn btn-success"
-    onclick="mostrarTabla('semana')"
-  >
-    Semana
-  </button>
-  <button type="button" class="btn btn-info" onclick="mostrarTabla('mes')">
-    Mes
-  </button>
-  <button type="button" class="btn btn-warning" onclick="mostrarTabla('total')">
-    Total
-  </button>
+{% block title %}Detalle de {{ user.username }} | Panel{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="dc-wizard">
+  <div class="dc-head">
+    <div>
+      <span class="dc-eyebrow">Cobrador</span>
+      <h1>{{ user.get_full_name|default:user.username }}</h1>
+      <p class="dc-sub">Actividad de cobro, gastos y cuotas pendientes.</p>
+    </div>
+  </div>
+
+  <!-- ===================== TABS DE TIPO ===================== -->
+  <div class="dc-tabs">
+    <a href="?tipo=pagos" class="dc-tab {% if tipo == 'pagos' %}is-active{% endif %}">
+      <i class="fas fa-hand-holding-usd"></i> Pagos cobrados
+    </a>
+    <a href="?tipo=gastos" class="dc-tab {% if tipo == 'gastos' %}is-active{% endif %}">
+      <i class="fas fa-receipt"></i> Gastos
+    </a>
+    <a href="?tipo=prestamos" class="dc-tab {% if tipo == 'prestamos' %}is-active{% endif %}">
+      <i class="fas fa-calendar-times"></i> Cuotas pendientes
+    </a>
+  </div>
+
+  <!-- ===================== KPIs (según tipo) ===================== -->
+  <div class="dc-kpis">
+    {% if tipo == 'pagos' %}
+      <button type="button" class="dc-kpi is-active" data-periodo="hoy"><span>Hoy</span><strong>${{ total_pagado_hoy|floatformat:2 }}</strong></button>
+      <button type="button" class="dc-kpi" data-periodo="semana"><span>Semana</span><strong>${{ total_pagado_semana|floatformat:2 }}</strong></button>
+      <button type="button" class="dc-kpi" data-periodo="mes"><span>Mes</span><strong>${{ total_pagado_mes|floatformat:2 }}</strong></button>
+      <button type="button" class="dc-kpi" data-periodo="total"><span>Total</span><strong>${{ total_pagado_general|floatformat:2 }}</strong></button>
+    {% elif tipo == 'gastos' %}
+      <button type="button" class="dc-kpi is-active" data-periodo="hoy"><span>Hoy</span><strong>${{ total_gasto_hoy|floatformat:2 }}</strong></button>
+      <button type="button" class="dc-kpi" data-periodo="semana"><span>Semana</span><strong>${{ total_gasto_semana|floatformat:2 }}</strong></button>
+      <button type="button" class="dc-kpi" data-periodo="mes"><span>Mes</span><strong>${{ total_gasto_mes|floatformat:2 }}</strong></button>
+      <button type="button" class="dc-kpi" data-periodo="total"><span>Total</span><strong>${{ total_gasto_general|floatformat:2 }}</strong></button>
+    {% elif tipo == 'prestamos' %}
+      <button type="button" class="dc-kpi is-active" data-periodo="hoy"><span>Hoy</span><strong>{{ pagos_hoy }}</strong><small>${{ monto_pendiente_hoy|floatformat:2 }}</small></button>
+      <button type="button" class="dc-kpi" data-periodo="semana"><span>Semana</span><strong>{{ pagos_semana }}</strong><small>${{ monto_pendiente_semana|floatformat:2 }}</small></button>
+      <button type="button" class="dc-kpi" data-periodo="mes"><span>Mes</span><strong>{{ pagos_mes }}</strong><small>${{ monto_pendiente_mes|floatformat:2 }}</small></button>
+      <button type="button" class="dc-kpi" data-periodo="total"><span>Total</span><strong>{{ pagos_totales }}</strong><small>${{ monto_pendiente_general|floatformat:2 }}</small></button>
+    {% endif %}
+  </div>
+
+  <!-- ===================== TABLAS ===================== -->
+  {% if tipo == 'pagos' %}
+    {% include 'partials/_dc_tabla_pagos.html' with periodo='hoy' titulo='Pagos de hoy' filas=pagos_hoy_detalles total=total_pagado_hoy activo=True %}
+    {% include 'partials/_dc_tabla_pagos.html' with periodo='semana' titulo='Pagos de esta semana' filas=pagos_semana_detalles total=total_pagado_semana activo=False %}
+    {% include 'partials/_dc_tabla_pagos.html' with periodo='mes' titulo='Pagos de este mes' filas=pagos_mes_detalles total=total_pagado_mes activo=False %}
+    {% include 'partials/_dc_tabla_pagos.html' with periodo='total' titulo='Pagos totales' filas=pagos_totales_detalles total=total_pagado_general activo=False %}
+
+  {% elif tipo == 'gastos' %}
+    {% include 'partials/_dc_tabla_gastos.html' with periodo='hoy' titulo='Gastos de hoy' filas=gastos_hoy_detalles total=total_gasto_hoy activo=True %}
+    {% include 'partials/_dc_tabla_gastos.html' with periodo='semana' titulo='Gastos de esta semana' filas=gastos_semana_detalles total=total_gasto_semana activo=False %}
+    {% include 'partials/_dc_tabla_gastos.html' with periodo='mes' titulo='Gastos de este mes' filas=gastos_mes_detalles total=total_gasto_mes activo=False %}
+    {% include 'partials/_dc_tabla_gastos.html' with periodo='total' titulo='Gastos totales' filas=gastos_totales_detalles total=total_gasto_general activo=False %}
+
+  {% elif tipo == 'prestamos' %}
+    {% include 'partials/_dc_tabla_prestamos.html' with periodo='hoy' titulo='Cuotas pendientes hoy' filas=pagos_hoy_detalles total=monto_pendiente_hoy activo=True %}
+    {% include 'partials/_dc_tabla_prestamos.html' with periodo='semana' titulo='Cuotas pendientes esta semana' filas=pagos_semana_detalles total=monto_pendiente_semana activo=False %}
+    {% include 'partials/_dc_tabla_prestamos.html' with periodo='mes' titulo='Cuotas pendientes este mes' filas=pagos_mes_detalles total=monto_pendiente_mes activo=False %}
+    {% include 'partials/_dc_tabla_prestamos.html' with periodo='total' titulo='Cuotas pendientes totales' filas=pagos_totales_detalles total=monto_pendiente_general activo=False %}
+  {% endif %}
 </div>
-{% if tipo == 'pagos' %}
-<!-- Tabla de pagos -->
-<div id="tabla_hoy" class="tabla-pagos">
-  <!-- Tabla de pagos hoy -->
-  <h4>Pagos Hoy</h4>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-        <th>Método de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_hoy_detalles %}
-      <tr>
-        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
-        <td>{{ pago.pago__prestamo__tipo }}</td>
-        <td>{{ pago.fecha }}</td>
-        <td>${{ pago.monto|floatformat:2 }}</td>
-        <td>{{ pago.metodo_pago }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" class="text-center">No hay pagos hoy</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Pagos Hoy:</strong>
-        </td>
-        <td colspan="2" class="text-right">
-          ${{ total_pagado_hoy|floatformat:2 }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de pagos por semana -->
-<div id="tabla_semana" class="tabla-pagos" style="display: none">
-  <h4>Pagos Esta Semana</h4>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-        <th>Método de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_semana_detalles %}
-      <tr>
-        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
-        <!-- Nombre del cliente -->
-
-        <td>{{ pago.pago__prestamo__tipo }}</td>
-        <!-- Tipo de préstamo -->
-
-        <td>{{ pago.fecha }}</td>
-        <!-- Fecha real del abono -->
-
-        <td>${{ pago.monto|floatformat:2 }}</td>
-        <!-- Monto realmente abonado -->
-
-        <td>{{ pago.metodo_pago }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" class="text-center">No hay pagos esta semana</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Pagos Hoy:</strong>
-        </td>
-        <td colspan="2" class="text-right">
-          ${{ total_pagado_semana|default:'No hay pagos esta semana' }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de pagos por mes -->
-<div id="tabla_mes" class="tabla-pagos" style="display: none">
-  <h4>Pagos Este Mes</h4>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-        <th>Método de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_mes_detalles %}
-      <tr>
-        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
-        <!-- Nombre del cliente -->
-
-        <td>{{ pago.pago__prestamo__tipo }}</td>
-        <!-- Tipo de préstamo -->
-
-        <td>{{ pago.fecha }}</td>
-        <!-- Fecha real del abono -->
-
-        <td>${{ pago.monto|floatformat:2 }}</td>
-        <!-- Monto abonado -->
-
-        <td>{{ pago.metodo_pago }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" class="text-center">No hay pagos este mes</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Pagos Hoy:</strong>
-        </td>
-        <td colspan="2" class="text-right">
-          ${{ total_pagado_mes|default:'No hay pagos este mes' }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de pagos totales -->
-<div id="tabla_total" class="tabla-pagos" style="display: none">
-  <h5>Pagos Totales</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-        <th>Método de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_totales_detalles %}
-      <tr>
-        <td>{{ pago.pago__prestamo__cliente__nombre }}</td>
-        <!-- Nombre del cliente -->
-
-        <td>{{ pago.pago__prestamo__tipo }}</td>
-        <!-- Tipo de préstamo -->
-
-        <td>{{ pago.fecha }}</td>
-        <!-- Fecha real del abono -->
-
-        <td>${{ pago.monto|floatformat:2 }}</td>
-        <!-- Monto realmente abonado -->
-
-        <td>{{ pago.metodo_pago }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" class="text-center">No hay pagos registrados</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Pagos Hoy:</strong>
-        </td>
-        <td colspan="2" class="text-right">
-          ${{ total_pagado_general|default:'No hay pagos totales' }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-{% elif tipo == 'gastos' %}
-<!-- Tabla de gastos -->
-<div id="tabla_hoy" class="tabla-pagos">
-  <!-- Tabla de gastos hoy -->
-  <h5>Gastos Hoy</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Promotor</th>
-        <th>Monto</th>
-        <th>Fecha</th>
-        <th>Concepto</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for gasto in gastos_hoy_detalles %}
-      <tr>
-        <td>{{ gasto.usuario__username }}</td>
-        <!-- Nombre del promotor -->
-        <td>${{ gasto.monto|floatformat:2 }}</td>
-        <!-- Monto del gasto -->
-        <td>{{ gasto.programada }}</td>
-        <!-- Fecha del gasto -->
-        <td>{{ gasto.concepto }}</td>
-        <!-- Concepto del gasto -->
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Gastos Hoy:</strong>
-        </td>
-        <td colspan="1" class="text-right">
-          ${{ total_gasto_hoy|floatformat:2 }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de gastos por semana -->
-<div id="tabla_semana" class="tabla-pagos" style="display: none">
-  <h5>Gastos Esta Semana</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Promotor</th>
-        <th>Monto</th>
-        <th>Fecha</th>
-        <th>Concepto</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for gasto in gastos_semana_detalles %}
-      <tr>
-        <td>{{ gasto.usuario__username }}</td>
-        <td>${{ gasto.monto|floatformat:2 }}</td>
-        <td>{{ gasto.fecha_programada }}</td>
-        <td>{{ gasto.concepto }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Gastos Esta Semana:</strong>
-        </td>
-        <td colspan="1" class="text-right">
-          ${{ total_gasto_semana|floatformat:2 }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de gastos por mes -->
-<div id="tabla_mes" class="tabla-pagos" style="display: none">
-  <h5>Gastos Este Mes</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Promotor</th>
-        <th>Monto</th>
-        <th>Fecha</th>
-        <th>Concepto</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for gasto in gastos_mes_detalles %}
-      <tr>
-        <td>{{ gasto.usuario__username }}</td>
-        <td>${{ gasto.monto|floatformat:2 }}</td>
-        <td>{{ gasto.fecha_programada }}</td>
-        <td>{{ gasto.concepto }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Gastos Este Mes:</strong>
-        </td>
-        <td colspan="1" class="text-right">
-          ${{ total_gasto_mes|floatformat:2 }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de gastos totales -->
-<div id="tabla_total" class="tabla-pagos" style="display: none">
-  <h5>Gastos Totales</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Promotor</th>
-        <th>Monto</th>
-        <th>Fecha</th>
-        <th>Concepto</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for gasto in gastos_totales_detalles %}
-      <tr>
-        <td>{{ gasto.usuario__username }}</td>
-        <td>${{ gasto.monto|floatformat:2 }}</td>
-        <td>{{ gasto.fecha_programada }}</td>
-        <td>{{ gasto.concepto }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Gastos Totales:</strong>
-        </td>
-        <td colspan="1" class="text-right">
-          ${{ total_gasto_general|floatformat:2 }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-{% elif tipo == 'prestamos' %}
-
-<!-- Tabla de pagos pendientes -->
-<div id="tabla_hoy" class="tabla-pagos">
-  <!-- Tabla de pagos pendientes hoy -->
-  <h4>Pagos pendientes hoy</h4>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_hoy_detalles %}
-      <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
-        <!-- Nombre del cliente -->
-        <td>{{ pago.prestamo__tipo }}</td>
-        <!-- Tipo de préstamo -->
-        <td>{{ pago.fecha_programada }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de Pagos pendientes hoy:</strong>
-        </td>
-        <td colspan="1" class="text-right">{{ pagos_hoy}}</td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de pagos pendientes por semana -->
-<div id="tabla_semana" class="tabla-pagos" style="display: none">
-  <h5>Pagos pendientes esta semana</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_semana_detalles %}
-      <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
-        <td>{{ pago.prestamo__tipo }}</td>
-        <td>{{ pago.fecha_programada }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de pagos pendientes esta semana:</strong>
-        </td>
-        <td colspan="1" class="text-right">{{ pagos_semana }}</td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de pagos pendientes por mes -->
-<div id="tabla_mes" class="tabla-pagos" style="display: none">
-  <h5>Pagos pendientes este mes</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_mes_detalles %}
-      <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
-        <td>{{ pago.prestamo__tipo }}</td>
-        <td>{{ pago.fecha_programada }}</td>
-        <td>${{ pago.monto_pago}}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de pagos pendientes este mes:</strong>
-        </td>
-        <td colspan="1" class="text-right">{{ pagos_mes}}</td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<!-- Tabla de pagos pendientes totales -->
-<div id="tabla_total" class="tabla-pagos" style="display: none">
-  <h5>Pagos pendientes totales</h5>
-  <table class="table table-bordered table-striped table-hover">
-    <thead class="thead-dark">
-      <tr>
-        <th>Nombre Cliente</th>
-        <th>Tipo de Préstamo</th>
-        <th>Fecha de Pago</th>
-        <th>Monto de Pago</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pago in pagos_totales_detalles %}
-      <tr>
-        <td>{{ pago.prestamo__cliente__nombre }}</td>
-        <td>{{ pago.prestamo__tipo }}</td>
-        <td>{{ pago.fecha_programada }}</td>
-        <td>${{ pago.monto_pago|floatformat:2 }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-info">
-        <td colspan="3" class="text-right">
-          <strong>Total de pagos pendientes totales:</strong>
-        </td>
-        <td colspan="1" class="text-right">{{ pagos_totales }}</td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-{% endif %}
 
 <script>
-  // Función para mostrar la tabla correspondiente al botón seleccionado
-  function mostrarTabla(tipo) {
-    // Ocultar todas las tablas
-    document.getElementById("tabla_hoy").style.display = "none";
-    document.getElementById("tabla_semana").style.display = "none";
-    document.getElementById("tabla_mes").style.display = "none";
-    document.getElementById("tabla_total").style.display = "none";
-
-    // Mostrar la tabla seleccionada
-    document.getElementById("tabla_" + tipo).style.display = "block";
+  function mostrarPeriodo(periodo) {
+    document.querySelectorAll('.dc-tabla-periodo').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.dc-kpi').forEach(el => el.classList.remove('is-active'));
+    const tabla = document.getElementById('dc-tabla-' + periodo);
+    if (tabla) tabla.style.display = 'block';
+    const kpi = document.querySelector('.dc-kpi[data-periodo="' + periodo + '"]');
+    if (kpi) kpi.classList.add('is-active');
   }
+  document.querySelectorAll('.dc-kpi').forEach(btn => {
+    btn.addEventListener('click', () => mostrarPeriodo(btn.dataset.periodo));
+  });
 </script>
+
+<style>
+.dc-wizard {
+  --dc-bg: #f4f6f8;
+  --dc-surface: #ffffff;
+  --dc-primary: #12384f;
+  --dc-primary-dark: #0b2635;
+  --dc-accent: #c7752b;
+  --dc-success: #1f7a4d;
+  --dc-danger: #b3261e;
+  --dc-text: #151a1e;
+  --dc-text-muted: #65748b;
+  --dc-border: #e1e5ea;
+  --dc-radius: 14px;
+  --dc-radius-sm: 8px;
+  font-family: 'Inter', sans-serif;
+  color: var(--dc-text);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.dc-wizard h1, .dc-wizard h2 { font-family: 'Manrope', sans-serif; margin: 0; }
+.dc-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dc-accent); margin-bottom: .3rem; }
+.dc-head h1 { font-size: 1.6rem; font-weight: 800; color: var(--dc-primary-dark); }
+.dc-sub { color: var(--dc-text-muted); margin: .3rem 0 1.25rem; }
+
+.dc-tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.25rem; border-bottom: 1px solid var(--dc-border); }
+.dc-tab { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1rem; font-size: .88rem; font-weight: 600; color: var(--dc-text-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.dc-tab:hover { color: var(--dc-primary-dark); }
+.dc-tab.is-active { color: var(--dc-primary-dark); border-bottom-color: var(--dc-primary); }
+
+.dc-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-bottom: 1.5rem; }
+@media (max-width: 640px) { .dc-kpis { grid-template-columns: repeat(2, 1fr); } }
+.dc-kpi { display: flex; flex-direction: column; align-items: flex-start; gap: .2rem; background: var(--dc-surface); border: 1.5px solid var(--dc-border); border-radius: var(--dc-radius-sm); padding: .75rem .9rem; cursor: pointer; text-align: left; }
+.dc-kpi span { font-size: .74rem; font-weight: 600; color: var(--dc-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+.dc-kpi strong { font-family: 'Manrope', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--dc-text); }
+.dc-kpi small { font-size: .74rem; color: var(--dc-text-muted); }
+.dc-kpi.is-active { border-color: var(--dc-primary); background: #eaf1f5; }
+.dc-kpi.is-active strong { color: var(--dc-primary-dark); }
+
+.dc-card { background: var(--dc-surface); border: 1px solid var(--dc-border); border-radius: var(--dc-radius); padding: 1.25rem; margin-bottom: 1rem; }
+.dc-card h2 { font-size: 1rem; font-weight: 700; color: var(--dc-primary-dark); margin-bottom: .9rem; }
+
+.dc-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.dc-table { width: 100%; border-collapse: collapse; font-size: .86rem; min-width: 480px; }
+.dc-table th { text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--dc-text-muted); border-bottom: 2px solid var(--dc-border); padding: .5rem .6rem; white-space: nowrap; }
+.dc-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--dc-border); vertical-align: middle; }
+.dc-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dc-table tfoot th { border-bottom: none; border-top: 2px solid var(--dc-border); padding-top: .65rem; }
+.dc-cell-success { color: var(--dc-success); font-weight: 700; }
+.dc-cell-danger { color: var(--dc-danger); font-weight: 700; }
+.dc-empty { text-align: center; color: var(--dc-text-muted); padding: 1.75rem !important; }
+.dc-empty i { display: block; font-size: 1.3rem; margin-bottom: .3rem; }
+.dc-badge { display: inline-block; font-size: .66rem; font-weight: 700; padding: .12rem .45rem; border-radius: 5px; }
+.dc-badge-info { background: #e1eef7; color: #2f6690; }
+.dc-badge-metodo { background: #f4f6f8; color: var(--dc-text-muted); }
+</style>
 {% endblock %}

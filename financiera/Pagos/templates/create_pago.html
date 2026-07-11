@@ -1,318 +1,369 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Registrar Abono | Panel{% endblock %}
+{% block title %}Registrar abono | Panel{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6 col-md-8 col-12">
-            <!-- Tarjeta principal -->
-            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-gradient-primary text-white py-4" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
-                    <div class="text-center">
-                        <i class="fas fa-hand-holding-usd fa-2x mb-2"></i>
-                        <h3 class="mb-0 fw-bold">Registrar Abono</h3>
-                        <p class="mb-0 mt-1 small opacity-75">Cuota #{{ pago.numero_pago }}</p>
-                    </div>
-                </div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-                <div class="card-body p-4 p-lg-5">
-                    <!-- Resumen de la cuota -->
-                    <div class="bg-light p-3 rounded-3 mb-4">
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <span class="text-muted small">Monto cuota</span>
-                                <h5 class="mb-0 fw-bold text-success">${{ pago.monto_pago|floatformat:2 }}</h5>
-                            </div>
-                            <div class="col-6">
-                                <span class="text-muted small">Saldo restante</span>
-                                <h5 class="mb-0 fw-bold text-danger" id="saldoRestante">${{ pago.saldo_restante|floatformat:2 }}</h5>
-                            </div>
-                        </div>
-                    </div>
+<div class="ab-wizard">
+  <div class="ab-card">
+    <header class="ab-header">
+      <span class="ab-eyebrow">Cuota #{{ pago.numero_pago }}</span>
+      <h1>Registrar abono</h1>
+      <p class="ab-sub">
+        {% if pago.prestamo.es_grupal %}
+          <i class="fas fa-people-group"></i> Grupo {{ pago.prestamo.grupo.nombre }}
+        {% else %}
+          <i class="fas fa-user"></i> {{ cliente.nombre }}
+        {% endif %}
+      </p>
+    </header>
 
-                    <form method="post" id="formAbono" novalidate>
-                        {% csrf_token %}
-
-                        <!-- Monto recibido (abono a capital/interés) -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-money-bill-wave me-1 text-primary"></i> Monto a abonar *
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light">$</span>
-                                <input type="number" name="monto_pagado" class="form-control form-control-lg"
-                                       step="0.01" min="0.01" max="{{ pago.saldo_restante }}" required
-                                       placeholder="0.00" id="id_monto" value="">
-                            </div>
-                            <small class="text-muted">Máximo permitido: ${{ pago.saldo_restante|floatformat:2 }}</small>
-                            <div class="invalid-feedback">Ingrese un monto válido.</div>
-                        </div>
-                        
-                        {% if saldo_ahorro_cliente > 0 %}
-                        <!-- Usar ahorro disponible -->
-                        <div class="mb-4" id="ahorroContainer">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="checkUsarAhorro" name="usar_ahorro" value="1">
-                                <label class="form-check-label fw-semibold" for="checkUsarAhorro">
-                                    <i class="fas fa-piggy-bank me-1 text-warning"></i> Usar ahorro disponible para pagar
-                                </label>
-                            </div>
-                            <div id="ahorroInputGroup" style="display: none;">
-                                <label class="form-label">Monto a usar del ahorro</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light">$</span>
-                                    <input type="number" name="monto_ahorro_usar" id="id_monto_ahorro_usar" class="form-control"
-                                           step="0.01" min="0" max="{{ saldo_ahorro_cliente }}" value="0">
-                                </div>
-                                <small class="text-muted">Ahorro disponible: ${{ saldo_ahorro_cliente|floatformat:2 }}. El total pagado será (abono + ahorro usado).</small>
-                            </div>
-                        </div>
-                        {% endif %}
-
-
-                        <!-- NUEVO CAMPO: Ahorro (independiente) -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-piggy-bank me-1 text-success"></i> Ahorro (opcional)
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light">$</span>
-                                <input type="number" name="ahorro" class="form-control form-control-lg"
-                                       step="0.01" min="0" value="0" placeholder="0.00">
-                            </div>
-                            <small class="text-muted">Este monto no afecta el saldo de la cuota, se registra como ahorro del cliente.</small>
-                        </div>
-
-                        <!-- Método de pago -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-credit-card me-1 text-info"></i> Método de pago *
-                            </label>
-                            <select name="metodo_pago" class="form-select form-select-lg" required>
-                                <option value="">Seleccione método</option>
-                                <option value="EFECTIVO">💵 Efectivo</option>
-                                <option value="TARJETA">💳 Tarjeta</option>
-                                <option value="TRANSFERENCIA">🏦 Transferencia</option>
-                                <option value="CHEQUE">📄 Cheque</option>
-                            </select>
-                        </div>
-
-                        <!-- Comentario -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-comment-dots me-1 text-secondary"></i> Comentario (opcional)
-                            </label>
-                            <textarea name="comentarios" class="form-control" rows="2" placeholder="Notas adicionales..."></textarea>
-                        </div>
-
-                        <!-- Campo oculto para detectar pago rápido -->
-                        <input type="hidden" name="pago_rapido" id="pagoRapido" value="0">
-
-                        <!-- Botones -->
-                        <div class="d-flex gap-3 mt-4 flex-wrap">
-                            <a href="{% url 'detalle_pago' pago.prestamo.id %}" class="btn btn-outline-secondary btn-lg flex-fill">
-                                <i class="fas fa-arrow-left me-1"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
-                                <i class="fas fa-save me-1"></i> Guardar abono
-                            </button>
-                        </div>
-
-                        <!-- Botón de pago rápido, solo si hay saldo pendiente -->
-                        {% if pago.saldo_restante > 0 %}
-                        <div class="mt-3 text-center">
-                            <button type="button" class="btn btn-success btn-lg w-100" id="btnPagoRapido">
-    <i class="fas fa-bolt me-2"></i> Pago rápido (completo)
-</button>
-                        </div>
-                        {% endif %}
-                    </form>
-                </div>
-            </div>
-
-            <!-- Tarjeta de información adicional -->
-            <div class="card mt-4 border-0 shadow-sm rounded-3">
-                <div class="card-body text-center text-muted small">
-                    <i class="fas fa-info-circle me-1"></i>
-                    El <strong>ahorro</strong> se guarda por separado y no reduce el saldo de la cuota.
-                    Si el abono cubre toda la cuota, la cuota pasará a estado <strong>Pagado</strong>.
-                </div>
-            </div>
+    <!-- ===================== RESUMEN + PROGRESO ===================== -->
+    <div class="ab-resumen">
+      <div class="ab-resumen-row">
+        <div>
+          <span>Monto cuota</span>
+          <strong>${{ pago.monto_pago|floatformat:2 }}</strong>
         </div>
+        <div>
+          <span>Saldo restante</span>
+          <strong class="ab-danger" id="ab-saldo-actual">${{ pago.saldo_restante|floatformat:2 }}</strong>
+        </div>
+      </div>
+      <div class="ab-progress">
+        <div class="ab-progress-bar" style="width: {% widthratio total_abonado pago.monto_pago 100 %}%;"></div>
+      </div>
+      <p class="ab-progress-label">
+        ${{ total_abonado|floatformat:2 }} abonado de ${{ pago.monto_pago|floatformat:2 }}
+      </p>
     </div>
+
+    <form method="post" id="formAbono" novalidate>
+      {% csrf_token %}
+
+      <!-- Monto a abonar -->
+      <div class="ab-field">
+        <label for="id_monto"><i class="fas fa-money-bill-wave"></i> Monto a abonar <em>*</em></label>
+        <div class="ab-input-affix">
+          <span>$</span>
+          <input type="number" name="monto_pagado" id="id_monto" step="0.01" min="0.01"
+                 max="{{ pago.saldo_restante }}" required placeholder="0.00">
+        </div>
+        <small>Máximo permitido: ${{ pago.saldo_restante|floatformat:2 }}</small>
+      </div>
+
+      {% if cliente and saldo_ahorro_cliente > 0 %}
+      <!-- Usar ahorro disponible -->
+      <div class="ab-field ab-toggle-field">
+        <label class="ab-checkbox">
+          <input type="checkbox" id="checkUsarAhorro" name="usar_ahorro" value="1">
+          <span><i class="fas fa-piggy-bank"></i> Usar ahorro disponible para pagar</span>
+        </label>
+        <div id="ahorroInputGroup" class="ab-subfield" style="display:none;">
+          <label for="id_monto_ahorro_usar">Monto a usar del ahorro</label>
+          <div class="ab-input-affix">
+            <span>$</span>
+            <input type="number" name="monto_ahorro_usar" id="id_monto_ahorro_usar" step="0.01" min="0"
+                   max="{{ saldo_ahorro_cliente }}" value="0">
+          </div>
+          <small>Ahorro disponible: ${{ saldo_ahorro_cliente|floatformat:2 }}</small>
+        </div>
+      </div>
+      {% elif pago.prestamo.es_grupal %}
+      <div class="ab-note">
+        <i class="fas fa-circle-info"></i> El ahorro individual no aplica en préstamos grupales.
+      </div>
+      {% endif %}
+
+      <!-- Ahorro independiente -->
+      <div class="ab-field">
+        <label for="id_ahorro"><i class="fas fa-piggy-bank"></i> Ahorro (opcional)</label>
+        <div class="ab-input-affix">
+          <span>$</span>
+          <input type="number" name="ahorro" id="id_ahorro" step="0.01" min="0" value="0" placeholder="0.00">
+        </div>
+        <small>No afecta el saldo de la cuota; se registra como ahorro del cliente.</small>
+      </div>
+
+      <!-- Método de pago -->
+      <div class="ab-field">
+        <label for="id_metodo"><i class="fas fa-credit-card"></i> Método de pago <em>*</em></label>
+        <select name="metodo_pago" id="id_metodo" class="ab-select" required>
+          <option value="">Seleccione método</option>
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="TARJETA">Tarjeta</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+          <option value="CHEQUE">Cheque</option>
+        </select>
+      </div>
+
+      <!-- Comentario -->
+      <div class="ab-field">
+        <label for="id_comentarios"><i class="fas fa-comment-dots"></i> Comentario (opcional)</label>
+        <textarea name="comentarios" id="id_comentarios" rows="2" placeholder="Notas adicionales..."></textarea>
+      </div>
+
+      <!-- Vista previa en vivo -->
+      <div class="ab-preview" id="ab-preview" style="display:none;">
+        <i class="fas fa-calculator"></i>
+        Después de este abono, el saldo quedará en <strong id="ab-preview-saldo">$0.00</strong>
+      </div>
+
+      <!-- Acciones (desktop) -->
+      <div class="ab-actions">
+        <a href="{% url 'detalle_pago' pago.prestamo.id %}" class="ab-btn ab-btn-ghost">
+          <i class="fas fa-arrow-left"></i> Cancelar
+        </a>
+        <button type="submit" class="ab-btn ab-btn-primary">
+          <i class="fas fa-save"></i> Guardar abono
+        </button>
+      </div>
+
+      {% if pago.saldo_restante > 0 %}
+      <button type="button" class="ab-btn ab-btn-success ab-btn-block" id="btnPagoRapido">
+        <i class="fas fa-bolt"></i> Pago rápido (saldo completo)
+      </button>
+      {% endif %}
+    </form>
+  </div>
+
+  <p class="ab-footnote">
+    <i class="fas fa-circle-info"></i> El ahorro se guarda por separado y no reduce el saldo de la cuota.
+    Si el abono cubre toda la cuota, pasará a estado <strong>Pagado</strong>.
+  </p>
 </div>
 
-<!-- Modal de confirmación para pago rápido (compatible Bootstrap 4/5) -->
-<div class="modal fade" id="modalPagoRapido" tabindex="-1" aria-labelledby="modalPagoRapidoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0 rounded-4">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title fw-bold" id="modalPagoRapidoLabel">
-                    <i class="fas fa-bolt me-2"></i> Confirmar pago rápido
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="fs-5">¿Estás seguro de que deseas pagar <strong>el saldo completo</strong> de esta cuota?</p>
-                <div class="alert alert-light text-center fs-4 fw-bold" style="background-color: #f8f9fc;">
-                    ${{ pago.saldo_restante|floatformat:2 }}
-                </div>
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-check-circle text-success me-2"></i> Método de pago: <strong>Efectivo</strong></li>
-                    <li><i class="fas fa-piggy-bank me-2 text-secondary"></i> Ahorro: <strong>$0.00</strong></li>
-                    <li><i class="fas fa-comment me-2 text-secondary"></i> Sin comentarios</li>
-                </ul>
-                <p class="text-muted small">Esta acción registrará un abono por el total adeudado. No podrás deshacerla.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="confirmarPagoRapido">
-                    <i class="fas fa-check-circle me-1"></i> Sí, pagar total
-                </button>
-            </div>
-        </div>
-    </div>
+<!-- Barra fija de acción para móvil -->
+<div class="ab-mobile-bar">
+  <a href="{% url 'detalle_pago' pago.prestamo.id %}" class="ab-btn ab-btn-ghost">Cancelar</a>
+  <button type="submit" form="formAbono" class="ab-btn ab-btn-primary ab-btn-block">
+    <i class="fas fa-save"></i> Guardar abono
+  </button>
 </div>
 
+<!-- Modal de confirmación para pago rápido -->
+<div class="ab-modal-backdrop" id="modalPagoRapido">
+  <div class="ab-modal">
+    <header>
+      <i class="fas fa-bolt"></i>
+      <h3>Confirmar pago rápido</h3>
+    </header>
+    <p>¿Deseas pagar el <strong>saldo completo</strong> de esta cuota?</p>
+    <div class="ab-modal-monto">${{ pago.saldo_restante|floatformat:2 }}</div>
+    <ul class="ab-modal-list">
+      <li><i class="fas fa-check-circle"></i> Método de pago: <strong>Efectivo</strong></li>
+      <li><i class="fas fa-piggy-bank"></i> Ahorro: <strong>$0.00</strong></li>
+    </ul>
+    <div class="ab-modal-actions">
+      <button type="button" class="ab-btn ab-btn-ghost" id="cancelarPagoRapido">Cancelar</button>
+      <button type="button" class="ab-btn ab-btn-success" id="confirmarPagoRapido">
+        <i class="fas fa-check-circle"></i> Sí, pagar total
+      </button>
+    </div>
+  </div>
+</div>
 
-<!-- Estilos adicionales (igual que antes) -->
-<style>
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-    }
-    .form-control-lg, .form-select-lg {
-        font-size: 1rem;
-        padding: 0.6rem 1rem;
-    }
-    .card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 1rem 2rem rgba(0,0,0,0.1);
-    }
-    input:focus, select:focus, textarea:focus {
-        border-color: #4e73df;
-        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
-    }
-    @media (max-width: 576px) {
-        .card-body {
-            padding: 1.5rem !important;
-        }
-        .btn-lg {
-            font-size: 0.9rem;
-        }
-    }
-</style>
-
-<!-- Scripts de validación y pago rápido -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('formAbono');
-        const montoInput = document.getElementById('id_monto');
-        const maxMonto = parseFloat(montoInput.getAttribute('max'));
-        const checkAhorro = document.getElementById('checkUsarAhorro');
-        const ahorroDiv = document.getElementById('ahorroInputGroup');
-        const montoAhorroInput = document.getElementById('id_monto_ahorro_usar');
-        const saldoRestante = parseFloat('{{ pago.saldo_restante|default:"0" }}');
-        const ahorroDisponible = parseFloat('{{ saldo_ahorro_cliente|default:"0" }}');
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('formAbono');
+  const montoInput = document.getElementById('id_monto');
+  const maxMonto = parseFloat(montoInput.getAttribute('max')) || 0;
+  const checkAhorro = document.getElementById('checkUsarAhorro');
+  const ahorroDiv = document.getElementById('ahorroInputGroup');
+  const montoAhorroInput = document.getElementById('id_monto_ahorro_usar');
+  const saldoRestante = parseFloat('{{ pago.saldo_restante|default:"0"|stringformat:"f" }}') || 0;
+  const ahorroDisponible = parseFloat('{{ saldo_ahorro_cliente|default:"0"|stringformat:"f" }}') || 0;
+  const previewBox = document.getElementById('ab-preview');
+  const previewSaldo = document.getElementById('ab-preview-saldo');
 
-        // Mostrar/ocultar campo de monto ahorro según checkbox
-        if (checkAhorro) {
-            checkAhorro.addEventListener('change', function() {
-                ahorroDiv.style.display = this.checked ? 'block' : 'none';
-                if (!this.checked) {
-                    montoAhorroInput.value = 0;
-                }
-            });
-        }
+  const formatoMoneda = (v) => v.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
-        // Validación al enviar el formulario
-        form.addEventListener('submit', function(event) {
-            const esPagoRapido = document.getElementById('pagoRapido').value === '1';
-            let montoAbono = parseFloat(montoInput.value) || 0;
-            let montoAhorro = parseFloat(montoAhorroInput.value) || 0;
-            const usarAhorro = checkAhorro && checkAhorro.checked;
-
-            if (!esPagoRapido) {
-                // Validar abono normal
-                if (montoAbono <= 0 && !(usarAhorro && montoAhorro > 0)) {
-                    alert("Debes ingresar un monto a abonar mayor a 0, o usar ahorro.");
-                    event.preventDefault();
-                    return false;
-                }
-                if (montoAbono > maxMonto) {
-                    alert(`El monto en efectivo no puede superar $${maxMonto.toFixed(2)}`);
-                    event.preventDefault();
-                    return false;
-                }
-                // Validar ahorro
-                if (usarAhorro && montoAhorro > 0) {
-                    if (montoAhorro > ahorroDisponible) {
-                        alert(`El ahorro a usar no puede superar $${ahorroDisponible.toFixed(2)}.`);
-                        event.preventDefault();
-                        return false;
-                    }
-                    if (montoAbono + montoAhorro > saldoRestante) {
-                        alert(`La suma del abono ($${montoAbono}) y ahorro usado ($${montoAhorro}) supera el saldo de la cuota ($${saldoRestante}).`);
-                        event.preventDefault();
-                        return false;
-                    }
-                }
-            }
-
-            // Si llegamos aquí, todo bien
-            form.classList.add('was-validated');
-        });
-
-        // Confirmación de pago rápido
-        const confirmarBtn = document.getElementById('confirmarPagoRapido');
-        if (confirmarBtn) {
-            confirmarBtn.addEventListener('click', function() {
-                document.getElementById('pagoRapido').value = '1';
-                montoInput.value = '';
-                document.querySelector('select[name="metodo_pago"]').value = 'EFECTIVO';
-                document.querySelector('input[name="ahorro"]').value = '0';
-                document.querySelector('textarea[name="comentarios"]').value = '';
-                // Forzar cierre del modal (si se abrió con Bootstrap)
-                $('#modalPagoRapido').modal('hide');
-                form.submit();
-            });
-        }
-
-        // Deshabilitar botón rápido si saldo es 0
-        const btnRapido = document.getElementById('btnPagoRapido');
-        if (saldoRestante <= 0 && btnRapido) {
-            btnRapido.disabled = true;
-            btnRapido.classList.add('btn-secondary');
-            btnRapido.classList.remove('btn-success');
-            btnRapido.innerHTML = '<i class="fas fa-check-circle me-2"></i> Cuota ya pagada';
-        }
-
-        // Abrir modal manualmente (compatible BS4/5)
-        const btnAbrirModal = document.getElementById('btnPagoRapido');
-        if (btnAbrirModal && saldoRestante > 0) {
-            btnAbrirModal.addEventListener('click', function(e) {
-                e.preventDefault();
-                var modal = document.getElementById('modalPagoRapido');
-                if (modal) {
-                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                        new bootstrap.Modal(modal).show();
-                    } else if (typeof $ !== 'undefined' && $.fn.modal) {
-                        $(modal).modal('show');
-                    } else {
-                        modal.style.display = 'block';
-                        modal.classList.add('show');
-                        document.body.classList.add('modal-open');
-                    }
-                }
-            });
-        }
+  if (checkAhorro) {
+    checkAhorro.addEventListener('change', function () {
+      ahorroDiv.style.display = this.checked ? 'block' : 'none';
+      if (!this.checked) montoAhorroInput.value = 0;
+      actualizarPreview();
     });
+  }
+
+  function actualizarPreview() {
+    const montoAbono = parseFloat(montoInput.value) || 0;
+    const montoAhorro = (checkAhorro && checkAhorro.checked) ? (parseFloat(montoAhorroInput.value) || 0) : 0;
+    const total = montoAbono + montoAhorro;
+
+    if (total <= 0) {
+      previewBox.style.display = 'none';
+      return;
+    }
+    const nuevoSaldo = Math.max(saldoRestante - total, 0);
+    previewSaldo.textContent = formatoMoneda(nuevoSaldo);
+    previewBox.style.display = 'flex';
+  }
+
+  montoInput.addEventListener('input', actualizarPreview);
+  if (montoAhorroInput) montoAhorroInput.addEventListener('input', actualizarPreview);
+
+  form.addEventListener('submit', function (event) {
+    const montoAbono = parseFloat(montoInput.value) || 0;
+    const montoAhorro = (checkAhorro && checkAhorro.checked) ? (parseFloat(montoAhorroInput.value) || 0) : 0;
+    const usarAhorro = checkAhorro && checkAhorro.checked;
+
+    if (montoAbono <= 0 && !(usarAhorro && montoAhorro > 0)) {
+      alert('Debes ingresar un monto a abonar mayor a 0, o usar ahorro.');
+      event.preventDefault();
+      return false;
+    }
+    if (montoAbono > maxMonto) {
+      alert(`El monto en efectivo no puede superar $${maxMonto.toFixed(2)}`);
+      event.preventDefault();
+      return false;
+    }
+    if (usarAhorro && montoAhorro > 0) {
+      if (montoAhorro > ahorroDisponible) {
+        alert(`El ahorro a usar no puede superar $${ahorroDisponible.toFixed(2)}.`);
+        event.preventDefault();
+        return false;
+      }
+      if (montoAbono + montoAhorro > saldoRestante) {
+        alert(`La suma del abono ($${montoAbono}) y ahorro usado ($${montoAhorro}) supera el saldo de la cuota ($${saldoRestante}).`);
+        event.preventDefault();
+        return false;
+      }
+    }
+  });
+
+  // ---------- Pago rápido: llena el formulario y pide confirmación ----------
+  const btnRapido = document.getElementById('btnPagoRapido');
+  const modal = document.getElementById('modalPagoRapido');
+
+  if (saldoRestante <= 0 && btnRapido) {
+    btnRapido.disabled = true;
+    btnRapido.classList.remove('ab-btn-success');
+    btnRapido.classList.add('ab-btn-ghost');
+    btnRapido.innerHTML = '<i class="fas fa-check-circle"></i> Cuota ya pagada';
+  }
+
+  if (btnRapido && saldoRestante > 0) {
+    btnRapido.addEventListener('click', () => modal.classList.add('is-open'));
+  }
+  document.getElementById('cancelarPagoRapido')?.addEventListener('click', () => modal.classList.remove('is-open'));
+  modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('is-open'); });
+
+  document.getElementById('confirmarPagoRapido')?.addEventListener('click', function () {
+    montoInput.value = saldoRestante.toFixed(2);
+    document.getElementById('id_metodo').value = 'EFECTIVO';
+    document.getElementById('id_ahorro').value = '0';
+    document.getElementById('id_comentarios').value = '';
+    if (checkAhorro) { checkAhorro.checked = false; ahorroDiv.style.display = 'none'; }
+    modal.classList.remove('is-open');
+    form.submit();
+  });
+});
 </script>
 
+<style>
+.ab-wizard {
+  --ab-bg: #f4f6f8;
+  --ab-surface: #ffffff;
+  --ab-primary: #12384f;
+  --ab-primary-dark: #0b2635;
+  --ab-accent: #c7752b;
+  --ab-success: #1f7a4d;
+  --ab-danger: #b3261e;
+  --ab-text: #151a1e;
+  --ab-text-muted: #65748b;
+  --ab-border: #e1e5ea;
+  --ab-radius: 16px;
+  --ab-radius-sm: 8px;
+  font-family: 'Inter', sans-serif;
+  color: var(--ab-text);
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.ab-wizard h1 { font-family: 'Manrope', sans-serif; margin: 0; }
+.ab-card { background: var(--ab-surface); border: 1px solid var(--ab-border); border-radius: var(--ab-radius); padding: 1.5rem; }
+.ab-header { text-align: center; margin-bottom: 1.25rem; }
+.ab-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ab-accent); margin-bottom: .3rem; }
+.ab-header h1 { font-size: 1.4rem; font-weight: 800; color: var(--ab-primary-dark); }
+.ab-sub { color: var(--ab-text-muted); margin: .35rem 0 0; font-size: .9rem; }
+
+.ab-resumen { background: #f8f9fb; border-radius: var(--ab-radius-sm); padding: 1rem 1.1rem; margin-bottom: 1.5rem; }
+.ab-resumen-row { display: flex; justify-content: space-between; margin-bottom: .7rem; }
+.ab-resumen-row div { display: flex; flex-direction: column; }
+.ab-resumen-row span { font-size: .72rem; color: var(--ab-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+.ab-resumen-row strong { font-family: 'Manrope', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--ab-success); }
+.ab-resumen-row div:last-child { align-items: flex-end; }
+.ab-danger { color: var(--ab-danger) !important; }
+.ab-progress { height: 8px; border-radius: 5px; background: var(--ab-border); overflow: hidden; }
+.ab-progress-bar { height: 100%; background: var(--ab-success); transition: width .2s; }
+.ab-progress-label { font-size: .74rem; color: var(--ab-text-muted); margin: .4rem 0 0; }
+
+.ab-field { margin-bottom: 1.1rem; }
+.ab-field label { display: flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 600; margin-bottom: .4rem; color: var(--ab-text); }
+.ab-field label em { color: var(--ab-danger); font-style: normal; }
+.ab-input-affix { display: flex; align-items: center; border: 1px solid var(--ab-border); border-radius: var(--ab-radius-sm); overflow: hidden; }
+.ab-input-affix span { background: #f4f6f8; color: var(--ab-text-muted); padding: .65rem .7rem; font-size: .9rem; border-right: 1px solid var(--ab-border); }
+.ab-input-affix input { border: none; flex: 1; padding: .65rem .7rem; font-size: 1rem; min-width: 0; }
+.ab-input-affix input:focus { outline: none; }
+.ab-select, textarea { width: 100%; border: 1px solid var(--ab-border); border-radius: var(--ab-radius-sm); padding: .65rem .75rem; font-size: .95rem; font-family: inherit; }
+.ab-select:focus, textarea:focus, .ab-input-affix:focus-within { outline: none; border-color: var(--ab-primary); box-shadow: 0 0 0 3px rgba(18,56,79,.12); }
+.ab-field small { display: block; color: var(--ab-text-muted); font-size: .76rem; margin-top: .3rem; }
+
+.ab-toggle-field { background: #fbf6f0; border: 1px solid #f0e0cd; border-radius: var(--ab-radius-sm); padding: .9rem 1rem; }
+.ab-checkbox { display: flex; align-items: center; gap: .55rem; cursor: pointer; font-weight: 600; font-size: .88rem; margin: 0; }
+.ab-checkbox input { width: 18px; height: 18px; }
+.ab-subfield { margin-top: .8rem; padding-top: .8rem; border-top: 1px dashed #e6d3ba; }
+.ab-note { background: #eef3f8; color: var(--ab-primary); border: 1px solid #d3e0ea; border-radius: var(--ab-radius-sm); padding: .7rem .9rem; font-size: .84rem; margin-bottom: 1.1rem; }
+
+.ab-preview { display: flex; align-items: center; gap: .5rem; background: #e7f5ee; color: var(--ab-success); border-radius: var(--ab-radius-sm); padding: .7rem .9rem; font-size: .86rem; margin-bottom: 1.25rem; }
+.ab-preview strong { font-family: 'Manrope', sans-serif; }
+
+.ab-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: var(--ab-radius-sm); padding: .75rem 1.3rem; font-weight: 700; font-size: .92rem; text-decoration: none; border: none; cursor: pointer; }
+.ab-btn-primary { background: var(--ab-primary); color: #fff; }
+.ab-btn-primary:hover { background: var(--ab-primary-dark); color: #fff; }
+.ab-btn-ghost { background: transparent; color: var(--ab-text-muted); border: 1px solid var(--ab-border); }
+.ab-btn-ghost:hover { color: var(--ab-text); border-color: var(--ab-text-muted); }
+.ab-btn-success { background: var(--ab-success); color: #fff; }
+.ab-btn-success:hover { background: #185f3d; color: #fff; }
+.ab-btn-block { width: 100%; }
+.ab-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.ab-actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
+.ab-actions .ab-btn { flex: 1; }
+#btnPagoRapido { margin-top: .75rem; }
+
+.ab-footnote { text-align: center; color: var(--ab-text-muted); font-size: .8rem; margin-top: 1.25rem; }
+.ab-footnote strong { color: var(--ab-text); }
+
+/* Barra fija de acción en móvil */
+.ab-mobile-bar { display: none; }
+@media (max-width: 576px) {
+  .ab-wizard { padding-bottom: 6rem; }
+  .ab-actions { display: none; }
+  .ab-mobile-bar {
+    display: flex; gap: .6rem; position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid var(--ab-border); padding: .75rem 1rem;
+    box-shadow: 0 -4px 12px rgba(0,0,0,.06); z-index: 40;
+  }
+  .ab-mobile-bar .ab-btn-ghost { flex: 0 0 auto; }
+}
+
+/* Modal */
+.ab-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(11,38,53,.5); align-items: center; justify-content: center; z-index: 60; padding: 1rem; }
+.ab-modal-backdrop.is-open { display: flex; }
+.ab-modal { background: #fff; border-radius: var(--ab-radius); padding: 1.5rem; max-width: 360px; width: 100%; }
+.ab-modal header { display: flex; align-items: center; gap: .6rem; color: var(--ab-success); margin-bottom: .75rem; }
+.ab-modal header h3 { font-family: 'Manrope', sans-serif; font-size: 1.05rem; margin: 0; }
+.ab-modal p { font-size: .9rem; color: var(--ab-text); }
+.ab-modal-monto { text-align: center; font-family: 'Manrope', sans-serif; font-size: 1.6rem; font-weight: 800; background: #f8f9fb; border-radius: var(--ab-radius-sm); padding: .75rem; margin: .75rem 0; }
+.ab-modal-list { list-style: none; padding: 0; margin: 0 0 1rem; font-size: .85rem; color: var(--ab-text-muted); }
+.ab-modal-list li { display: flex; align-items: center; gap: .5rem; padding: .25rem 0; }
+.ab-modal-list i { color: var(--ab-success); }
+.ab-modal-actions { display: flex; gap: .6rem; }
+.ab-modal-actions .ab-btn { flex: 1; }
+</style>
 {% endblock %}

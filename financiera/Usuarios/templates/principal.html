@@ -1,270 +1,183 @@
-{% extends 'base.html' %} 
-{% load custom_filters %} 
-{% load static %} 
-{% block title %}Información Operacional | Panel{% endblock %} 
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}Información Operacional | Panel{% endblock %}
+
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="pr-wizard">
+  <div class="pr-head">
+    <div>
+      <span class="pr-eyebrow">{% if user.is_staff %}Panel administrativo{% else %}Tu resumen{% endif %}</span>
+      <h1>
+        {% if user.is_staff %}
+          Información operacional
+        {% else %}
+          Hola, {{ user.get_full_name|default:user.username }}
+        {% endif %}
+      </h1>
+      <p class="pr-sub">
+        {% if user.is_staff %}
+          Estado general de cobranza, gastos y cartera al día de hoy.
+        {% else %}
+          Esto es lo que llevas hoy.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  {% if user.is_staff %}
+  <!-- ===================== KPIs GLOBALES (solo admin) ===================== -->
+  <div class="pr-kpis">
+    <a href="{% url 'reporte_diario' %}" class="pr-kpi pr-kpi-primary">
+      <span class="pr-kpi-icon"><i class="fas fa-dollar-sign"></i></span>
+      <span class="pr-kpi-label">Total recaudado</span>
+      <strong>${{ total_recaudado|floatformat:2|default:"0.00" }}</strong>
+    </a>
+    <div class="pr-kpi pr-kpi-success">
+      <span class="pr-kpi-icon"><i class="fas fa-receipt"></i></span>
+      <span class="pr-kpi-label">Total gastos</span>
+      <strong>${{ total_gastos|floatformat:2|default:"0.00" }}</strong>
+    </div>
+    <div class="pr-kpi pr-kpi-info">
+      <span class="pr-kpi-icon"><i class="fas fa-clock"></i></span>
+      <span class="pr-kpi-label">Cuotas pendientes hoy</span>
+      <strong>{{ total_prestamos_hoy|default:"0" }}</strong>
+    </div>
+    <div class="pr-kpi pr-kpi-warning">
+      <span class="pr-kpi-icon"><i class="fas fa-triangle-exclamation"></i></span>
+      <span class="pr-kpi-label">Morosidad</span>
+      <strong>{{ morosidad|floatformat:1 }}%</strong>
+    </div>
+    <a href="{% url 'reporte_diario' %}" class="pr-kpi pr-kpi-neutral">
+      <span class="pr-kpi-icon"><i class="fas fa-users"></i></span>
+      <span class="pr-kpi-label">Comunidades</span>
+      <strong>{{ total_comunidades|default:"0" }}</strong>
+    </a>
+  </div>
+  {% endif %}
+  <div class="pr-kpis">
+    <a href="{% url 'reporte_diario' %}" class="pr-kpi pr-kpi-neutral">
+      <span class="pr-kpi-icon"><i class="fas fa-users"></i></span>
+      <span class="pr-kpi-label">Comunidades</span>
+      <strong>{{ total_comunidades|default:"0" }}</strong>
+    </a>
+  </div>
+
+  <!-- ===================== TARJETAS POR COBRADOR ===================== -->
+  {% if mensaje %}
+  <div class="pr-alert">
+    <i class="fas fa-circle-info"></i> {{ mensaje }}
+  </div>
+  {% elif not totales_cobradores %}
+  <div class="pr-empty-state">
+    <i class="fas fa-user-clock"></i>
+    <p>No hay actividad de cobranza registrada todavía hoy.</p>
+  </div>
+  {% else %}
+  <div class="pr-cobradores-grid">
+    {% for cobrador, total in totales_cobradores.items %}
+    {% with gasto=totales_gastos|get_item:cobrador pendientes=prestamos_diarios|get_item:cobrador atrasadas=cuotas_atrasadas_por_cobrador|get_item:cobrador %}
+    <div class="pr-cobrador-card">
+      <div class="pr-cobrador-head">
+        <span class="pr-avatar">{{ cobrador|slice:":1"|upper }}</span>
+        <div>
+          <strong>{{ cobrador }}</strong>
+          <small>{% if atrasadas %}<span class="pr-tag-danger">{{ atrasadas }} cuota{{ atrasadas|pluralize }} atrasada{{ atrasadas|pluralize }}</span>{% else %}<span class="pr-tag-ok">Al corriente</span>{% endif %}</small>
+        </div>
+      </div>
+
+      <div class="pr-cobrador-stats">
+        <a href="{% url 'detalles_cobrador' cobrador %}?tipo=pagos" class="pr-stat">
+          <span class="pr-stat-label"><i class="fas fa-hand-holding-usd"></i> Recaudado neto hoy</span>
+          <strong class="{% if total < 0 %}pr-neg{% else %}pr-pos{% endif %}">${{ total|floatformat:2 }}</strong>
+        </a>
+        <a href="{% url 'detalles_cobrador' cobrador %}?tipo=gastos" class="pr-stat">
+          <span class="pr-stat-label"><i class="fas fa-receipt"></i> Gastos hoy</span>
+          <strong>${{ gasto|default:0|floatformat:2 }}</strong>
+        </a>
+        <a href="{% url 'detalles_cobrador' cobrador %}?tipo=prestamos" class="pr-stat">
+          <span class="pr-stat-label"><i class="fas fa-calendar-day" ></i> Cuotas pendientes hoy</span>
+          <strong>{{ pendientes|default:"0" }}</strong>
+        </a>
+      </div>
+
+      <a href="{% url 'detalles_cobrador' cobrador %}?tipo=pagos" class="pr-cobrador-link">
+        Ver detalle completo <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
 <style>
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-  }
-  .bg-gradient-success {
-    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
-  }
-  .bg-gradient-info {
-    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
-  }
-  .stat-card {
-    transition:
-      transform 0.2s,
-      box-shadow 0.2s;
-    border-left: 4px solid;
-    border-radius: 0.75rem;
-  }
-  .stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
-  }
-  .transition-hover {
-    transition: all 0.2s ease-in-out;
-  }
-  .transition-hover:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  }
-  .rounded-circle {
-    border-radius: 50% !important;
-  }
-  .bg-gradient {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-  }
-  .bg-success.bg-gradient {
-    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
-  }
-  .bg-info.bg-gradient {
-    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
-  }
-  @media (max-width: 768px) {
-    .stat-card .h5 {
-      font-size: 1rem;
-    }
-  }
+.pr-wizard {
+  --pr-bg: #f4f6f8;
+  --pr-surface: #ffffff;
+  --pr-primary: #12384f;
+  --pr-primary-dark: #0b2635;
+  --pr-accent: #c7752b;
+  --pr-success: #1f7a4d;
+  --pr-danger: #b3261e;
+  --pr-warning: #c7752b;
+  --pr-text: #151a1e;
+  --pr-text-muted: #65748b;
+  --pr-border: #e1e5ea;
+  --pr-radius: 14px;
+  --pr-radius-sm: 8px;
+  font-family: 'Inter', sans-serif;
+  color: var(--pr-text);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.pr-wizard h1 { font-family: 'Manrope', sans-serif; margin: 0; }
+.pr-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pr-accent); margin-bottom: .3rem; }
+.pr-head h1 { font-size: 1.55rem; font-weight: 800; color: var(--pr-primary-dark); }
+.pr-sub { color: var(--pr-text-muted); margin: .3rem 0 1.5rem; }
+
+.pr-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: .85rem; margin-bottom: 2rem; }
+@media (max-width: 992px) { .pr-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .pr-kpis { grid-template-columns: repeat(2, 1fr); } }
+.pr-kpi { display: flex; flex-direction: column; gap: .3rem; background: var(--pr-surface); border: 1px solid var(--pr-border); border-left: 4px solid var(--pr-border); border-radius: var(--pr-radius-sm); padding: 1rem 1.1rem; text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; }
+.pr-kpi:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(11,38,53,.08); color: inherit; }
+.pr-kpi-icon { color: var(--pr-text-muted); font-size: .95rem; }
+.pr-kpi-label { font-size: .74rem; font-weight: 600; color: var(--pr-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+.pr-kpi strong { font-family: 'Manrope', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--pr-primary-dark); }
+.pr-kpi-primary { border-left-color: var(--pr-primary); }
+.pr-kpi-success { border-left-color: var(--pr-success); }
+.pr-kpi-info { border-left-color: #2f6690; }
+.pr-kpi-warning { border-left-color: var(--pr-warning); }
+.pr-kpi-neutral { border-left-color: var(--pr-text-muted); }
+
+.pr-alert { background: #eef3f8; color: var(--pr-primary); border: 1px solid #d3e0ea; border-radius: var(--pr-radius-sm); padding: .8rem 1rem; font-size: .9rem; }
+.pr-empty-state { text-align: center; color: var(--pr-text-muted); padding: 3rem 1rem; background: var(--pr-surface); border: 1px dashed var(--pr-border); border-radius: var(--pr-radius); }
+.pr-empty-state i { font-size: 1.8rem; display: block; margin-bottom: .6rem; }
+
+.pr-cobradores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+.pr-cobrador-card { background: var(--pr-surface); border: 1px solid var(--pr-border); border-radius: var(--pr-radius); padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+.pr-cobrador-head { display: flex; align-items: center; gap: .75rem; }
+.pr-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--pr-primary-dark); color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pr-cobrador-head strong { display: block; font-size: .95rem; text-transform: capitalize; }
+.pr-cobrador-head small { display: block; margin-top: .15rem; }
+.pr-tag-danger { font-size: .7rem; font-weight: 700; color: var(--pr-danger); background: #fdecea; padding: .1rem .45rem; border-radius: 5px; }
+.pr-tag-ok { font-size: .7rem; font-weight: 700; color: var(--pr-success); background: #e7f5ee; padding: .1rem .45rem; border-radius: 5px; }
+
+.pr-cobrador-stats { display: flex; flex-direction: column; gap: .5rem; }
+.pr-stat { display: flex; justify-content: space-between; align-items: center; padding: .55rem .7rem; border-radius: var(--pr-radius-sm); text-decoration: none; color: inherit; background: #f8f9fb; }
+.pr-stat:hover { background: #eef1f4; color: inherit; }
+.pr-stat-label { font-size: .8rem; color: var(--pr-text-muted); display: flex; align-items: center; gap: .4rem; }
+.pr-stat strong { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: .95rem; color: var(--pr-text); }
+.pr-pos { color: var(--pr-success) !important; }
+.pr-neg { color: var(--pr-danger) !important; }
+
+.pr-cobrador-link { align-self: flex-start; font-size: .82rem; font-weight: 700; color: var(--pr-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .35rem; }
+.pr-cobrador-link:hover { color: var(--pr-primary-dark); }
 </style>
-
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">
-    <i class="fas fa-chart-line fa-fw text-primary"></i> Información Operacional
-  </h1>
-</div>
-
-{% if user.is_staff %}
-<!-- ========== TARJETAS DE RESUMEN GLOBAL ========== -->
-<div class="row mb-4">
-<div class="col-xl-3 col-md-6 mb-3" onclick="window.location.href='{% url 'reporte_diario' %}'" style="cursor: pointer;">
-    <div class="card stat-card border-left-primary shadow-sm h-100">
-        <div class="card-body">
-            <div class="row no-gutters align-items-center">
-                <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total recaudado</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_recaudado|floatformat:2|default:"0.00" }}</div>
-                </div>
-                <div class="col-auto">
-                    <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-  <div class="col-xl-3 col-md-6 mb-3">
-    <div class="card stat-card border-left-success shadow-sm h-100">
-      <div class="card-body">
-        <div class="row no-gutters align-items-center">
-          <div class="col mr-2">
-            <div
-              class="text-xs font-weight-bold text-success text-uppercase mb-1"
-            >
-              Total gastos
-            </div>
-            <div class="h5 mb-0 font-weight-bold text-gray-800">
-              ${{ total_gastos|floatformat:2|default:"0.00" }}
-            </div>
-          </div>
-          <div class="col-auto">
-            <i class="fas fa-receipt fa-2x text-gray-300"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-xl-3 col-md-6 mb-3">
-    <div class="card stat-card border-left-info shadow-sm h-100">
-      <div class="card-body">
-        <div class="row no-gutters align-items-center">
-          <div class="col mr-2">
-            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-              Préstamos pendientes hoy
-            </div>
-            <div class="h5 mb-0 font-weight-bold text-gray-800">
-              {{ total_prestamos_hoy|default:"0" }}
-            </div>
-          </div>
-          <div class="col-auto">
-            <i class="fas fa-clock fa-2x text-gray-300"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-xl-3 col-md-6 mb-3">
-    <div class="card stat-card border-left-warning shadow-sm h-100">
-      <div class="card-body">
-        <div class="row no-gutters align-items-center">
-          <div class="col mr-2">
-            <div
-              class="text-xs font-weight-bold text-warning text-uppercase mb-1"
-            >
-              Morosidad
-            </div>
-            <div class="h5 mb-0 font-weight-bold text-gray-800">
-              {{ morosidad|floatformat:1 }}%
-            </div>
-          </div>
-          <div class="col-auto">
-            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-<!-- ========== TARJETA DE COMUNIDADES (siempre visible, mismo tamaño que las de cobrador) ========== -->
-<div class="row mb-4">
-    <div class="col-xl-4 col-md-4 mb-3" onclick="window.location.href='{% url 'reporte_diario' %}'" style="cursor: pointer;">
-        <div class="card stat-card border-left-primary shadow-sm h-100">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Total comunidades
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ total_comunidades|default:"0" }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-users fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ========== TARJETAS POR COBRADOR ========== -->
-{% if mensaje %}
-<div
-  class="alert alert-info alert-dismissible fade show rounded-3"
-  role="alert"
->
-  <i class="fas fa-info-circle me-2"></i> {{ mensaje }}
-  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-{% else %} {% for cobrador, total in totales_cobradores.items %}
-<div class="row mb-4">
-  <!-- Tarjeta Recaudación -->
-  <div class="col-xl-4 col-md-4 mb-3">
-    <a
-      href="{% url 'detalles_cobrador' cobrador %}?tipo=pagos"
-      class="text-decoration-none"
-    >
-      <div class="card shadow-sm h-100 border-left-primary transition-hover">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div
-                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
-              >
-                <i class="fas fa-user me-1"></i> {{ cobrador }}
-              </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">
-                ${{ total|floatformat:2 }}
-              </div>
-              <small class="text-muted">Recaudación total</small>
-            </div>
-            <div class="col-auto">
-              <div class="bg-primary bg-gradient p-3 rounded-circle shadow-sm">
-                <i class="fas fa-dollar-sign fa-2x text-white"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- Tarjeta Gastos -->
-  <div class="col-xl-4 col-md-4 mb-3">
-    <a
-      href="{% url 'detalles_cobrador' cobrador %}?tipo=gastos"
-      class="text-decoration-none"
-    >
-      <div class="card shadow-sm h-100 border-left-success transition-hover">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div
-                class="text-xs font-weight-bold text-success text-uppercase mb-1"
-              >
-                <i class="fas fa-receipt me-1"></i> Gastos
-              </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">
-                ${{ totales_gastos|get_item:cobrador|default:0|floatformat:2 }}
-              </div>
-              <small class="text-muted">Registrados</small>
-            </div>
-            <div class="col-auto">
-              <div class="bg-success bg-gradient p-3 rounded-circle shadow-sm">
-                <i class="fas fa-chart-line fa-2x text-white"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- Tarjeta Préstamos diarios -->
-  <div class="col-xl-4 col-md-4 mb-3">
-    <a
-      href="{% url 'detalles_cobrador' cobrador %}?tipo=prestamos"
-      class="text-decoration-none"
-    >
-      <div class="card shadow-sm h-100 border-left-info transition-hover">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div
-                class="text-xs font-weight-bold text-info text-uppercase mb-1"
-              >
-                <i class="fas fa-calendar-day me-1"></i> Préstamos pendientes
-                hoy
-              </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">
-                {{ prestamos_diarios|get_item:cobrador|default:'0' }}
-              </div>
-              <small class="text-muted">Requieren cobro</small>
-            </div>
-            <div class="col-auto">
-              <div class="bg-info bg-gradient p-3 rounded-circle shadow-sm">
-                <i class="fas fa-money-bill-wave fa-2x text-white"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </a>
-  </div>
-  
-</div>
-{% endfor %} {% endif %} {% endblock %}
+{% endblock %}

@@ -4,420 +4,289 @@
 {% block title %}Préstamos | Panel{% endblock %}
 
 {% block content %}
-<style>
-    /* Estilos personalizados */
-    .stat-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-        border-left: 4px solid;
-    }
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
-    }
-    .btn-icon-circle {
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-    }
-    .loan-card {
-        border-left: 4px solid;
-        transition: all 0.2s;
-    }
-    .loan-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
-    }
-    .badge-pill {
-        font-size: 0.7rem;
-        padding: 0.3rem 0.6rem;
-    }
-    @media (max-width: 767.98px) {
-        .action-buttons .btn {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-        .stat-card .card-body {
-            padding: 0.75rem;
-        }
-        .stat-card .h5 {
-            font-size: 1.1rem;
-        }
-        .btn-group-responsive {
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .btn-group-responsive .btn {
-            flex: 1 0 auto;
-        }
-    }
-    @media (max-width: 576px) {
-        .btn-icon-circle {
-            width: 28px;
-            height: 28px;
-        }
-        .loan-card .card-title {
-            font-size: 1rem;
-        }
-    }
-    /* DataTables personalización */
-    .dataTables_wrapper .dataTables_paginate .paginate_button {
-        border-radius: 30px !important;
-        margin: 0 2px;
-    }
-    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-        background: #4e73df !important;
-        border-color: #4e73df !important;
-        color: white !important;
-    }
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fc;
-    }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4 flex-wrap">
-    <h1 class="h3 mb-2 mb-sm-0 text-gray-800">
-        <i class="fas fa-hand-holding-usd fa-fw text-primary"></i> Préstamos
-    </h1>
-    <div class="btn-group btn-group-sm shadow-sm mt-2 mt-sm-0" role="group">
-        <a href="{% url 'principalPrestamos' %}" class="btn btn-secondary {% if not tipo_actual %}active{% endif %}">
-            <i class="fas fa-list"></i> Todos
-        </a>
-        <a href="?es_grupal=true" class="btn btn-warning {% if tipo_actual == 'true' %}active{% endif %}">
-            <i class="fas fa-users"></i> Grupales
-        </a>
-        {% if user.is_staff %}
-        <a href="{% url 'createPrestamo' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i> Nuevo
-        </a>
-        {% endif %}
+<div class="pl-wizard">
+  <div class="pl-head">
+    <div>
+      <span class="pl-eyebrow">Cartera</span>
+      <h1>Préstamos</h1>
+      <p class="pl-sub">{{ total_count }} resultado{{ total_count|pluralize }} con los filtros actuales.</p>
     </div>
-</div>
-{% if user.is_staff %}
-<!-- Tarjetas de estadísticas -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card stat-card border-left-primary shadow h-100">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Total préstamos
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ prestamos.count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="pl-head-actions">
+      <a href="{% url 'principalPrestamos' %}" class="pl-chip {% if not tipo_actual %}is-active{% endif %}"><i class="fas fa-list"></i> Todos</a>
+      <a href="?es_grupal=true" class="pl-chip {% if tipo_actual == 'true' %}is-active{% endif %}"><i class="fas fa-people-group"></i> Grupales</a>
+      {% if user.is_staff %}
+      <a href="{% url 'createPrestamo' %}" class="pl-btn pl-btn-ghost"><i class="fas fa-plus"></i> Nuevo</a>
+      <a href="{% url 'crear-prestamo' %}" class="pl-btn pl-btn-primary"><i class="fas fa-people-group"></i> Nuevo grupal</a>
+      {% endif %}
     </div>
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card stat-card border-left-success shadow h-100">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Monto total
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_monto|floatformat:2|default:"0" }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card stat-card border-left-info shadow h-100">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Aprobados
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ aprobados_count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card stat-card border-left-warning shadow h-100">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Pendientes
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pendientes_count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-clock fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-<!-- Filtros y búsqueda (con envío GET) -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <form method="get" id="filtroForm" class="form">
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-2 mb-md-0">
-                    <div class="input-group">
-                        <input type="text" name="buscar" id="searchInput" class="form-control bg-light border-0 small" 
-                               placeholder="Buscar por cliente, grupo o folio..." value="{{ request.GET.buscar|default:'' }}">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-search fa-sm"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <select name="estado" id="statusFilter" class="form-control form-control-sm">
-                        <option value="">Todos los estados</option>
-                        <option value="APROBADO" {% if request.GET.estado == 'APROBADO' %}selected{% endif %}>Aprobados</option>
-                        <option value="SOLICITADO" {% if request.GET.estado == 'SOLICITADO' %}selected{% endif %}>Solicitado</option>
-                        <option value="RECHAZADO" {% if request.GET.estado == 'RECHAZADO' %}selected{% endif %}>Rechazados</option>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <select name="tipo" id="typeFilter" class="form-control form-control-sm">
-                        <option value="">Todos los tipos</option>
-                        <option value="SEMANAL" {% if request.GET.tipo == 'SEMANAL' %}selected{% endif %}>Semanal</option>
-                        <option value="MENSUAL" {% if request.GET.tipo == 'MENSUAL' %}selected{% endif %}>Mensual</option>
-                    </select>
-                </div>
-                <div class="col-md-2 text-md-right">
-                    <a href="{% url 'principalPrestamos' %}{% if tipo_actual %}?es_grupal={{ tipo_actual }}{% endif %}" class="btn btn-sm btn-secondary">
-                        <i class="fas fa-undo-alt"></i> Reset
-                    </a>
-                </div>
-            </div>
-            <!-- Mantener el filtro grupal actual -->
-            {% if tipo_actual %}
-                <input type="hidden" name="es_grupal" value="{{ tipo_actual }}">
-            {% endif %}
-        </form>
-    </div>
-    <div class="card-body">
-        <!-- Vista para escritorio y tablet: tabla con DataTables -->
-        <div class="table-responsive d-none d-md-block">
-            <table class="table table-bordered table-hover" id="prestamosTable" width="100%" cellspacing="0">
-                <thead class="thead-light">
-                    <tr>
-                        <th>{% if tipo_actual == 'true' %}Grupo{% else %}Cliente{% endif %}</th>
-                        <th>Monto</th>
-                        <th>Interés</th>
-                        <th>Tipo</th>
-                        <th>Pagos</th>
-                        <th>Estado</th>
-                        {% if user.is_staff %}<th>Acciones</th>{% endif %}
-                        <th>Detalle</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for prestamo in prestamos %}
-                    <tr>
-                        <td>
-                            {% if prestamo.es_grupal %}
-                                <i class="fas fa-users text-warning"></i> {{ prestamo.grupo.nombre }}
-                            {% else %}
-                                <i class="fas fa-user text-info"></i> {{ prestamo.cliente.nombre }}
-                            {% endif %}
-                        </td>
-                        <td class="text-right">${{ prestamo.monto|floatformat:2|default:"0.00" }}</td>
-                        <td class="text-right">{{ prestamo.tasa_interes|floatformat:2 }}%</td>
-                        <td>{{ prestamo.tipo }}</td>
-                        <td class="text-center">{{ prestamo.total_pagos }}</td>
-                       <td class="text-center">
-    <span class="badge badge-pill 
-        {% if prestamo.estado == 'APROBADO' %}badge-success
-        {% elif prestamo.estado == 'PAGADO' %}badge-danger
-        {% elif prestamo.estado == 'RECHAZADO' %}badge-danger
-        {% else %}badge-warning{% endif %}">
-        {{ prestamo.get_estado_display }}
-    </span>
-</td>
-                        {% if user.is_staff %}
-                        <td class="text-center">
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'editar_prestamo' pk=prestamo.id %}" class="btn btn-outline-warning btn-icon-circle" data-toggle="tooltip" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button onclick="eliminarRegistro({{prestamo.id}})" class="btn btn-outline-danger btn-icon-circle" data-toggle="tooltip" title="Eliminar">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                        {% endif %}
-                        <td class="text-center">
-                            <a href="{% url 'detalle_prestamo' pk=prestamo.id %}" class="btn btn-outline-info btn-icon-circle btn-sm" data-toggle="tooltip" title="Ver detalle">
-                                <i class="fas fa-info"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="{% if user.is_staff %}8{% else %}7{% endif %}" class="text-center text-muted">
-                            No hay préstamos registrados
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  </div>
 
-        <!-- Vista móvil: tarjetas -->
-        <div id="mobileCardsContainer" class="d-block d-md-none">
-            {% for prestamo in prestamos %}
-            <div class="card loan-card mb-3 shadow-sm" 
-                 data-estado="{{ prestamo.estado }}" 
-                 data-tipo="{{ prestamo.tipo }}" 
-                 data-nombre="{% if prestamo.es_grupal %}{{ prestamo.grupo.nombre }}{% else %}{{ prestamo.cliente.nombre }}{% endif %}">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <h6 class="card-title mb-0">
-                            {% if prestamo.es_grupal %}
-                                <i class="fas fa-users text-warning"></i> {{ prestamo.grupo.nombre }}
-                            {% else %}
-                                <i class="fas fa-user-circle text-info"></i> {{ prestamo.cliente.nombre }}
-                            {% endif %}
-                        </h6>
-                        <span class="badge badge-pill 
-                            {% if prestamo.estado == 'APROBADO' %}badge-success
-                            {% elif prestamo.estado == 'RECHAZADO' %}badge-danger
-                            {% else %}badge-warning{% endif %}">
-                            {{ prestamo.get_estado_display }}
-                        </span>
-                    </div>
-                    <div class="row mt-2 small">
-                        <div class="col-6">
-                            <strong>Monto:</strong> ${{ prestamo.monto|floatformat:2 }}<br>
-                            <strong>Interés:</strong> {{ prestamo.tasa_interes|floatformat:2 }}%<br>
-                            <strong>Tipo:</strong> {{ prestamo.tipo }}
-                        </div>
-                        <div class="col-6">
-                            <strong>Pagos:</strong> {{ prestamo.total_pagos }}<br>
-                            <strong>Plazo:</strong> {{ prestamo.total_pagos }} pagos
-                        </div>
-                    </div>
-                    <div class="btn-group w-100 mt-3 btn-group-responsive" role="group">
-                        {% if user.is_staff %}
-                        <a href="{% url 'editar_prestamo' pk=prestamo.id %}" class="btn btn-sm btn-outline-warning flex-fill">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
-                        <button onclick="eliminarRegistro({{prestamo.id}})" class="btn btn-sm btn-outline-danger flex-fill">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                        {% endif %}
-                        <a href="{% url 'detalle_prestamo' pk=prestamo.id %}" class="btn btn-sm btn-outline-info flex-fill">
-                            <i class="fas fa-info-circle"></i> Detalle
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="alert alert-info text-center">No hay préstamos registrados</div>
-            {% endfor %}
-            <!-- Paginación móvil (manual) -->
-            <div id="mobilePagination" class="d-flex justify-content-between align-items-center mt-3"></div>
+  {% if user.is_staff %}
+  <div class="pl-kpis">
+    <div class="pl-kpi pl-kpi-primary"><span>Total préstamos</span><strong>{{ total_count }}</strong></div>
+    <div class="pl-kpi pl-kpi-success"><span>Monto total</span><strong>${{ total_monto|floatformat:2|default:"0" }}</strong></div>
+    <div class="pl-kpi pl-kpi-info"><span>Aprobados</span><strong>{{ aprobados_count }}</strong></div>
+    <div class="pl-kpi pl-kpi-warning"><span>Solicitados</span><strong>{{ pendientes_count }}</strong></div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== FILTROS ===================== -->
+  <section class="pl-card pl-filters-card">
+    <form method="GET" class="pl-filters" id="filtroForm">
+      {% if tipo_actual %}<input type="hidden" name="es_grupal" value="{{ tipo_actual }}">{% endif %}
+      <div class="pl-field pl-field-search">
+        <label for="searchInput">Buscar</label>
+        <div class="pl-input-affix">
+          <span><i class="fas fa-search"></i></span>
+          <input type="text" name="buscar" id="searchInput" placeholder="Cliente, grupo, folio o promotor…" value="{{ request.GET.buscar|default:'' }}">
         </div>
+      </div>
+      <div class="pl-field">
+        <label for="statusFilter">Estado</label>
+        <select name="estado" id="statusFilter" class="pl-select">
+          <option value="">Todos</option>
+          <option value="SOLICITADO" {% if request.GET.estado == 'SOLICITADO' %}selected{% endif %}>Solicitado</option>
+          <option value="APROBADO" {% if request.GET.estado == 'APROBADO' %}selected{% endif %}>Aprobado</option>
+          <option value="RECHAZADO" {% if request.GET.estado == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
+          <option value="PAGADO" {% if request.GET.estado == 'PAGADO' %}selected{% endif %}>Pagado</option>
+        </select>
+      </div>
+      <div class="pl-field">
+        <label for="typeFilter">Frecuencia</label>
+        <select name="tipo" id="typeFilter" class="pl-select">
+          <option value="">Todas</option>
+          <option value="SEMANAL" {% if request.GET.tipo == 'SEMANAL' %}selected{% endif %}>Semanal</option>
+          <option value="MENSUAL" {% if request.GET.tipo == 'MENSUAL' %}selected{% endif %}>Mensual</option>
+        </select>
+      </div>
+      <div class="pl-field pl-field-actions">
+        <button type="submit" class="pl-btn pl-btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+        <a href="{% url 'principalPrestamos' %}{% if tipo_actual %}?es_grupal={{ tipo_actual }}{% endif %}" class="pl-btn pl-btn-ghost"><i class="fas fa-undo-alt"></i> Reset</a>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===================== LISTA (responsiva sin duplicar markup) ===================== -->
+  <section class="pl-card pl-list-card">
+    <div class="pl-list">
+      <div class="pl-row pl-row-head">
+        <span>{% if tipo_actual == 'true' %}Grupo{% else %}Cliente / Grupo{% endif %}</span>
+        <span class="num">Monto</span>
+        <span class="num">Interés</span>
+        <span>Tipo</span>
+        <span class="num">Pagos</span>
+        <span>Estado</span>
+        <span class="pl-col-actions">Acciones</span>
+      </div>
+
+      {% for prestamo in prestamos %}
+      <div class="pl-row">
+        <span data-label="Cliente / Grupo" class="pl-cell-name">
+          {% if prestamo.es_grupal %}
+            <i class="fas fa-people-group pl-icon-grupal"></i> {{ prestamo.grupo.nombre }}
+          {% else %}
+            <i class="fas fa-user pl-icon-individual"></i> {{ prestamo.cliente.nombre }}
+          {% endif %}
+        </span>
+        <span data-label="Monto" class="num">${{ prestamo.monto|floatformat:2|default:"0.00" }}</span>
+        <span data-label="Interés" class="num">{{ prestamo.tasa_interes|floatformat:2 }}%</span>
+        <span data-label="Tipo">{{ prestamo.get_tipo_display }}</span>
+        <span data-label="Pagos" class="num">{{ prestamo.total_pagos }}</span>
+        <span data-label="Estado">
+          <span class="pl-badge
+            {% if prestamo.estado == 'APROBADO' %}pl-badge-success
+            {% elif prestamo.estado == 'PAGADO' %}pl-badge-info
+            {% elif prestamo.estado == 'RECHAZADO' %}pl-badge-danger
+            {% else %}pl-badge-warning{% endif %}">
+            {{ prestamo.get_estado_display }}
+          </span>
+        </span>
+        <span class="pl-col-actions">
+          {% if user.is_staff %}
+          <a href="{% url 'editar_prestamo' pk=prestamo.id %}" class="pl-icon-btn" title="Editar"><i class="fas fa-pen"></i></a>
+          <button type="button" onclick="eliminarRegistro({{ prestamo.id }})" class="pl-icon-btn pl-icon-btn-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
+          {% endif %}
+          <a href="{% url 'detalle_prestamo' pk=prestamo.id %}" class="pl-icon-btn pl-icon-btn-info" title="Ver detalle"><i class="fas fa-arrow-right"></i></a>
+        </span>
+      </div>
+      {% empty %}
+      <div class="pl-empty">
+        <i class="fas fa-folder-open"></i>
+        <p>No hay préstamos que coincidan con estos filtros.</p>
+      </div>
+      {% endfor %}
     </div>
+
+    <!-- ===================== PAGINACIÓN ===================== -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pl-pagination">
+      {% if page_obj.has_previous %}
+        <a href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number }}" class="pl-page-btn"><i class="fas fa-chevron-left"></i></a>
+      {% else %}
+        <span class="pl-page-btn is-disabled"><i class="fas fa-chevron-left"></i></span>
+      {% endif %}
+
+      <span class="pl-page-info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+
+      {% if page_obj.has_next %}
+        <a href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number }}" class="pl-page-btn"><i class="fas fa-chevron-right"></i></a>
+      {% else %}
+        <span class="pl-page-btn is-disabled"><i class="fas fa-chevron-right"></i></span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
 </div>
 
 <script>
-    $(document).ready(function() {
-        // Inicializar DataTables solo en escritorio y si hay datos
-        if ($(window).width() >= 768 && $('#prestamosTable tbody tr').length > 0) {
-            $('#prestamosTable').DataTable({
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
-                },
-                pageLength: 10,
-                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]],
-                responsive: true,
-                dom: '<"top"lf>rt<"bottom"ip><"clear">',
-                columnDefs: [
-                    { orderable: false, targets: [{% if user.is_staff %}6,7{% else %}6{% endif %}] }
-                ]
-            });
-        }
+document.addEventListener('DOMContentLoaded', function () {
+  const statusFilter = document.getElementById('statusFilter');
+  const typeFilter = document.getElementById('typeFilter');
+  [statusFilter, typeFilter].forEach(sel => sel && sel.addEventListener('change', () => document.getElementById('filtroForm').submit()));
+});
 
-        // Paginación manual para móvil (5 por página)
-        function paginateMobile() {
-            const cards = $('.loan-card');
-            const itemsPerPage = 5;
-            const totalPages = Math.ceil(cards.length / itemsPerPage);
-            let currentPage = 1;
-
-            function showPage(page) {
-                cards.hide();
-                const start = (page-1)*itemsPerPage;
-                const end = start + itemsPerPage;
-                cards.slice(start, end).show();
-                $('#pageInfo').text(`Página ${page} de ${totalPages}`);
-                $('#prevPage').prop('disabled', page === 1);
-                $('#nextPage').prop('disabled', page === totalPages);
-                currentPage = page;
-            }
-
-            if (totalPages > 1) {
-                $('#mobilePagination').html(`
-                    <button id="prevPage" class="btn btn-sm btn-outline-secondary"><i class="fas fa-chevron-left"></i> Anterior</button>
-                    <span id="pageInfo" class="small">Página 1 de ${totalPages}</span>
-                    <button id="nextPage" class="btn btn-sm btn-outline-secondary">Siguiente <i class="fas fa-chevron-right"></i></button>
-                `);
-                $('#prevPage').click(() => showPage(currentPage-1));
-                $('#nextPage').click(() => showPage(currentPage+1));
-                showPage(1);
-            } else {
-                cards.show();
-                $('#mobilePagination').empty();
-            }
-        }
-
-        if ($(window).width() < 768) {
-            paginateMobile();
-        }
-
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // Si cambia el select de estado o tipo, enviar el formulario automáticamente
-        $('#statusFilter, #typeFilter').on('change', function() {
-            $('#filtroForm').submit();
-        });
-    });
-
-    function eliminarRegistro(id) {
-        Swal.fire({
-            title: "¿Eliminar préstamo?",
-            text: "Esta acción no se puede deshacer",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#e74a3b",
-            cancelButtonColor: "#858796",
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = `/Prestamos/eliminar/${id}/`;
-            }
-        });
+function eliminarRegistro(id) {
+  Swal.fire({
+    title: '¿Eliminar préstamo?',
+    text: 'Esta acción no se puede deshacer',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#b3261e',
+    cancelButtonColor: '#65748b',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.href = `/Prestamos/eliminar/${id}/`;
     }
+  });
+}
 </script>
+
+<style>
+.pl-wizard {
+  --pl-bg: #f4f6f8;
+  --pl-surface: #ffffff;
+  --pl-primary: #12384f;
+  --pl-primary-dark: #0b2635;
+  --pl-accent: #c7752b;
+  --pl-success: #1f7a4d;
+  --pl-danger: #b3261e;
+  --pl-warning: #c7752b;
+  --pl-text: #151a1e;
+  --pl-text-muted: #65748b;
+  --pl-border: #e1e5ea;
+  --pl-radius: 14px;
+  --pl-radius-sm: 8px;
+  font-family: 'Inter', sans-serif;
+  color: var(--pl-text);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.pl-wizard h1 { font-family: 'Manrope', sans-serif; margin: 0; }
+.pl-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.pl-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pl-accent); margin-bottom: .3rem; }
+.pl-head h1 { font-size: 1.55rem; font-weight: 800; color: var(--pl-primary-dark); }
+.pl-sub { color: var(--pl-text-muted); margin: .3rem 0 0; font-size: .88rem; }
+.pl-head-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.pl-chip { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid var(--pl-border); border-radius: 999px; padding: .5rem 1rem; font-size: .82rem; font-weight: 600; color: var(--pl-text-muted); text-decoration: none; background: #fff; }
+.pl-chip.is-active { background: var(--pl-primary-dark); color: #fff; border-color: var(--pl-primary-dark); }
+
+.pl-btn { display: inline-flex; align-items: center; gap: .45rem; border-radius: var(--pl-radius-sm); padding: .55rem 1.1rem; font-weight: 700; font-size: .84rem; text-decoration: none; border: none; cursor: pointer; }
+.pl-btn-primary { background: var(--pl-primary); color: #fff; }
+.pl-btn-primary:hover { background: var(--pl-primary-dark); color: #fff; }
+.pl-btn-ghost { background: transparent; color: var(--pl-text-muted); border: 1px solid var(--pl-border); }
+.pl-btn-ghost:hover { color: var(--pl-text); border-color: var(--pl-text-muted); }
+
+.pl-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin-bottom: 1.25rem; }
+@media (max-width: 640px) { .pl-kpis { grid-template-columns: repeat(2, 1fr); } }
+.pl-kpi { background: var(--pl-surface); border: 1px solid var(--pl-border); border-left: 4px solid var(--pl-border); border-radius: var(--pl-radius-sm); padding: .9rem 1.1rem; }
+.pl-kpi span { display: block; font-size: .72rem; font-weight: 600; color: var(--pl-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+.pl-kpi strong { display: block; font-family: 'Manrope', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--pl-primary-dark); margin-top: .2rem; }
+.pl-kpi-primary { border-left-color: var(--pl-primary); }
+.pl-kpi-success { border-left-color: var(--pl-success); }
+.pl-kpi-info { border-left-color: #2f6690; }
+.pl-kpi-warning { border-left-color: var(--pl-warning); }
+
+.pl-card { background: var(--pl-surface); border: 1px solid var(--pl-border); border-radius: var(--pl-radius); padding: 1.25rem; margin-bottom: 1.25rem; }
+
+.pl-filters { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; }
+@media (max-width: 768px) { .pl-filters { grid-template-columns: 1fr 1fr; } .pl-field-search { grid-column: 1 / -1; } .pl-field-actions { grid-column: 1 / -1; } }
+.pl-field label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .35rem; color: var(--pl-text); }
+.pl-input-affix { display: flex; align-items: center; border: 1px solid var(--pl-border); border-radius: var(--pl-radius-sm); overflow: hidden; }
+.pl-input-affix span { background: #f4f6f8; color: var(--pl-text-muted); padding: .55rem .65rem; border-right: 1px solid var(--pl-border); }
+.pl-input-affix input { border: none; flex: 1; padding: .55rem .65rem; font-size: .9rem; min-width: 0; }
+.pl-input-affix input:focus { outline: none; }
+.pl-select { width: 100%; border: 1px solid var(--pl-border); border-radius: var(--pl-radius-sm); padding: .55rem .65rem; font-size: .88rem; background: #fff; }
+.pl-field-actions { display: flex; gap: .6rem; }
+
+.pl-list-card { padding: 0; overflow: hidden; }
+.pl-list { display: flex; flex-direction: column; }
+.pl-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr .7fr 1fr auto; gap: .75rem; align-items: center; padding: .8rem 1.25rem; border-bottom: 1px solid var(--pl-border); font-size: .87rem; }
+.pl-row:last-child { border-bottom: none; }
+.pl-row-head { background: #f8f9fb; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--pl-text-muted); font-weight: 700; }
+.pl-row .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pl-cell-name { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.pl-icon-grupal { color: var(--pl-accent); }
+.pl-icon-individual { color: #2f6690; }
+
+.pl-badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
+.pl-badge-success { background: #e7f5ee; color: var(--pl-success); }
+.pl-badge-info { background: #e1eef7; color: #2f6690; }
+.pl-badge-danger { background: #fdecea; color: var(--pl-danger); }
+.pl-badge-warning { background: #fbeadd; color: var(--pl-accent); }
+
+.pl-col-actions { display: flex; gap: .4rem; justify-content: flex-end; }
+.pl-icon-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--pl-border); color: var(--pl-text-muted); text-decoration: none; background: #fff; cursor: pointer; }
+.pl-icon-btn:hover { border-color: var(--pl-primary); color: var(--pl-primary-dark); }
+.pl-icon-btn-danger:hover { border-color: var(--pl-danger); color: var(--pl-danger); }
+.pl-icon-btn-info:hover { border-color: #2f6690; color: #2f6690; }
+
+.pl-empty { text-align: center; color: var(--pl-text-muted); padding: 3rem 1rem; }
+.pl-empty i { font-size: 1.8rem; display: block; margin-bottom: .5rem; }
+
+.pl-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; border-top: 1px solid var(--pl-border); }
+.pl-page-btn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--pl-border); color: var(--pl-text); text-decoration: none; }
+.pl-page-btn:hover { border-color: var(--pl-primary); color: var(--pl-primary-dark); }
+.pl-page-btn.is-disabled { opacity: .4; pointer-events: none; }
+.pl-page-info { font-size: .82rem; color: var(--pl-text-muted); }
+
+/* ===== Responsivo: la fila-tabla se convierte en tarjeta apilada ===== */
+@media (max-width: 900px) {
+  .pl-row-head { display: none; }
+  .pl-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "name name"
+      "monto interes"
+      "tipo pagos"
+      "estado estado"
+      "acciones acciones";
+    gap: .4rem .75rem;
+    padding: 1rem 1.1rem;
+  }
+  .pl-row span[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: .66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--pl-text-muted);
+    margin-bottom: .1rem;
+  }
+  .pl-row span[data-label="Cliente / Grupo"] { grid-area: name; }
+  .pl-row span[data-label="Monto"] { grid-area: monto; text-align: left; }
+  .pl-row span[data-label="Interés"] { grid-area: interes; text-align: left; }
+  .pl-row span[data-label="Tipo"] { grid-area: tipo; }
+  .pl-row span[data-label="Pagos"] { grid-area: pagos; text-align: left; }
+  .pl-row span[data-label="Estado"] { grid-area: estado; }
+  .pl-col-actions { grid-area: acciones; justify-content: flex-start; padding-top: .4rem; border-top: 1px dashed var(--pl-border); margin-top: .3rem; }
+}
+</style>
 {% endblock %}

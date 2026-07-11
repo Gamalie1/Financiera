@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.urls import reverse
 from .models import Grupo, IntegranteGrupo, DetallePrestamoGrupal
 from Clientes.models import Cliente
@@ -10,6 +10,7 @@ from decimal import Decimal
 from Prestamos.models import Prestamo
 from django.db import transaction
 from django.http import JsonResponse
+
 
 from django.contrib.auth.decorators import login_required
 
@@ -37,96 +38,129 @@ def listar_grupos(request):
 
 @login_required
 def crear_prestamo_grupal(request):
-
-    grupos = Grupo.objects.all()
-    clientes = Cliente.objects.all()
-    promotores = User.objects.all()
+    grupos = Grupo.objects.filter(activo=True).order_by('nombre')
+    clientes = Cliente.objects.all().order_by('nombre')
+    promotores = User.objects.all().order_by('username')
 
     if request.method == 'POST':
-
         form_data = request.POST.copy()
+        try:
+            grupo_id = form_data.get('grupo')
+            promotor_id = form_data.get('promotor')
 
-        grupo_id = form_data.get('grupo')
-        grupo = Grupo.objects.get(id=grupo_id)
-        responsable = grupo.responsable
+            if not grupo_id:
+                messages.error(request, "Debe seleccionar un grupo.")
+                return render(request, "grupo_form.html", {
+                    "grupos": grupos, "clientes": clientes, "promotores": promotores,
+                    "grupo_seleccionado": grupo_id,
+                })
+            if not promotor_id:
+                messages.error(request, "Debe seleccionar un promotor.")
+                return render(request, "grupo_form.html", {
+                    "grupos": grupos, "clientes": clientes, "promotores": promotores,
+                    "grupo_seleccionado": grupo_id,
+                })
 
-        promotor = User.objects.get(id=form_data.get('promotor'))
+            grupo = get_object_or_404(Grupo, id=grupo_id)
+            promotor = get_object_or_404(User, id=promotor_id)
 
-        es_grupal = form_data.get('es_grupal') == 'True'
+            monto = Decimal(form_data.get('monto', '0').strip() or '0')
+            tasa_interes = Decimal(form_data.get('tasa_interes', '0').strip() or '0')
+            tipo = form_data.get('tipo')
+            total_pagos = int(form_data.get('total_pagos', '0').strip() or 0)
+            iva_sobre_intereses = Decimal(form_data.get('iva_sobre_intereses', '0') or '0')
+            garantia_liquida = Decimal(form_data.get('garantia_liquida', '0') or '0')
+            aportacion_social = Decimal(form_data.get('aportacion_social', '0') or '0')
+            ahorro = Decimal(form_data.get('ahorro', '0') or '0')
+            pago_final = Decimal(form_data.get('pago_final', '0') or '0')
+            folio = form_data.get('solicitud_credito', '').strip()
 
-        monto = Decimal(form_data.get('monto', '0').strip() or '0')
-        tasa_interes = Decimal(form_data.get('tasa_interes', '0').strip() or '0')
-
-        tipo = form_data.get('tipo')
-        total_pagos = int(form_data.get('total_pagos', '0') or 0)
-
-        iva_sobre_intereses = Decimal(form_data.get('iva_sobre_intereses', '0') or '0')
-        garantia_liquida = Decimal(form_data.get('garantia_liquida', '0') or '0')
-        aportacion_social = Decimal(form_data.get('aportacion_social', '0') or '0')
-        ahorro = Decimal(form_data.get('ahorro', '0') or '0')
-        pago_final = Decimal(form_data.get('pago_final', '0') or '0')
-
-        folio = form_data.get('solicitud_credito', '').strip()
-
-        # ==========================
-        # INTEGRANTES
-        # ==========================
-        integrantes_ids = request.POST.getlist('integrantes_ids[]')
-        montos = request.POST.getlist('montos[]')
-
-        if not integrantes_ids:
-            messages.error(request, "Debe agregar integrantes al préstamo grupal")
-            return redirect('crear_prestamo_grupal')
-
-        # TRANSACCIÓN SEGURA
-        # ==========================
-
-        with transaction.atomic():
-
-            # ✅ Crear préstamo
-            prestamo = Prestamo.objects.create(
-                cliente_id=responsable.id,
-                grupo=grupo,
-                promotor=promotor,
-                monto=monto,
-                tasa_interes=tasa_interes,
-                tipo=tipo,
-                total_pagos=total_pagos,
-                iva_sobre_intereses=iva_sobre_intereses,
-                garantia_liquida=garantia_liquida,
-                aportacion_social=aportacion_social,
-                es_grupal=es_grupal,
-                ahorro=ahorro,
-                pago_final=pago_final,
-                estado='SOLICITADO',
-                folio=folio,
-            )
             integrantes_ids = request.POST.getlist('integrantes_ids[]')
             montos = request.POST.getlist('montos[]')
 
-            for cliente_id, monto_individual in zip(integrantes_ids, montos):
-                integrante, created = IntegranteGrupo.objects.get_or_create(
+            # ---------- Validaciones (las mismas reglas del préstamo individual) ----------
+            errores = []
+            if not folio:
+                errores.append("El folio de solicitud es obligatorio.")
+            if monto < 100:
+                errores.append("El monto mínimo es $100.00")
+            if tipo not in ['SEMANAL', 'MENSUAL']:
+                errores.append("Tipo de préstamo inválido")
+            if total_pagos < 1:
+                errores.append("El número mínimo de pagos es 1")
+            if tipo == 'SEMANAL' and total_pagos > 520:
+                errores.append("El máximo de pagos semanales es 520 (10 años)")
+            elif tipo == 'MENSUAL' and total_pagos > 120:
+                errores.append("El máximo de pagos mensuales es 120 (10 años)")
+            if tasa_interes < Decimal('0.1') or tasa_interes > Decimal('30'):
+                errores.append("La tasa debe estar entre 0.1% y 30%")
+            if not integrantes_ids:
+                errores.append("Debe agregar al menos un integrante al préstamo grupal.")
+            if len(integrantes_ids) != len(set(integrantes_ids)):
+                errores.append("No puedes agregar al mismo integrante más de una vez.")
+
+            if errores:
+                for error in errores:
+                    messages.error(request, error)
+                return render(request, "grupo_form.html", {
+                    "grupos": grupos, "clientes": clientes, "promotores": promotores,
+                    "grupo_seleccionado": grupo_id,
+                })
+
+            with transaction.atomic():
+                # Un préstamo grupal NO lleva cliente individual, solo grupo.
+                prestamo = Prestamo.objects.create(
+                    cliente=None,
                     grupo=grupo,
-                    cliente_id=cliente_id,
-                    defaults={'es_representante': False}
-                )
-
-                DetallePrestamoGrupal.objects.create(
-                    prestamo=prestamo,
-                    integrante=integrante,
-                    monto=Decimal(monto_individual),
+                    promotor=promotor,
+                    monto=monto,
                     tasa_interes=tasa_interes,
-                    plazo_pagos=total_pagos
+                    tipo=tipo,
+                    total_pagos=total_pagos,
+                    iva_sobre_intereses=iva_sobre_intereses,
+                    garantia_liquida=garantia_liquida,
+                    aportacion_social=aportacion_social,
+                    es_grupal=True,
+                    ahorro=ahorro,
+                    pago_final=pago_final,
+                    estado='SOLICITADO',
+                    folio=folio,
                 )
 
-        messages.success(request, 'Préstamo grupal creado correctamente')
+                for cliente_id, monto_individual in zip(integrantes_ids, montos):
+                    integrante, _ = IntegranteGrupo.objects.get_or_create(
+                        grupo=grupo,
+                        cliente_id=cliente_id,
+                        defaults={'es_representante': False},
+                    )
+                    DetallePrestamoGrupal.objects.create(
+                        prestamo=prestamo,
+                        integrante=integrante,
+                        monto=Decimal(monto_individual or '0'),
+                        tasa_interes=tasa_interes,
+                        plazo_pagos=total_pagos,
+                    )
+
+            messages.success(request, 'Préstamo grupal creado correctamente')
+            return redirect('principalPrestamos')
+
+        except Http404:
+            messages.error(request, "El grupo o el promotor seleccionado no existe.")
+        except Exception as e:
+            messages.error(request, f"Error al crear el préstamo grupal: {str(e)}")
+
+        return render(request, "grupo_form.html", {
+            "grupos": grupos, "clientes": clientes, "promotores": promotores,
+            "grupo_seleccionado": request.POST.get("grupo"),
+        })
 
     return render(request, "grupo_form.html", {
         "grupos": grupos,
         "clientes": clientes,
         "promotores": promotores,
-        "grupo_seleccionado": request.POST.get("grupo")
+        "grupo_seleccionado": None,
     })
+
 
 @login_required
 def crear_grupo(request):

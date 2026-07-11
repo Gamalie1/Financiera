@@ -1,274 +1,381 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Reporte Diario de Pagos{% endblock %}
+{% block title %}Reporte de pagos | Panel{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h2 class="mb-4">Reporte de caja - {{ fecha|date:"l d/m/Y" }}</h2>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Filtros mejorados - Experiencia intuitiva -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-4">
-        <form method="GET" class="row g-4 align-items-end">
-            <!-- Campo de fecha -->
-            <div class="col-md-4">
-                <label class="form-label fw-semibold mb-2">
-                    <i class="fas fa-calendar-alt text-primary me-1"></i> 
-                    Día a consultar
-                </label>
-                <div class="input-group">
-                    <input type="date" name="fecha" 
-                           value="{{ fecha|date:'Y-m-d' }}" 
-                           class="form-control form-control-lg"
-                           id="id_fecha"
-                           aria-label="Fecha de consulta">
-                    <button type="button" class="btn btn-outline-secondary btn-lg" 
-                            id="btnHoy" 
-                            title="Seleccionar el día de hoy">
-                        <i class="fas fa-calendar-day me-1"></i> Hoy
-                    </button>
-                </div>
-                <small class="form-text text-muted mt-1">
-                    Selecciona un día para ver los pagos realizados y los pendientes de esa fecha.
-                </small>
-            </div>
-
-            <!-- Campo de comunidad -->
-            <div class="col-md-4">
-                <label class="form-label fw-semibold mb-2">
-                    <i class="fas fa-building text-primary me-1"></i> 
-                    Comunidad
-                </label>
-                <select name="comunidad" class="form-select form-select-lg">
-                    <option value="">🏘️ Todas las comunidades</option>
-                    {% for com in comunidades %}
-                        <option value="{{ com.id }}" 
-                                {% if comunidad_seleccionada == com.id|stringformat:"s" %}selected{% endif %}>
-                            {{ com.nombre }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <small class="form-text text-muted mt-1">
-                    Filtra por comunidad para ver solo sus pagos.
-                </small>
-            </div>
-
-            <!-- Botones de acción -->
-            <div class="col-md-4">
-                <div class="d-flex gap-2 justify-content-md-end">
-                    <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm">
-                        <i class="fas fa-filter me-2"></i> Aplicar filtros
-                    </button>
-                    <a href="{% url 'reporte_diario' %}" class="btn btn-outline-secondary btn-lg px-4">
-                        <i class="fas fa-eraser me-2"></i> Limpiar
-                    </a>
-                </div>
-                <!-- Indicador de filtros activos (opcional) -->
-                {% if request.GET.fecha or request.GET.comunidad %}
-                    <div class="text-end mt-2">
-                        <span class="badge bg-info text-dark">
-                            <i class="fas fa-check-circle"></i> Filtros activos
-                        </span>
-                    </div>
-                {% endif %}
-            </div>
-        </form>
+<div class="rp-wizard">
+  <div class="rp-head">
+    <div>
+      <span class="rp-eyebrow">Reporte</span>
+      <h1>Pagos {{ fecha_desde|date:"d/m/Y" }} — {{ fecha_hasta|date:"d/m/Y" }}</h1>
+      <p class="rp-sub">Abonos cobrados y cuotas todavía pendientes dentro del rango seleccionado.</p>
     </div>
-</div>
+  </div>
 
-    <!-- Tabla 1: Abonos reales del día -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <i class="fas fa-hand-holding-usd"></i> Abonos realizados el {{ fecha|date:"d/m/Y" }}
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Préstamo #</th>
-                            <th>Cuota #</th>
-                            <th>Monto abonado</th>
-                            <th>Método</th>
-                            <th>Cobrador</th>
-                            <th>Comentario</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for abono in abonos_dia %}
-                        <tr>
-                            <td>{{ abono.pago.prestamo.cliente.nombre }}</td>
-                            <td>{{ abono.pago.prestamo.id }}</td>
-                            <td>{{ abono.pago.numero_pago }}</td>
-                            <td class="text-success fw-bold">${{ abono.monto|floatformat:2 }}</td>
-                            <td>{{ abono.get_metodo_pago_display }}</td>
-                            <td>{{ abono.cobrador.get_full_name|default:abono.cobrador.username }}</td>
-                            <td>{{ abono.comentario|default:"-" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="7" class="text-center">No hay abonos registrados en esta fecha.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th colspan="3" class="text-end">Total abonado en el día:</th>
-                            <th class="text-success">${{ total_abonado|floatformat:2 }}</th>
-                            <th colspan="3"></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
+  <!-- ===================== KPIs ===================== -->
+  <div class="rp-kpis">
+    <div class="rp-kpi rp-kpi-success">
+      <span class="rp-kpi-label"><i class="fas fa-hand-holding-usd"></i> Total cobrado</span>
+      <strong>${{ total_abonado|floatformat:2 }}</strong>
     </div>
+    <div class="rp-kpi rp-kpi-warning">
+      <span class="rp-kpi-label"><i class="fas fa-calendar-times"></i> Total por cobrar</span>
+      <strong>${{ total_pendiente|floatformat:2 }}</strong>
+    </div>
+    <div class="rp-kpi rp-kpi-danger">
+      <span class="rp-kpi-label"><i class="fas fa-triangle-exclamation"></i> Cuotas atrasadas</span>
+      <strong>{{ cuotas_atrasadas }}</strong>
+    </div>
+  </div>
 
-    <!-- Tabla 2: Cuotas programadas para el día y aún pendientes -->
-    <div class="card">
-        <div class="card-header bg-warning text-dark">
-            <i class="fas fa-calendar-times"></i> Cuotas programadas para el {{ fecha|date:"d/m/Y" }} y aún no pagadas
+  <!-- ===================== FILTROS ===================== -->
+  <section class="rp-card">
+    <form method="GET" class="rp-filters">
+      <div class="rp-field rp-field-date">
+        <label for="id_desde">Desde</label>
+        <input type="date" name="fecha_desde" value="{{ fecha_desde|date:'Y-m-d' }}" class="rp-input" id="id_desde">
+      </div>
+      <div class="rp-field rp-field-date">
+        <label for="id_hasta">Hasta</label>
+        <input type="date" name="fecha_hasta" value="{{ fecha_hasta|date:'Y-m-d' }}" class="rp-input" id="id_hasta">
+      </div>
+
+      <div class="rp-field rp-field-quick">
+        <label>Atajos</label>
+        <div class="rp-quick-btns">
+          <button type="button" class="rp-chip" onclick="setRango('hoy')">Hoy</button>
+          <button type="button" class="rp-chip" onclick="setRango('semana')">Esta semana</button>
+          <button type="button" class="rp-chip" onclick="setRango('mes')">Este mes</button>
+          <button type="button" class="rp-chip" onclick="setRango('anio')">Este año</button>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Préstamo #</th>
-                            <th>Cuota #</th>
-                            <th>Monto total cuota</th>
-                            <th>Saldo pendiente</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                       <!-- Dentro del <tbody> de la tabla de cuotas pendientes -->
-                    {% for pago in pagos_programados %}
-                    <tr>
-                        <td>{{ pago.prestamo.cliente.nombre }}</td>
-                        <td>{{ pago.prestamo.id }}</td>
-                        <td>{{ pago.numero_pago }}</td>
-                        <td>${{ pago.monto_pago|floatformat:2 }}</td>
-                        <td class="text-danger">${{ pago.saldo_restante|floatformat:2 }}</td>
-                        <td>
-                            <!-- Botón para pagar SOLO esta cuota -->
-                            <form method="POST" action="{% url 'pagar_cuota_individual' pago.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="metodo_pago" value="EFECTIVO">
-                                <!-- Botón PAGAR ESTA CUOTA -->
-                            <button type="button" class="btn btn-success btn-sm" 
-                                    onclick="pagarCuota({{ pago.id }}, {{ pago.saldo_restante|floatformat:2 }}, {{ pago.numero_pago }})">
-                                <i class="fas fa-dollar-sign"></i> Pagar esta cuota
-                            </button>
-                                                        </form>
-                                                        <!-- NUEVO BOTÓN ABONAR -->
-                            <a href="{% url 'createPago' id=pago.id %}" class="btn btn-info btn-sm" style="display:inline-block; margin:0 2px;">
-                                <i class="fas fa-money-bill-wave"></i> Abonar
-                            </a>
-                                                        
-                                <!-- Botón para liquidar TODO el préstamo (ya existente) -->
-                            <form method="POST" action="{% url 'liquidar_prestamo' pago.prestamo.id %}" style="display:inline;">
-                                {% csrf_token %}
-                            <input type="hidden" name="metodo_pago" value="EFECTIVO">
-                            <!-- Botón LIQUIDAR PRÉSTAMO (necesitamos el saldo pendiente TOTAL del préstamo) -->
-                            <button type="button" class="btn btn-danger btn-sm" 
-                                    onclick="liquidarPrestamo({{ pago.prestamo.id }}, {{ pago.prestamo.saldo_pendiente|floatformat:2 }})">
-                                <i class="fas fa-hand-holding-usd"></i> Liquidar préstamo
-                            </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th colspan="4" class="text-end">Total pendiente de cuotas de hoy:</th>
-                            <th class="text-danger">${{ total_pendiente|floatformat:2 }}</th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
+      </div>
+
+      <div class="rp-field">
+        <label for="id_promotor">Promotor</label>
+        <select name="promotor" id="id_promotor" class="rp-select">
+          <option value="">Todos</option>
+          {% for promo in promotores %}
+          <option value="{{ promo.id }}" {% if promotor_seleccionado == promo.id|stringformat:"s" %}selected{% endif %}>{{ promo.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="rp-field">
+        <label for="id_comunidad">Comunidad</label>
+        <select name="comunidad" id="id_comunidad" class="rp-select">
+          <option value="">Todas</option>
+          {% for com in comunidades %}
+          <option value="{{ com.id }}" {% if comunidad_seleccionada == com.id|stringformat:"s" %}selected{% endif %}>{{ com.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="rp-field">
+        <label for="id_grupo">Grupo</label>
+        <select name="grupo" id="id_grupo" class="rp-select">
+          <option value="">Todos</option>
+          {% for grupo in grupos %}
+          <option value="{{ grupo.id }}" {% if grupo_seleccionado == grupo.id|stringformat:"s" %}selected{% endif %}>{{ grupo.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="rp-field rp-field-actions">
+        <button type="submit" class="rp-btn rp-btn-primary"><i class="fas fa-filter"></i> Aplicar filtros</button>
+        <a href="{% url 'reporte_diario' %}" class="rp-btn rp-btn-ghost"><i class="fas fa-eraser"></i> Limpiar</a>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===================== TABLA: ABONOS ===================== -->
+  <section class="rp-card">
+    <header class="rp-card-head">
+      <span class="rp-tag rp-tag-success"><i class="fas fa-hand-holding-usd"></i></span>
+      <div>
+        <h2>Abonos realizados</h2>
+        <p>{{ fecha_desde|date:"d/m/Y" }} al {{ fecha_hasta|date:"d/m/Y" }}</p>
+      </div>
+    </header>
+    <div class="rp-table-wrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Cliente / Grupo</th>
+            <th>Préstamo #</th>
+            <th>Cuota #</th>
+            <th class="num">Monto abonado</th>
+            <th>Método</th>
+            <th>Cobrador</th>
+            <th>Comentario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for abono in abonos_dia %}
+          <tr>
+            <td>
+              {% if abono.pago.prestamo.es_grupal %}
+                <span class="rp-badge rp-badge-info">Grupal</span> {{ abono.pago.prestamo.grupo.nombre }}
+              {% else %}
+                {{ abono.pago.prestamo.cliente.nombre }}
+              {% endif %}
+            </td>
+            <td>#{{ abono.pago.prestamo.id }}</td>
+            <td>{{ abono.pago.numero_pago }}</td>
+            <td class="num rp-cell-success">${{ abono.monto|floatformat:2 }}</td>
+            <td>{{ abono.get_metodo_pago_display }}</td>
+            <td>{{ abono.cobrador.get_full_name|default:abono.cobrador.username }}</td>
+            <td class="rp-cell-muted">{{ abono.comentario|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="rp-empty"><i class="fas fa-inbox"></i> No hay abonos registrados en este período.</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="3">Total abonado en el período</th>
+            <th class="num rp-cell-success">${{ total_abonado|floatformat:2 }}</th>
+            <th colspan="3"></th>
+          </tr>
+        </tfoot>
+      </table>
     </div>
+  </section>
+
+  <!-- ===================== TABLA: PENDIENTES ===================== -->
+  <section class="rp-card">
+    <header class="rp-card-head">
+      <span class="rp-tag rp-tag-warning"><i class="fas fa-calendar-times"></i></span>
+      <div>
+        <h2>Cuotas programadas sin pagar</h2>
+        <p>{{ fecha_desde|date:"d/m/Y" }} al {{ fecha_hasta|date:"d/m/Y" }}</p>
+      </div>
+    </header>
+    <div class="rp-table-wrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>Cliente / Grupo</th>
+            <th>Préstamo #</th>
+            <th>Cuota #</th>
+            <th>Fecha</th>
+            <th class="num">Monto cuota</th>
+            <th class="num">Saldo pendiente</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pago in pagos_programados %}
+          <tr>
+            <td>
+              {% if pago.prestamo.es_grupal %}
+                <span class="rp-badge rp-badge-info">Grupal</span> {{ pago.prestamo.grupo.nombre }}
+              {% else %}
+                {{ pago.prestamo.cliente.nombre }}
+              {% endif %}
+              {% if pago.dias_atraso > 0 %}
+                <span class="rp-badge rp-badge-danger">{{ pago.dias_atraso }}d atraso</span>
+              {% endif %}
+            </td>
+            <td>#{{ pago.prestamo.id }}</td>
+            <td>{{ pago.numero_pago }}</td>
+            <td>{{ pago.fecha_programada}}</td>
+            <td class="num">${{ pago.monto_pago|floatformat:2 }}</td>
+            <td class="num rp-cell-danger">${{ pago.saldo_restante|floatformat:2 }}</td>
+            <td class="rp-actions">
+              <button type="button" class="rp-btn rp-btn-sm rp-btn-success"
+                      onclick="pagarCuota({{ pago.id }}, {{ pago.saldo_restante|floatformat:2 }}, {{ pago.numero_pago }})">
+                <i class="fas fa-dollar-sign"></i> Pagar cuota
+              </button>
+              <a href="{% url 'createPago' id=pago.id %}" class="rp-btn rp-btn-sm rp-btn-info">
+                <i class="fas fa-money-bill-wave"></i> Abonar
+              </a>
+              <button type="button" class="rp-btn rp-btn-sm rp-btn-danger"
+                      onclick="liquidarPrestamo({{ pago.prestamo.id }}, {{ pago.prestamo.saldo_pendiente|floatformat:2 }})">
+                <i class="fas fa-hand-holding-usd"></i> Liquidar
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="rp-empty"><i class="fas fa-circle-check"></i> No hay cuotas pendientes en este período.</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="4">Total pendiente en el período</th>
+            <th class="num rp-cell-danger">${{ total_pendiente|floatformat:2 }}</th>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
 </div>
 
 <script>
-// Función para pagar una cuota individual
+function setRango(opcion) {
+  const hoy = new Date();
+  let desde = new Date(hoy);
+  let hasta = new Date(hoy);
+
+  if (opcion === 'semana') {
+    const diaSemana = hoy.getDay();
+    const diff = diaSemana === 0 ? 6 : diaSemana - 1;
+    desde.setDate(hoy.getDate() - diff);
+    hasta = new Date(desde);
+    hasta.setDate(desde.getDate() + 6);
+  } else if (opcion === 'mes') {
+    desde.setDate(1);
+    hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  } else if (opcion === 'anio') {
+    desde = new Date(hoy.getFullYear(), 0, 1);
+    hasta = new Date(hoy.getFullYear(), 11, 31);
+  }
+
+  document.getElementById('id_desde').value = desde.toISOString().split('T')[0];
+  document.getElementById('id_hasta').value = hasta.toISOString().split('T')[0];
+}
+
 function pagarCuota(pagoId, monto, numeroCuota) {
-    Swal.fire({
-        title: '¿Pagar esta cuota?',
-        html: `</strong><br>Monto a pagar: <strong>$${monto.toFixed(2)}</strong>`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#28a745',   // verde
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, pagar cuota',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Creamos un formulario dinámico y lo enviamos
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/Pagos/pagar-cuota/${pagoId}/`;  // Ajusta la URL a tu patrón real
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = '{{ csrf_token }}';  // Obtén el token del template
-            form.appendChild(csrfInput);
-            
-            // Si quieres enviar el método de pago (opcional)
-            const metodoInput = document.createElement('input');
-            metodoInput.type = 'hidden';
-            metodoInput.name = 'metodo_pago';
-            metodoInput.value = 'EFECTIVO';
-            form.appendChild(metodoInput);
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
-    });
+  Swal.fire({
+    title: '¿Pagar esta cuota?',
+    html: `Cuota #${numeroCuota}<br>Monto a pagar: <strong>$${monto.toFixed(2)}</strong>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#1f7a4d',
+    cancelButtonColor: '#65748b',
+    confirmButtonText: 'Sí, pagar cuota',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      enviarForm(`/Pagos/pagar-cuota/${pagoId}/`);
+    }
+  });
 }
 
-// Función para liquidar completamente un préstamo
 function liquidarPrestamo(prestamoId, saldoPendiente) {
-    Swal.fire({
-        title: '¿Liquidar préstamo completo?',
-        html: `Se pagarán <strong>TODAS las cuotas pendientes</strong>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',   // rojo
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, liquidar préstamo',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/Pagos/liquidar-prestamo/${prestamoId}/`;
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = '{{ csrf_token }}';
-            form.appendChild(csrfInput);
-            
-            const metodoInput = document.createElement('input');
-            metodoInput.type = 'hidden';
-            metodoInput.name = 'metodo_pago';
-            metodoInput.value = 'EFECTIVO';
-            form.appendChild(metodoInput);
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
-    });
+  Swal.fire({
+    title: '¿Liquidar préstamo completo?',
+    html: `Se pagarán <strong>todas las cuotas pendientes</strong> del préstamo #${prestamoId}`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#b3261e',
+    cancelButtonColor: '#65748b',
+    confirmButtonText: 'Sí, liquidar préstamo',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      enviarForm(`/Pagos/liquidar-prestamo/${prestamoId}/`);
+    }
+  });
 }
-// Botón "Hoy": establece la fecha actual y envía el formulario
-    document.getElementById('btnHoy')?.addEventListener('click', () => {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('id_fecha').value = today;
-        document.getElementById('id_fecha').form.submit();
-    });
 
+function enviarForm(action) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = action;
+
+  const csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = 'csrfmiddlewaretoken';
+  csrfInput.value = '{{ csrf_token }}';
+  form.appendChild(csrfInput);
+
+  const metodoInput = document.createElement('input');
+  metodoInput.type = 'hidden';
+  metodoInput.name = 'metodo_pago';
+  metodoInput.value = 'EFECTIVO';
+  form.appendChild(metodoInput);
+
+  document.body.appendChild(form);
+  form.submit();
+}
 </script>
+
+<style>
+.rp-wizard {
+  --rp-bg: #f4f6f8;
+  --rp-surface: #ffffff;
+  --rp-primary: #12384f;
+  --rp-primary-dark: #0b2635;
+  --rp-accent: #c7752b;
+  --rp-success: #1f7a4d;
+  --rp-danger: #b3261e;
+  --rp-warning: #c7752b;
+  --rp-text: #151a1e;
+  --rp-text-muted: #65748b;
+  --rp-border: #e1e5ea;
+  --rp-radius: 14px;
+  --rp-radius-sm: 8px;
+  font-family: 'Inter', sans-serif;
+  color: var(--rp-text);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+.rp-wizard h1, .rp-wizard h2 { font-family: 'Manrope', sans-serif; margin: 0; }
+.rp-head { margin-bottom: 1.25rem; }
+.rp-eyebrow { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rp-accent); margin-bottom: .35rem; }
+.rp-head h1 { font-size: 1.7rem; font-weight: 800; color: var(--rp-primary-dark); }
+.rp-sub { color: var(--rp-text-muted); margin: .35rem 0 0; }
+
+.rp-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+@media (max-width: 768px) { .rp-kpis { grid-template-columns: 1fr; } }
+.rp-kpi { background: var(--rp-surface); border: 1px solid var(--rp-border); border-radius: var(--rp-radius); padding: 1.1rem 1.25rem; border-left: 4px solid var(--rp-border); }
+.rp-kpi strong { display: block; font-family: 'Manrope', sans-serif; font-size: 1.6rem; font-weight: 800; margin-top: .3rem; color: var(--rp-primary-dark); }
+.rp-kpi-label { color: var(--rp-text-muted); font-size: .82rem; font-weight: 600; }
+.rp-kpi-success { border-left-color: var(--rp-success); }
+.rp-kpi-warning { border-left-color: var(--rp-warning); }
+.rp-kpi-danger { border-left-color: var(--rp-danger); }
+
+.rp-card { background: var(--rp-surface); border: 1px solid var(--rp-border); border-radius: var(--rp-radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+.rp-card-head { display: flex; gap: .9rem; align-items: flex-start; margin-bottom: 1rem; }
+.rp-card-head h2 { font-size: 1.05rem; font-weight: 700; color: var(--rp-primary-dark); }
+.rp-card-head p { margin: .15rem 0 0; color: var(--rp-text-muted); font-size: .82rem; }
+.rp-tag { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
+.rp-tag-success { background: var(--rp-success); }
+.rp-tag-warning { background: var(--rp-warning); }
+
+.rp-filters { display: grid; grid-template-columns: 140px 140px 1fr repeat(3, 1fr); gap: 1rem; align-items: end; }
+@media (max-width: 992px) { .rp-filters { grid-template-columns: 1fr 1fr; } }
+.rp-field label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .35rem; color: var(--rp-text); }
+.rp-input, .rp-select { width: 100%; border: 1px solid var(--rp-border); border-radius: var(--rp-radius-sm); padding: .5rem .65rem; font-size: .88rem; font-family: inherit; background: #fff; }
+.rp-input:focus, .rp-select:focus { outline: none; border-color: var(--rp-primary); box-shadow: 0 0 0 3px rgba(18,56,79,.12); }
+.rp-field-quick { grid-column: span 1; }
+.rp-quick-btns { display: flex; flex-wrap: wrap; gap: .4rem; }
+.rp-chip { border: 1px solid var(--rp-border); background: #fff; border-radius: 999px; padding: .35rem .8rem; font-size: .78rem; font-weight: 600; color: var(--rp-text-muted); cursor: pointer; }
+.rp-chip:hover { border-color: var(--rp-primary); color: var(--rp-primary-dark); }
+.rp-field-actions { grid-column: -1 / -1; display: flex; justify-content: flex-end; gap: .6rem; }
+@media (max-width: 992px) { .rp-field-actions { grid-column: 1 / -1; } }
+
+.rp-btn { display: inline-flex; align-items: center; gap: .45rem; border-radius: var(--rp-radius-sm); padding: .6rem 1.2rem; font-weight: 600; font-size: .86rem; text-decoration: none; border: none; cursor: pointer; }
+.rp-btn-primary { background: var(--rp-primary); color: #fff; }
+.rp-btn-primary:hover { background: var(--rp-primary-dark); color: #fff; }
+.rp-btn-ghost { background: transparent; color: var(--rp-text-muted); border: 1px solid var(--rp-border); }
+.rp-btn-ghost:hover { color: var(--rp-text); border-color: var(--rp-text-muted); }
+.rp-btn-sm { padding: .35rem .7rem; font-size: .78rem; }
+.rp-btn-success { background: var(--rp-success); color: #fff; }
+.rp-btn-info { background: #2f6690; color: #fff; }
+.rp-btn-danger { background: var(--rp-danger); color: #fff; }
+.rp-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+.rp-table-wrap { overflow-x: auto; }
+.rp-table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+.rp-table th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--rp-text-muted); border-bottom: 2px solid var(--rp-border); padding: .55rem .6rem; }
+.rp-table td { padding: .55rem .6rem; border-bottom: 1px solid var(--rp-border); vertical-align: middle; }
+.rp-table tfoot th { border-bottom: none; border-top: 2px solid var(--rp-border); padding-top: .7rem; }
+.rp-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rp-cell-success { color: var(--rp-success); font-weight: 700; }
+.rp-cell-danger { color: var(--rp-danger); font-weight: 700; }
+.rp-cell-muted { color: var(--rp-text-muted); }
+.rp-empty { text-align: center; color: var(--rp-text-muted); padding: 2rem !important; }
+.rp-empty i { display: block; font-size: 1.4rem; margin-bottom: .4rem; }
+
+.rp-badge { display: inline-block; font-size: .68rem; font-weight: 700; padding: .15rem .5rem; border-radius: 5px; margin-left: .3rem; }
+.rp-badge-info { background: #e1eef7; color: #2f6690; }
+.rp-badge-danger { background: #fdecea; color: var(--rp-danger); }
+</style>
 {% endblock %}

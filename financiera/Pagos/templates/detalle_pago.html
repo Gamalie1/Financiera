@@ -111,6 +111,54 @@
                         </div>
                     </div>
 
+                      <!-- ========== SECCIÓN DE INTEGRANTES (SOLO GRUPAL) ========== -->
+                    {% if prestamo.es_grupal and detalles_grupales %}
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light fw-bold">
+                            <i class="fas fa-users me-2"></i> Integrantes del grupo
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr class="text-center">
+                                            <th>#</th>
+                                            <th>Nombre</th>
+                                            <th>Monto individual</th>
+                                            <th>Tasa de interés</th>
+                                            <th>Plazo (pagos)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for detalle in detalles_grupales %}
+                                        <tr>
+                                            <td class="text-center">{{ forloop.counter }}</td>
+                                            <td>
+                                                <i class="fas fa-user-circle text-info me-2"></i>
+                                                {{ detalle.integrante.cliente.nombre }}
+                                                {% if detalle.integrante.es_representante %}
+                                                    <span class="badge bg-primary ms-2">Representante</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">${{ detalle.monto|floatformat:2 }}</td>
+                                            <td class="text-end">{{ detalle.tasa_interes|floatformat:2 }}%</td>
+                                            <td class="text-center">{{ detalle.plazo_pagos }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-secondary fw-bold">
+                                        <tr>
+                                            <td colspan="2" class="text-end">Total del grupo:</td>
+                                            <td class="text-end">${{ total_monto_grupal|floatformat:2 }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
 
                     <!-- ========== TABLA DE CUOTAS ========== -->
                     <div class="card shadow-sm border-0 rounded-3">

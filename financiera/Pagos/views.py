@@ -25,7 +25,10 @@ from weasyprint import HTML
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
-
+from Grupos.models import DetallePrestamoGrupal
+from Grupos.models import Grupo
+from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 
 
 @login_required
@@ -34,6 +37,7 @@ def pagosPrincipal(request):
     es_grupal = request.GET.get('es_grupal')
     estado = request.GET.get('estado')
     con_atrasos = request.GET.get('con_atrasos')
+    page_number = request.GET.get('page', 1)
 
     # Base: préstamos según rol
     if request.user.is_staff:
@@ -41,20 +45,16 @@ def pagosPrincipal(request):
     else:
         prestamos = Prestamo.objects.filter(promotor=request.user)
 
-    # ========== NUEVO: Excluir préstamos ya pagados ==========
-    prestamos = prestamos.exclude(estado='PAGADO')  # También podrías excluir 'LIQUIDADO' si existe
-
+    # Los préstamos ya PAGADOs no requieren seguimiento de cobranza
+    prestamos = prestamos.exclude(estado='PAGADO')
     prestamos = prestamos.select_related('cliente', 'grupo')
 
-    # Filtro grupal
     if es_grupal == 'true':
         prestamos = prestamos.filter(es_grupal=True)
 
-    # Filtro por estado del préstamo (solo los que aún están activos, ej. APROBADO, SOLICITADO)
     if estado:
         prestamos = prestamos.filter(estado=estado)
 
-    # Búsqueda
     if buscar:
         prestamos = prestamos.filter(
             Q(cliente__nombre__icontains=buscar) |
@@ -72,23 +72,31 @@ def pagosPrincipal(request):
         )
     )
 
-    # Filtro por préstamos con/sin cuotas atrasadas
     if con_atrasos == 'si':
         prestamos = prestamos.filter(cuotas_atrasadas__gt=0)
     elif con_atrasos == 'no':
         prestamos = prestamos.filter(cuotas_atrasadas=0)
 
-    # Estadísticas (solo sobre los préstamos no pagados, que son los que se muestran)
+    # Los préstamos con más atraso aparecen primero: son los que más urgen atender.
+    prestamos = prestamos.order_by('-cuotas_atrasadas', 'folio')
+
+    # Estadísticas (sobre los préstamos filtrados que se muestran)
     aprobados_count = prestamos.filter(estado='APROBADO').count()
     solicitados_count = prestamos.filter(estado='SOLICITADO').count()
     total_atrasadas = prestamos.aggregate(total=Sum('cuotas_atrasadas'))['total'] or 0
+    total_count = prestamos.count()
+
+    paginator = Paginator(prestamos, 15)
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'prestamos': prestamos,
+        'prestamos': page_obj,
+        'page_obj': page_obj,
         'tipo_actual': es_grupal,
         'aprobados_count': aprobados_count,
         'solicitados_count': solicitados_count,
         'total_atrasadas': total_atrasadas,
+        'total_count': total_count,
     }
     return render(request, 'pagos.html', context)
 
@@ -207,9 +215,12 @@ def create_pago(request, id):
     # GET
     saldo_ahorro_cliente = cliente.saldo_ahorro if cliente.saldo_ahorro is not None else Decimal('0')
     return render(request, 'create_pago.html', {
+        'cliente': cliente, 
         'pago': pago,
         'saldo_ahorro_cliente': saldo_ahorro_cliente,
     })
+
+
 @login_required
 def editar_pago(request, id): 
     pago = get_object_or_404(Pago, id=id)
@@ -333,6 +344,18 @@ def detalle_pago(request, prestamo_id):
     cliente = prestamo.cliente
     saldo_ahorro = cliente.saldo_ahorro if cliente and cliente.saldo_ahorro is not None else Decimal('0')
 
+    # Si es grupal, obtener los detalles de los integrantes
+    detalles_grupales = None
+    total_monto_grupal = Decimal('0')
+    if prestamo.es_grupal:
+            detalles_grupales = DetallePrestamoGrupal.objects.filter(
+                prestamo=prestamo
+            ).select_related('integrante__cliente')
+            total_monto_grupal = detalles_grupales.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    else:
+            detalles_grupales = None
+            total_monto_grupal = Decimal('0') 
+
     context = {
         'prestamo': prestamo,
         'pagos': pagos,
@@ -343,6 +366,8 @@ def detalle_pago(request, prestamo_id):
         'total_abonado_general': total_abonado_general,
         'total_saldo_general': total_saldo_general,
         'total_ahorro': saldo_ahorro,      # <-- aquí el campo saldo_ahorro
+        'detalles_grupales': detalles_grupales,
+        'total_monto_grupal': total_monto_grupal,
     }
     return render(request, 'detalle_pago.html', context)
 
@@ -786,47 +811,95 @@ def poner_al_corriente(request, prestamo_id):
 
 @login_required
 def reporte_diario(request):
-    # Obtener fecha del GET o usar hoy
-    fecha_str = request.GET.get('fecha')
+    hoy = timezone.now().date()
+
+    # ---------- Rango de fechas ----------
+    fecha_desde_str = request.GET.get('fecha_desde')
+    fecha_hasta_str = request.GET.get('fecha_hasta')
+
     try:
-        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date() if fecha_str else timezone.now().date()
+        fecha_desde = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date() if fecha_desde_str else hoy
     except ValueError:
-        fecha = timezone.now().date()
+        fecha_desde = hoy
 
+    try:
+        fecha_hasta = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date() if fecha_hasta_str else hoy
+    except ValueError:
+        fecha_hasta = hoy
+
+    # Si el usuario invierte las fechas, las reordenamos en vez de devolver vacío
+    if fecha_desde > fecha_hasta:
+        fecha_desde, fecha_hasta = fecha_hasta, fecha_desde
+
+    promotor_id = request.GET.get('promotor')
     comunidad_id = request.GET.get('comunidad')
+    grupo_id = request.GET.get('grupo')
 
-    # 1. Abonos realizados exactamente en esa fecha (sin importar la hora)
-    abonos_dia = Abono.objects.filter(fecha__date=fecha).select_related(
-        'pago__prestamo__cliente', 'cobrador'
+    # ---------- 1. Abonos realizados en el rango ----------
+    abonos_dia = Abono.objects.filter(
+        fecha__date__gte=fecha_desde,
+        fecha__date__lte=fecha_hasta,
+    ).select_related(
+        'pago__prestamo__cliente__comunidad',
+        'pago__prestamo__grupo',
+        'pago__prestamo__promotor',
+        'cobrador',
     )
 
-    # 2. Pagos (cuotas) programados para esa fecha que NO estén completamente pagados
+    # ---------- 2. Cuotas programadas en el rango que siguen sin pagarse ----------
     pagos_programados = Pago.objects.filter(
-        fecha_programada=fecha,
-        estado_pago__in=['pendiente', 'parcial']
-    ).select_related('prestamo__cliente')
+        fecha_programada__gte=fecha_desde,
+        fecha_programada__lte=fecha_hasta,
+        estado_pago__in=['pendiente', 'parcial'],
+    ).select_related(
+        'prestamo__cliente__comunidad',
+        'prestamo__grupo',
+        'prestamo__promotor',
+    )
 
-    # Filtro por comunidad (si se seleccionó)
+    # ---------- Filtros ----------
+    if promotor_id:
+        abonos_dia = abonos_dia.filter(cobrador_id=promotor_id)
+        pagos_programados = pagos_programados.filter(prestamo__promotor_id=promotor_id)
+
     if comunidad_id:
         abonos_dia = abonos_dia.filter(pago__prestamo__cliente__comunidad_id=comunidad_id)
         pagos_programados = pagos_programados.filter(prestamo__cliente__comunidad_id=comunidad_id)
 
+    if grupo_id:
+        abonos_dia = abonos_dia.filter(pago__prestamo__grupo_id=grupo_id)
+        pagos_programados = pagos_programados.filter(prestamo__grupo_id=grupo_id)
+
+    abonos_dia = abonos_dia.order_by('-fecha')
+    pagos_programados = pagos_programados.order_by('fecha_programada')
+
     total_abonado = abonos_dia.aggregate(total=Sum('monto'))['total'] or Decimal('0')
     total_pendiente = pagos_programados.aggregate(total=Sum('saldo_restante'))['total'] or Decimal('0')
 
-    # Lista de comunidades para el filtro
+    cuotas_atrasadas = pagos_programados.filter(fecha_programada__lt=hoy).count()
+
+    # ---------- Listas para los filtros ----------
     comunidades = Comunidad.objects.all().order_by('nombre')
+    promotores = User.objects.all().order_by('username')
+    grupos = Grupo.objects.all().order_by('nombre')
 
     context = {
-        'fecha': fecha,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
         'abonos_dia': abonos_dia,
         'pagos_programados': pagos_programados,
         'total_abonado': total_abonado,
         'total_pendiente': total_pendiente,
+        'cuotas_atrasadas': cuotas_atrasadas,
         'comunidades': comunidades,
         'comunidad_seleccionada': comunidad_id,
+        'promotores': promotores,
+        'promotor_seleccionado': promotor_id,
+        'grupos': grupos,
+        'grupo_seleccionado': grupo_id,
     }
     return render(request, 'reporte_diario.html', context)
+
 
 
 @login_required
