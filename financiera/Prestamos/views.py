@@ -9,7 +9,7 @@ from django.contrib import messages
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta  
-from Prestamos.models import Prestamo
+from Prestamos.models import Prestamo,  InformacionCliente
 from Pagos.models import Pago, Abono
 from Grupos.models import Grupo, IntegranteGrupo
 from Grupos.models import DetallePrestamoGrupal
@@ -28,6 +28,9 @@ from django.db.models import Q
 from zoneinfo import ZoneInfo
 from django.db.models import OuterRef, Subquery, DecimalField, Sum
 from django.core.paginator import Paginator
+from io import BytesIO
+import zipfile
+from django.http import FileResponse, HttpResponse, Http404
 
 @login_required
 def principal(request):
@@ -918,4 +921,64 @@ def descargar_lista(request, prestamo_id):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'filename="lista_miembros_{prestamo.id}.pdf"'
 
+    return response
+
+
+def subir_informacion(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    if request.method == 'POST':
+        archivos = request.FILES.getlist('informacion')
+        if archivos:
+            for archivo in archivos:
+                InformacionCliente.objects.create(
+                    prestamo=prestamo,
+                    archivo=archivo,
+                    nombre=archivo.name,
+                    subido_por=request.user
+                )
+            messages.success(request, f"Se subieron {len(archivos)} archivo(s) correctamente.")
+        else:
+            messages.warning(request, "No seleccionaste ningún archivo.")
+    return redirect('detalle_prestamo', pk=prestamo.id)
+
+
+def eliminar_informacion(request, info_id):
+    info = get_object_or_404(InformacionCliente, id=info_id)
+    prestamo_id = info.prestamo.id
+    # Eliminar el archivo físico
+    if info.archivo:
+        default_storage.delete(info.archivo.path)
+    info.delete()
+    messages.success(request, "Archivo eliminado.")
+    return redirect('detalle_prestamo', pk=prestamo_id)
+
+# Descargar un archivo individual (cualquier usuario autenticado)
+@login_required
+def descargar_informacion(request, info_id):
+    info = get_object_or_404(InformacionCliente, id=info_id)
+    if not info.archivo or not default_storage.exists(info.archivo.name):
+        raise Http404("El archivo no existe.")
+    response = FileResponse(info.archivo.open('rb'), as_attachment=True, filename=info.filename())
+    return response
+
+# Descargar todos los archivos en un ZIP (cualquier usuario autenticado)
+@login_required
+def descargar_todas_informaciones(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamo, id=prestamo_id)
+    informaciones = prestamo.informaciones.all()
+    if not informaciones:
+        messages.warning(request, "No hay archivos para descargar.")
+        return redirect('detalle_prestamo', pk=prestamo.id)
+
+    # Crear ZIP en memoria
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for info in informaciones:
+            # Leer archivo y agregarlo al ZIP
+            with info.archivo.open('rb') as f:
+                zip_file.writestr(info.filename(), f.read())
+
+    zip_buffer.seek(0)
+    response = HttpResponse(zip_buffer, content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="informacion_prestamo_{prestamo.id}.zip"'
     return response

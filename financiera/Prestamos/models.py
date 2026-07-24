@@ -7,6 +7,8 @@ from dateutil.relativedelta import relativedelta
 from datetime import timedelta
 from django.contrib.auth.models import User  # Importar el modelo User de Django
 from django.apps import apps
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 class Prestamo(models.Model):
 
@@ -296,4 +298,17 @@ class Prestamo(models.Model):
         verbose_name = "Préstamo"
         verbose_name_plural = "Préstamos"
         ordering = ['-fecha_solicitud']
-        
+
+
+class InformacionCliente(models.Model):
+    prestamo = models.ForeignKey('Prestamo', on_delete=models.CASCADE, related_name='informaciones')
+    archivo = models.FileField(upload_to='informacion_clientes/%Y/%m/%d/')
+    nombre = models.CharField(max_length=255, blank=True)  # opcional, se puede auto-completar
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre or self.archivo.name
+
+    def filename(self):
+        return self.archivo.name.split('/')[-1]

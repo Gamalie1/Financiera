@@ -1,230 +1,377 @@
-{% extends 'base.html' %} {% load static %}
-<title>{% block title %}Documentos{% endblock %}</title>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Documentos Disponibles{% endblock %}
+
 {% block content %}
+<div class="container py-4">
+  
+  <!-- Encabezado con gradiente y contador -->
+  <div class="row align-items-center mb-4 pb-2 border-bottom">
+    <div class="col-md-6">
+      <h1 class="display-4 fw-bold text-gradient">
+        <i class="fas fa-file-pdf text-danger me-2"></i>Documentos
+      </h1>
+      <p class="lead text-muted">
+        <i class="far fa-file-alt me-1"></i> 
+        <span id="totalDocumentos">{{ documentos|length }}</span> documentos disponibles
+      </p>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+      {% if user.is_staff %}
+        <a href="{% url 'subir_documento_general' %}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+          <i class="fas fa-upload me-2"></i> Subir nuevo
+        </a>
+      {% endif %}
+    </div>
+  </div>
 
-<!doctype html>
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documentos Disponibles</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      body {
-        font-family: "Poppins", sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 0;
-      }
-
-      header {
-        background-color: #1a73e8;
-        color: white;
-        text-align: center;
-        padding: 20px;
-      }
-
-      header h1 {
-        margin: 0;
-        font-size: 36px;
-      }
-
-      .container {
-        width: 80%;
-        margin: 20px auto;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: space-between;
-      }
-
-      .document-card {
-        background-color: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        width: calc(33% - 20px);
-        padding: 20px;
-        text-align: center;
-        transition:
-          transform 0.3s ease,
-          box-shadow 0.3s ease;
-      }
-
-      .document-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      }
-
-      .document-card h3 {
-        margin-bottom: 15px;
-        color: #333;
-        font-size: 22px;
-      }
-
-      .document-card p {
-        color: #777;
-        font-size: 16px;
-        margin-bottom: 20px;
-      }
-
-      .document-card iframe {
-        width: 100%;
-        height: 200px;
-        border: none;
-        margin-bottom: 20px;
-      }
-
-      .document-card a {
-        text-decoration: none;
-        background-color: #1a73e8;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: bold;
-        transition: background-color 0.3s ease;
-      }
-
-      .document-card a:hover {
-        background-color: #0c56c1;
-      }
-
-      @media (max-width: 768px) {
-        .document-card {
-          width: calc(50% - 20px);
-        }
-      }
-
-      @media (max-width: 480px) {
-        .document-card {
-          width: 100%;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Documentos Disponibles</h1>
-    </header>
-
-    <div class="container">
-      <!-- Contrato Individual -->
-      <div class="document-card">
-        <h3>Contrato individual</h3>
-        <iframe
-          src="{% static 'documentos/Contrato_Individual.pdf' %}"
-          title="Contrato Individual"
-        ></iframe>
-        <a href="{% static 'documentos/Contrato_Individual.pdf' %}" download
-          >Descargar</a
-        >
-      </div>
-
-      <!-- Págare -->
-      <div class="document-card">
-        <h3>Pagare individual semanal</h3>
-        <iframe
-          src="{% static 'documentos/PAGARE_INDIVIDUAL_SEMANAL.pdf' %}"
-          title="Págare"
-        ></iframe>
-        <a
-          href="{% static 'documentos/PAGARE_INDIVIDUAL_SEMANAL.pdf' %}"
-          download
-          >Descargar</a
-        >
-      </div>
-
-      <!-- Documento 1 -->
-      <div class="document-card">
-        <h3>Pagare individual mensual</h3>
-        <iframe
-          src="{% static 'documentos/PAGARE_INDIVIDUAL_MENSUAL.pdf' %}"
-          title="Documento 1"
-        ></iframe>
-        <a
-          href="{% static 'documentos/PAGARE_INDIVIDUAL_MENSUAL.pdf' %}"
-          download
-          >Descargar</a
-        >
-      </div>
-
-      <!-- Documento 2 -->
-      <div class="document-card">
-        <h3>Documento de liquidacion</h3>
-        <iframe
-          src="{% static 'documentos/LIQUIDACION.pdf' %}"
-          title="Documento 2"
-        ></iframe>
-        <a href="{% static 'documentos/LIQUIDACION.pdf' %}" download
-          >Descargar</a
-        >
-      </div>
-
-      <!-- Documento "LIQUIDACION DE CREDITO" -->
-      <div class="document-card">
-        <h3>Documento de invitacion</h3>
-        <iframe
-          src="{% static 'documentos/INVITACION.pdf' %}"
-          title="Liquidación de Crédito"
-        ></iframe>
-        <a href="{% static 'documentos/INVITACION.pdf' %}" download
-          >LIQUIDACION DE CREDITO</a
-        >
-      </div>
-
-      <!-- Documento 2 -->
-      <div class="document-card">
-        <h3>Invitacion de pago</h3>
-
-        <iframe
-          src="{% static 'documentos/invitacion_de_pago.pdf' %}"
-          title="Documento 2"
-        ></iframe>
-        <a href="{% static 'documentos/invitacion_de_pago.pdf' %}" download
-          >Descargar</a
-        >
-      </div>
-      <!-- Documento 2 -->
-      <div class="document-card">
-        <h3>Lista de cotrol grupal</h3>
-
-        <iframe
-          src="{% static 'documentos/Lista_control_pagos.pdf' %}"
-          title="Documento 2"
-        ></iframe>
-        <a href="{% static 'documentos/Lista_control_pagos.pdf' %}" download
-          >Descargar</a
-        >
-      </div>
-
-      <!-- Documento 2 -->
-      <div class="document-card">
-        <h3>Garantia Individual</h3>
-
-        <iframe
-          src="{% static 'documentos/Garantia_Individual.pdf' %}"
-          title="Documento 2"
-        ></iframe>
-        <a href="{% static 'documentos/Garantia_Individual.pdf' %}" download
-          >Descargar</a
-        >
-      </div>
-      <!-- Documento 2 -->
-      <div class="document-card">
-        <h3>Invitacion de pago</h3>
-
-        <iframe
-          src="{% static 'documentos/invitacion_2.pdf' %}"
-          title="Documento 2"
-        ></iframe>
-        <a href="{% static 'documentos/invitacion_2.pdf' %}" download
-          >Descargar</a
-        >
+  <!-- Buscador en tiempo real -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-lg-4">
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-white border-0"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" id="buscadorDocumentos" class="form-control border-0" placeholder="Buscar documento...">
       </div>
     </div>
-  </body>
-</html>
+  </div>
+
+  <!-- Grid de documentos -->
+  <div class="row g-4" id="gridDocumentos">
+    {% for doc in documentos %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 documento-item" data-nombre="{{ doc.nombre|lower }}">
+        <div class="card h-100 border-0 shadow-sm hover-card animate-card">
+          <div class="card-body d-flex flex-column p-3">
+            
+            <!-- Badge tipo de archivo (solo dinámicos) -->
+            {% if not doc.es_estatico %}
+              <div class="position-absolute top-0 end-0 mt-2 me-2">
+                {% with extension=doc.url|lower|slice:"-4:" %}
+                  {% if extension == '.pdf' %}
+                    <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm">
+                      <i class="fas fa-file-pdf me-1"></i> PDF
+                    </span>
+                  {% elif extension == '.png' or extension == '.jpg' or extension == '.jpeg' or extension == '.gif' %}
+                    <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">
+                      <i class="fas fa-image me-1"></i> Imagen
+                    </span>
+                  {% elif extension == '.doc' or extension == '.docx' %}
+                    <span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm">
+                      <i class="fas fa-file-word me-1"></i> Word
+                    </span>
+                  {% elif extension == '.xls' or extension == '.xlsx' %}
+                    <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">
+                      <i class="fas fa-file-excel me-1"></i> Excel
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary rounded-pill px-3 py-2 shadow-sm">
+                      <i class="fas fa-file me-1"></i> {{ extension|upper|cut:"." }}
+                    </span>
+                  {% endif %}
+                {% endwith %}
+              </div>
+            {% endif %}
+
+            <!-- Título -->
+            <h5 class="card-title text-center text-truncate mt-2" title="{{ doc.nombre }}">
+              {{ doc.nombre }}
+            </h5>
+
+            <!-- Vista previa -->
+            <div class="mb-3 text-center preview-container">
+              {% if doc.es_estatico %}
+                <iframe src="{{ doc.url }}" class="w-100 preview-iframe" style="border: none;" loading="lazy"></iframe>
+              {% else %}
+                {% with extension=doc.url|lower|slice:"-4:" %}
+                  {% if extension == '.pdf' %}
+                    <iframe src="{{ doc.url }}" class="w-100 preview-iframe" style="border: none;" loading="lazy"></iframe>
+                  {% elif extension == '.png' or extension == '.jpg' or extension == '.jpeg' or extension == '.gif' %}
+                    <img src="{{ doc.url }}" alt="{{ doc.nombre }}" class="preview-img">
+                  {% else %}
+                    <div class="preview-icon">
+                      <i class="fas fa-file fa-4x text-secondary"></i>
+                      <p class="small text-muted mt-1">Vista previa no disponible</p>
+                    </div>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+            </div>
+
+            <!-- Información adicional (dinámicos) -->
+            {% if not doc.es_estatico %}
+              <p class="card-text small text-muted text-center mb-2">
+                <i class="far fa-calendar-alt me-1"></i> {{ doc.fecha|date:"d/m/Y" }}
+                {% if doc.subido_por %}
+                  <br><i class="far fa-user me-1"></i> {{ doc.subido_por.get_full_name|default:doc.subido_por.username }}
+                {% endif %}
+              </p>
+            {% endif %}
+
+            <!-- Botones -->
+            <div class="mt-auto">
+              <div class="d-grid gap-2">
+                <!-- Descargar -->
+                {% if doc.es_estatico %}
+                  <a href="{{ doc.url }}" download class="btn btn-outline-success btn-sm rounded-pill">
+                    <i class="fas fa-download me-1"></i> Descargar
+                  </a>
+                {% else %}
+                  <a href="{% url 'descargar_documento_general' doc.id %}" class="btn btn-outline-success btn-sm rounded-pill">
+                    <i class="fas fa-download me-1"></i> Descargar
+                  </a>
+                {% endif %}
+
+                <!-- Acciones staff -->
+                {% if user.is_staff and not doc.es_estatico %}
+                  <div class="d-flex justify-content-center gap-2 mt-1">
+                    <a href="{% url 'editar_documento_general' doc.id %}" class="btn btn-outline-warning btn-sm rounded-pill">
+                      <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" onclick="mostrarModalEliminar('{{ doc.id }}', '{{ doc.nombre|escapejs }}')">
+                      <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal -->
+      {% if user.is_staff and not doc.es_estatico %}
+        <div class="modal fade" id="confirmDeleteModal{{ doc.id }}" tabindex="-1" style="display:none;" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Confirmar eliminación</h5>
+                <button type="button" class="btn-close" onclick="cerrarModal('{{ doc.id }}')" aria-label="Cerrar"></button>
+              </div>
+              <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el documento <strong>"{{ doc.nombre }}"</strong>?</p>
+                <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModal('{{ doc.id }}')">Cancelar</button>
+                <form id="formEliminar{{ doc.id }}" action="{% url 'eliminar_documento_general' doc.id %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-1"></i> Eliminar definitivamente</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info text-center py-5 shadow-sm" role="alert">
+          <i class="fas fa-info-circle fa-4x mb-3 text-primary"></i>
+          <h4>No hay documentos disponibles</h4>
+          <p class="mb-0">Vuelve más tarde o contacta al administrador.</p>
+          {% if user.is_staff %}
+            <a href="{% url 'subir_documento_general' %}" class="btn btn-primary mt-3">
+              <i class="fas fa-upload me-1"></i> Subir el primero
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Footer con información extra -->
+  <div class="row mt-5 pt-3 border-top">
+    <div class="col-md-6 text-muted small">
+      <i class="fas fa-database me-1"></i> Total: <span id="totalDocumentosFooter">{{ documentos|length }}</span> documentos
+    </div>
+    <div class="col-md-6 text-md-end text-muted small">
+      <i class="fas fa-info-circle me-1"></i> Los documentos son de uso exclusivo de la empresa.
+    </div>
+  </div>
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+  .text-gradient {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hover-card {
+    transition: transform 0.25s ease, box-shadow 0.3s ease;
+  }
+  .hover-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 1rem 2.5rem rgba(0,0,0,0.15) !important;
+  }
+  .animate-card {
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+  }
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .preview-container {
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f8f9fa;
+    position: relative;
+  }
+  .preview-iframe {
+    height: 100%;
+    border: 0;
+    border-radius: 8px;
+  }
+  .preview-img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  .preview-icon {
+    text-align: center;
+    color: #6c757d;
+  }
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  .btn-lg {
+    border-radius: 50px;
+    padding: 0.6rem 1.8rem;
+  }
+  .btn-outline-success, .btn-outline-warning, .btn-outline-danger {
+    border-width: 2px;
+    font-weight: 500;
+  }
+  .btn-outline-success:hover {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+  }
+  .btn-outline-warning:hover {
+    background-color: #ffc107;
+    color: #212529;
+    border-color: #ffc107;
+  }
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+  }
+  .card-title {
+    font-weight: 600;
+    font-size: 1rem;
+    min-height: 2.4rem;
+  }
+  .input-group-text {
+    background: white;
+  }
+  .input-group:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    border-radius: 50px;
+  }
+  .input-group .form-control:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+  }
+  .modal-content {
+    border-radius: 20px;
+    border: none;
+  }
+  @media (max-width: 576px) {
+    .display-4 {
+      font-size: 2rem;
+    }
+    .preview-container {
+      height: 110px;
+    }
+    .card-title {
+      font-size: 0.9rem;
+      min-height: 2rem;
+    }
+    .badge {
+      font-size: 0.6rem;
+      padding: 0.3rem 0.8rem;
+    }
+    .btn-lg {
+      font-size: 0.9rem;
+      padding: 0.4rem 1.2rem;
+    }
+  }
+</style>
+
+<!-- Scripts -->
+<script>
+  // Buscador en tiempo real
+  document.addEventListener('DOMContentLoaded', function() {
+    const buscador = document.getElementById('buscadorDocumentos');
+    const items = document.querySelectorAll('.documento-item');
+    const totalSpan = document.getElementById('totalDocumentos');
+    const totalFooter = document.getElementById('totalDocumentosFooter');
+
+    buscador.addEventListener('input', function() {
+      const filtro = this.value.toLowerCase().trim();
+      let visibles = 0;
+      items.forEach(item => {
+        const nombre = item.dataset.nombre || '';
+        if (nombre.includes(filtro)) {
+          item.style.display = '';
+          visibles++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      // Actualizar contadores
+      totalSpan.textContent = visibles;
+      totalFooter.textContent = visibles;
+    });
+  });
+
+  // Funciones del modal
+  function mostrarModalEliminar(id) {
+    const modal = document.getElementById('confirmDeleteModal' + id);
+    if (modal) {
+      modal.style.display = 'block';
+      modal.classList.add('show');
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop fade show';
+      backdrop.id = 'backdrop' + id;
+      document.body.appendChild(backdrop);
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function cerrarModal(id) {
+    const modal = document.getElementById('confirmDeleteModal' + id);
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('show');
+      const backdrop = document.getElementById('backdrop' + id);
+      if (backdrop) backdrop.remove();
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Cerrar modal al hacer clic fuera
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal') && e.target.style.display === 'block') {
+      const id = e.target.id.replace('confirmDeleteModal', '');
+      cerrarModal(id);
+    }
+  });
+</script>
+
 {% endblock %}

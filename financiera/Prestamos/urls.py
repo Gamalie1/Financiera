@@ -21,6 +21,10 @@ urlpatterns = [
     path('descargar-informacion/<int:prestamo_id>/', Prestamos_views.descargar_informacion, name='descargar_informacion'),
     path('invitacion/<int:prestamo_id>/pdf/', Prestamos_views.generar_invitacion, name='invitacion_pdf'),
     path('liquidacion/<int:prestamo_id>/pdf/', Prestamos_views.generar_liquidacion, name='liquidacion_pdf'),
+     path('prestamo/<int:prestamo_id>/subir_informacion/', Prestamos_views.subir_informacion, name='subir_informacion'),
+    path('informacion/<int:info_id>/eliminar/', Prestamos_views.eliminar_informacion, name='eliminar_informacion'),
+    path('informacion/<int:info_id>/descargar/', Prestamos_views.descargar_informacion, name='descargar_informacion'),
+    path('prestamo/<int:prestamo_id>/descargar_todas/', Prestamos_views.descargar_todas_informaciones, name='descargar_todas_informaciones'),
 
 
     
